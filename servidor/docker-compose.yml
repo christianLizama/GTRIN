@@ -1,0 +1,27 @@
+version: "3"
+services:
+  server1:
+    image: node-app
+    environment:
+      - PORT= 3030
+      - MONGO_URL= mongodb://mongo/myapp
+    ports:
+      - 3030:3030
+    links:
+      - mongo
+    volumes:
+      - ./subidas:/uploads
+  mongo:
+    image: mongo
+    ports:
+      - 27017:27017
+    volumes:
+      - ./node1:/data/db
+  client:
+    image: vue-app
+    environment:
+      - VUE_APP_SERVER_URL= http://34.82.195.103:3030/
+    ports:
+      - 8080:80
+    links:
+      - server1
