@@ -1,0 +1,32 @@
+version: "3.5"
+services:
+  server1:
+    env_file: .env
+    image: node-app
+    build:
+      context: servidor
+      dockerfile: ../servidor/Dockerfile
+    ports:
+      - 3030:3030
+    links:
+      - mongo
+    volumes:
+      - ./subidas:/uploads
+  mongo:
+    image: mongo
+    ports:
+      - 27017:27017
+    volumes:
+      - ./node1:/data/db
+  client:
+    env_file: .env
+    image: vue-app
+    build:
+      context: proyecto
+      dockerfile: ../proyecto/Dockerfile
+      args:
+        VUE_APP_SERVER_URL: ${VUE_APP_SERVER_URL} # from .env file
+    ports:
+      - 8080:80
+    links:
+      - server1
