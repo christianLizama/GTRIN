@@ -1,6 +1,13 @@
 <template>
   <div>
-    <v-app-bar color="" app height="56%" elevation="1">
+    <v-app-bar  color="" app height="56%" elevation="1">
+      <v-app-bar-nav-icon class="hidden-md-and-up" @click="drawer = true"></v-app-bar-nav-icon>
+      <v-img
+        class="imagen"
+        max-height="55"
+        max-width="55"
+        src="../assets/logo.e34e8d2.png"
+      ></v-img>
       <v-spacer></v-spacer>
       <div class="text-center">
         <v-menu offset-y>
@@ -27,21 +34,20 @@
 
             <v-card-actions>
               <v-spacer></v-spacer>
-              <v-btn text @click="menu = false" to="home"> Mi Perfil </v-btn>
-              <v-btn color="primary" text @click="menu = false"> Salir </v-btn>
+              <v-btn color="primary" text > Salir </v-btn>
             </v-card-actions>
           </v-card>
         </v-menu>
       </div>
     </v-app-bar>
     <v-navigation-drawer
+      v-model="drawer"
       dark
       color="#212529"
       app
       :mini-variant.sync="mini"
-      permanent
+      :permanent="!$vuetify.breakpoint.xsOnly"
       expand-on-hover
-
     >
       <v-list-item class="px-2">
         <v-list-item-avatar>
@@ -97,6 +103,7 @@ import axios from "axios";
 export default {
   data() {
     return {
+      drawer: false,
       nombre: "Christian Lizama",
       menu: [{ action: "mdi-ticket", items: [], title: "Sociedades" }],
       mini: true,

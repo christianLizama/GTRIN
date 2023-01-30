@@ -2,7 +2,6 @@
   <div>
     <v-toolbar dense dark>
       <v-toolbar-title class="white--text"> Dashboard </v-toolbar-title>
-
       <v-spacer></v-spacer>
     </v-toolbar>
 
@@ -11,7 +10,14 @@
       <v-row>
         <v-col v-for="item in kpi" :key="item.nombre">
           <v-hover v-slot="{ hover }">
-            <v-card dark elevation="5" :color="item.color" class="mx-auto" height="140" outlined>
+            <v-card
+              dark
+              elevation="5"
+              :color="item.color"
+              class="mx-auto"
+              height="140"
+              outlined
+            >
               <v-expand-transition>
                 <div
                   v-if="hover"
@@ -49,10 +55,13 @@
       <v-card elevation="5" outlined class="mx-auto" max-width="98.6%">
         <v-card-title>
           Filtros <v-spacer></v-spacer>
-          <v-btn text color="red accent-4" @click="limpiarFiltros()">
+          <v-btn text color="blue accent-4" @click="limpiarFiltros()">
             Limpiar Filtros
-          </v-btn></v-card-title
-        >
+          </v-btn>
+          <v-btn text color="blue accent-4" large @click.stop="showScheduleForm = true">
+            Enviar Trigger
+          </v-btn>
+        </v-card-title>
         <v-card-text>
           <v-row align="center">
             <v-col cols="11" sm="5" md="6">
@@ -107,7 +116,7 @@
     </div>
 
     <div class="contenedor" v-if="!isLoading">
-      <v-card elevation="5" outlined class="mx-auto" max-width="98.6%">
+      <v-card elevation="5" outlined class="mx-auto mb-8" max-width="98.6%">
         <v-data-table
           :headers="headers"
           :items="filtros"
@@ -117,6 +126,10 @@
         >
           <template v-slot:[`item.padreSuperior`]="{ item }">
             {{ obtenerNombreSociedad(item.padreSuperior) }}
+          </template>
+
+          <template v-slot:[`item.diasAviso`]="{ item }">
+            {{ obtenerFechaAviso(item) }}
           </template>
 
           <template v-slot:[`item.abuelo`]="{ item }">
@@ -135,13 +148,12 @@
           <template v-slot:[`item.archivo`]="{ item }">
             <div class="text-truncate" style="max-width: 140px">
               <v-icon class="mr-2"> mdi-file-pdf-box</v-icon>
-              <a
-                class="texto"
-                :href="link+'uploadFile/files/' + item.archivo"
+              <a class="texto" :href="link + 'uploadFile/files/' + item.archivo"
                 >{{ item.archivo }}
               </a>
             </div>
           </template>
+
           <template v-slot:top>
             <v-toolbar flat>
               <v-toolbar-title>Archivos</v-toolbar-title>
@@ -165,7 +177,9 @@
                   csv-title="archivo"
                   :separator="';'"
                 >
-                  <v-btn icon> <v-icon color="green">mdi-microsoft-excel</v-icon></v-btn>
+                  <v-btn icon>
+                    <v-icon color="green">mdi-microsoft-excel</v-icon></v-btn
+                  >
                 </vue-json-to-csv>
               </template>
             </v-toolbar>
@@ -177,6 +191,8 @@
         </v-data-table>
       </v-card>
     </div>
+    <trigger v-model="showScheduleForm"></trigger>
+
   </div>
 </template>
 
@@ -185,9 +201,11 @@ import axios from "axios";
 import moment from "moment";
 import VueJsonToCsv from "vue-json-to-csv";
 import loading from "../loading.vue";
+import Trigger from "../trigger.vue";
 export default {
-  components: { VueJsonToCsv, loading },
+  components: { VueJsonToCsv, loading, Trigger },
   data: () => ({
+    showScheduleForm: false,
     link: process.env.VUE_APP_SERVER_URL,
     cVigente: 0,
     cPorVencer: 0,
@@ -298,7 +316,7 @@ export default {
         value: "status",
       },
       {
-        text: "Dias de Aviso alerta",
+        text: "Fecha aviso alerta",
         sortable: false,
         align: "center",
         value: "diasAviso",
@@ -325,19 +343,11 @@ export default {
     archivos: [],
   }),
   computed: {
-    fechaEm() {
-      if (this.editedItem.fechaEmision) {
-        return this.obtenerDiferencia(
-          this.editedItem.fechaEmision,
-          this.editedItem.fechaCaducidad
-        );
-      } else {
-        return 1;
-      }
-    },
     filtros() {
       return this.filtroSociedad(
-        this.filtroCarpetas(this.filtroSubCarpetas(this.filtroStatus(this.archivos)))
+        this.filtroCarpetas(
+          this.filtroSubCarpetas(this.filtroStatus(this.archivos))
+        )
       );
     },
     computedCarpeta() {
@@ -355,12 +365,21 @@ export default {
     this.initialize();
   },
   methods: {
+    obtenerFechaAviso(item) {
+      let fecha = moment(item.fechaEmision)
+        .add(item.diasAviso, "days")
+        .format("DD/MM/YYYY");
+      return fecha;
+    },
     contadorArchivos(lista, opcion) {
-      let archivosFiltrados = lista.filter((archivo) => archivo.status === opcion);
+      let archivosFiltrados = lista.filter(
+        (archivo) => archivo.status === opcion
+      );
       return archivosFiltrados.length;
     },
     carpetasHijas(carpetas) {
       if (this.sociedadSeleccionada.nombre == "Todo") {
+        this.carpetaSelecionada = this.carpetasDefault[0];
         return this.carpetasDefault;
       }
       let hijas = carpetas.filter((item) => {
@@ -371,9 +390,10 @@ export default {
     },
     subCarpetasHijas(subCarpetas) {
       if (
-        this.subCarpetaSelecionada.nombre == "Todo" &&
+        this.carpetaSelecionada.nombre == "Todo" &&
         this.sociedadSeleccionada.nombre == "Todo"
       ) {
+        this.subCarpetaSelecionada = this.subCarpetasDefault[0];
         return this.subCarpetasDefault;
       }
       let hijas = subCarpetas.filter((item) => {
@@ -384,7 +404,8 @@ export default {
     },
     filtroSociedad(archivos) {
       return archivos.filter(
-        (archivo) => !archivo.padreSuperior.indexOf(this.sociedadSeleccionada._id)
+        (archivo) =>
+          !archivo.padreSuperior.indexOf(this.sociedadSeleccionada._id)
       );
     },
     filtroCarpetas(archivos) {
@@ -399,14 +420,13 @@ export default {
       );
     },
     filtroStatus(archivos) {
+      if (this.estadoSeleccionado.codigo == 0) {
+        return archivos;
+      }
       let archivosFiltrados = archivos.filter(
         (archivo) => archivo.status === this.estadoSeleccionado.codigo
       );
-      if (archivosFiltrados.length > 0) {
-        return archivosFiltrados;
-      } else {
-        return archivos;
-      }
+      return archivosFiltrados;
     },
     limpiarFiltros() {
       this.sociedadSeleccionada = Object.assign({}, this.defaultFilter);
@@ -446,7 +466,6 @@ export default {
       });
     },
     obtenerDiferencia(fechaEmision, fechaVencimiento) {
-      this.editedItem.diasAviso = 1;
       var fecha1 = moment(fechaEmision);
       var fecha2 = moment(fechaVencimiento);
       return fecha2.diff(fecha1, "days");
@@ -464,8 +483,7 @@ export default {
     },
     async initialize() {
       await axios.get("archivo/allFiles").then((result) => {
-        let carpetas = result.data;
-        carpetas.forEach((element) => {
+        result.data.forEach((element) => {
           this.iniciarFile(element);
         });
         this.archivos = result.data;
@@ -517,14 +535,14 @@ export default {
 
       element.diasVigencia = diasVigencia;
       element.diasRestantes = diasRestantes;
-      console.log(element.nombre)
-      console.log("Fecha emision: "+element.fechaEmision)
-      console.log("Fecha vencimiento: "+element.fechaCaducidad)
-      console.log("Dias alerta: " + element.diasAviso )
-      console.log("Dias de vigencia: "+element.diasVigencia)
-      console.log("Dias restantes: "+element.diasRestantes)
-      
-      console.log("--------------------")
+      console.log(element.nombre);
+      console.log("Fecha emision: " + element.fechaEmision);
+      console.log("Fecha vencimiento: " + element.fechaCaducidad);
+      console.log("Dias alerta: " + element.diasAviso);
+      console.log("Dias de vigencia: " + element.diasVigencia);
+      console.log("Dias restantes: " + element.diasRestantes);
+
+      console.log("--------------------");
       if (diasRestantes < 1) {
         element.diasRestantes = 0;
       }
