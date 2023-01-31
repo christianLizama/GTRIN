@@ -1,5 +1,11 @@
 <template>
   <div>
+    <v-alert v-model="aceptado2" dense text type="success">
+      {{ alerta }}
+    </v-alert>
+    <v-alert v-model="rechazado2" dense outlined type="error">
+      {{ alerta }}
+    </v-alert>
     <v-toolbar dense dark>
       <v-btn @click="atras" big icon>
         <v-icon>mdi-chevron-left</v-icon>
@@ -27,6 +33,9 @@
       class="elevation-1"
       v-if="!isLoading"
     >
+      <template v-slot:[`item.diasAviso`]="{ item }">
+        {{ obtenerFechaAviso(item) }}
+      </template>
       <template v-slot:[`item.status`]="{ item }">
         <v-chip :color="getColor(item.status, item)" dark>
           {{ getNombre(item.status) }}
@@ -66,15 +75,13 @@
                 >
               </vue-json-to-csv>
             </template>
-            
+
             <loading texto="Subiendo Archivo" v-if="isUpload"></loading>
             <v-stepper v-else v-model="e1">
-              <v-alert v-model="aceptado" dense text type="success">
-              {{ message }}
-            </v-alert>
-            <v-alert v-model="rechazado" dense outlined type="error">
-              {{ message }}
-            </v-alert>
+              
+              <v-alert v-model="rechazado" dense outlined type="error">
+                {{ message }}
+              </v-alert>
               <v-stepper-header>
                 <v-stepper-step :complete="e1 > 1" step="1">
                   Nombre archivo
@@ -105,14 +112,13 @@
                             label="Nombre del archivo"
                           ></v-text-field>
                         </v-col>
-                        <v-col cols="12" sm="6" md="4">
+                        <v-col v-if="editedIndex == -1" cols="12" sm="6" md="4">
                           <v-file-input
                             prepend-icon="mdi-tray-arrow-up"
                             show-size
                             label="Seleccione un archivo"
                             @change="selectFile"
                           >
-                            <p>hoakasjdkdjas</p>
                           </v-file-input>
                         </v-col>
                       </v-row>
@@ -128,7 +134,6 @@
                     <v-card-title v-if="!isUpload">
                       <span class="text-h5">Fechas </span>
                     </v-card-title>
-
                     <v-card-text v-if="!isUpload">
                       <v-container>
                         <v-row align="center" justify="center">
@@ -195,7 +200,7 @@
                 </v-stepper-content>
 
                 <v-stepper-content step="3">
-                  <v-card class="mb-12 mx-auto" outlined color="lighten-1" >
+                  <v-card class="mb-12 mx-auto" outlined color="lighten-1">
                     <v-card-title>
                       Establecer día en que el archivo deja de estar vigente
                     </v-card-title>
@@ -208,13 +213,14 @@
                         :max="fechaEm - 1"
                       ></v-slider>
                       <p v-if="editedItem.diasAviso == 0">
-                        Día en que el archivo pasa a estado por vencer: <b>Hoy</b>
+                        Día en que el archivo pasa a estado por vencer:
+                        <b>Hoy</b>
                       </p>
                       <p v-else>
                         Día en que el archivo pasa a estado por vencer:
                         <b>{{ obtenerFecha(editedItem.diasAviso) }}</b>
                       </p>
-                      <p>Maxima Cantidad de dias de aviso: {{ fechaEm }}</p>
+                      <p>Maxima Cantidad de dias de aviso: {{ fechaEm - 1 }}</p>
                     </v-card-text>
                   </v-card>
                   <v-btn color="primary" @click="e1 = 2" text> Atras </v-btn>
@@ -287,11 +293,13 @@ import loading from "../loading.vue";
 export default {
   components: { VueJsonToCsv, loading },
   data: () => ({
+    alerta: "",
     e1: 1,
     link: process.env.VUE_APP_SERVER_URL,
     seleccion: 1,
-    aceptado: false,
     rechazado: false,
+    aceptado2: false,
+    rechazado2: false,
     busqueda: "",
     isLoading: true,
     isUpload: false,
@@ -319,12 +327,7 @@ export default {
         sortable: true,
         value: "status",
       },
-      {
-        text: "Fecha cambio estado",
-        sortable: false,
-        align: "center",
-        value: "diasAviso",
-      },
+
       {
         text: "Dias de vigencia archivo",
         align: "center",
@@ -339,8 +342,14 @@ export default {
       },
       { text: "Archivo", sortable: false, value: "archivo" },
       { text: "Tamaño", value: "peso", align: "center" },
-      { text: "Fecha Subida", value: "fechaCreacion", align: "center" },
+      // { text: "Fecha Subida", value: "fechaCreacion", align: "center" },
       { text: "Fecha Emisión", value: "fechaEmision", align: "center" },
+      {
+        text: "Fecha estado por vencer",
+        sortable: true,
+        align: "center",
+        value: "diasAviso",
+      },
       { text: "Fecha Caducidad", value: "fechaCaducidad", align: "center" },
       { text: "Acciones", value: "actions", sortable: false, align: "center" },
     ],
@@ -427,10 +436,10 @@ export default {
     },
   },
   watch: {
-    aceptado(new_val) {
+    aceptado2(new_val) {
       if (new_val) {
         setTimeout(() => {
-          this.aceptado = false;
+          this.aceptado2 = false;
         }, 2000);
       }
     },
@@ -438,6 +447,13 @@ export default {
       if (new_val) {
         setTimeout(() => {
           this.rechazado = false;
+        }, 1000);
+      }
+    },
+    rechazado2(new_val) {
+      if (new_val) {
+        setTimeout(() => {
+          this.rechazado2 = false;
         }, 1000);
       }
     },
@@ -452,9 +468,13 @@ export default {
     this.initialize();
   },
   methods: {
+    obtenerFechaAviso(item) {
+      let fecha = moment(item.fechaEmision)
+        .add(item.diasAviso, "days")
+        .format("DD/MM/YYYY");
+      return fecha;
+    },
     fechasIguales() {
-      // console.log("Fecha emision: "+this.editedItem.fechaEmision)
-      // console.log("Fecha caducidad: "+this.editedItem.fechaCaducidad)
       if (
         this.obtenerDiferencia(
           this.editedItem.fechaEmision,
@@ -473,6 +493,19 @@ export default {
         .add(dias, "days")
         .format("DD/MM/YYYY");
       return fechaPosicion;
+    },
+    async actualizarArchivo(Archivo, index) {
+      await axios
+        .put("archivo/update/", { _id: Archivo._id, archivo: Archivo })
+        .then((res) => {
+          console.log(res);
+          this.iniciarFile(Archivo);
+          Object.assign(this.archivos[index], Archivo);
+          this.close();
+        })
+        .catch((e) => {
+          console.log(e.response);
+        });
     },
     deleteOrEdit(item, opcion) {
       opcion = opcion + 1;
@@ -548,19 +581,36 @@ export default {
       console.log("Dias de vigencia: " + element.diasVigencia);
       console.log("Dias de aviso: " + element.diasAviso);
       console.log("Dias restantes: " + diasRestantes);
-      console.log("---------------");
+      let dateArray = element.fechaEmision.split("-");
+      var diaCambio2 = new Date(dateArray[0], dateArray[1] - 1, dateArray[2]);
+      diaCambio2.setDate(diaCambio2.getDate() + element.diasAviso);
+      diaCambio2.setHours(0, 0, 0, 0);
+
+      let date2Array = element.fechaCaducidad.split("-");
+      var fechaCaducidadAux = new Date(
+        date2Array[0],
+        date2Array[1] - 1,
+        date2Array[2]
+      );
+      fechaCaducidadAux.setHours(0, 0, 0, 0);
+
+      console.log("--------------------");
+      var hoy = new Date();
+      hoy.setHours(0, 0, 0, 0);
 
       if (diasRestantes < 1) {
         element.diasRestantes = 0;
       }
-
-      if (diasRestantes == 0) {
-        element.status = 1;
-      } else if (diasRestantes > element.diasAviso) {
-        element.status = 3;
-      } else if (diasRestantes <= element.diasAviso && diasRestantes >= 1) {
+      //Si el día de cambio de estado es igual al día de hoy pasa a estado por vencer
+      if (diaCambio2.getTime() <= hoy.getTime() && diasRestantes >= 1) {
         element.status = 2;
-      } else {
+      }
+      //Si el día de cambio de estado es despues del día de hoy esta vigente
+      else if (diaCambio2.getTime() > hoy.getTime()) {
+        element.status = 3;
+      }
+      //Quiere decir que el día de cambio no es ni igual a hoy, ni mayor que hoy por lo que puede estar vencido
+      else if (diaCambio2.getTime() <= fechaCaducidadAux.getTime()) {
         element.status = 1;
       }
     },
@@ -588,8 +638,8 @@ export default {
         (archivo) => archivo.nombre === this.editedItem.nombre
       );
       // console.log("Soy el resultado: " + this.editedItem.nombre);
-      if(this.editedItem.nombre.length < 3){
-        this.message = "Por favor ingrese un nombre con al menos 4 caracteres"
+      if (this.editedItem.nombre.length < 3) {
+        this.message = "Por favor ingrese un nombre con al menos 4 caracteres";
         this.isUpload = false;
         this.rechazado = true;
         this.e1 = 1;
@@ -630,13 +680,8 @@ export default {
           this.editedItem.padre = this.padre._id;
           this.editedItem.abuelo = this.padre.padre;
           this.editedItem.padreSuperior = this.padre.padreSuperior;
-          // console.log("Dias aviso:"+ this.editedItem.diasAviso);
-          let calculo = this.fechaEm - this.editedItem.diasAviso;
-          if (calculo == 0) {
-            this.editedItem.diasAviso = 1;
-          } else {
-            this.editedItem.diasAviso = calculo;
-          }
+          console.log("Fecha em: " + this.fechaEm);
+          console.log("Dias aviso: " + this.editedItem.diasAviso);
           this.postArchivo(this.editedItem);
         })
         .catch(() => {
@@ -658,6 +703,7 @@ export default {
         })
         .catch((e) => {
           console.log(e);
+          this.isUpload = false;
         });
     },
     formatBytes(bytes, decimals = 2) {
@@ -685,16 +731,18 @@ export default {
         .then((res) => {
           console.log(res);
           this.alerta = "Cambios realizados exitosamente";
-          this.aceptado = true;
+          this.aceptado2 = true;
           this.close();
         })
         .catch((e) => {
           console.log(e.response);
+          this.isLoading = false;
         });
     },
     editItem(item) {
       this.editedIndex = this.archivos.indexOf(item);
       this.editedItem = Object.assign({}, item);
+      console.log(item);
       this.dialog = true;
     },
     deleteItem(item) {
@@ -727,7 +775,27 @@ export default {
     save() {
       //Cuando se edita
       if (this.editedIndex > -1) {
-        Object.assign(this.archivos[this.editedIndex], this.editedItem);
+        const resultado = this.archivos.find(
+          (archivo) => archivo.nombre === this.editedItem.nombre
+        );
+
+        //Si no la encuentra hace el update
+        if (!resultado || resultado._id === this.editedItem._id) {
+          console.log(this.editedItem.nombre);
+          if (this.editedItem.nombre.length > 3) {
+            this.actualizarArchivo(this.editedItem, this.editedIndex);
+            this.alerta = "Archivo modificado exitosamente";
+            this.aceptado2 = true;
+          } else {
+            this.message =
+              "El nombre del archivo debe tener un largo mayor a 3 caracteres";
+            this.rechazado = true;
+          }
+        } else {
+          this.message = "Ya existe un archivo con ese nombre";
+          this.rechazado = true;
+          return;
+        }
       } else {
         this.upload();
       }

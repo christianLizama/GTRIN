@@ -41,7 +41,7 @@
     </v-toolbar>
     <loading texto="Cargando Datos" v-if="isLoading"></loading>
     <v-list v-if="!isLoading" two-line subheader>
-      <v-subheader inset> Carpetas </v-subheader>
+      <v-subheader inset> Sub-Carpetas </v-subheader>
 
       <v-list-item
         v-for="item in resultadoBusqueda"

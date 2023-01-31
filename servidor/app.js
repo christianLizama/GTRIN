@@ -14,8 +14,7 @@ require("dotenv").config();
 //const uri = 'mongodb://mongo/myapp';
 const uri = process.env.MONGO_URL
 //Conexion DB nueva
-console.log(uri)
-//const uri = 'mongodb+srv://proyecto:proyecto@cluster0.lafxcfw.mongodb.net/test';
+// console.log(uri)
 const options = {useNewUrlParser: true};
 mongoose.connect(uri, options).then(
   () => { console.log('Conectado a DB') },

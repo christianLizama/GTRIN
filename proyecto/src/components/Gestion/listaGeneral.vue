@@ -129,7 +129,7 @@
           </template>
 
           <template v-slot:[`item.diasAviso`]="{ item }">
-            {{ obtenerFechaAviso(item) }}
+            {{ obtenerFechaAviso(item) }} {{ item.diasAviso }}
           </template>
 
           <template v-slot:[`item.abuelo`]="{ item }">
@@ -525,13 +525,13 @@ export default {
 
       var today = new Date();
       var now = today.toISOString();
-      var cortado = now.split("T");
-      var fecha1 = moment(element.fechaEmision);
-      var fecha2 = moment(element.fechaCaducidad);
-      var fecha3 = moment(element.fechaCaducidad);
+      var fechaActual = now.split("T");
+      var fechaEmis = moment(element.fechaEmision);
+      var fechaCaducidad1 = moment(element.fechaCaducidad);
+      var fechaCaducidad = moment(element.fechaCaducidad);
 
-      var diasVigencia = fecha2.diff(fecha1, "days");
-      var diasRestantes = fecha3.diff(cortado[0], "days");
+      var diasVigencia = fechaCaducidad1.diff(fechaEmis, "days");
+      var diasRestantes = fechaCaducidad.diff(fechaActual[0], "days");
 
       element.diasVigencia = diasVigencia;
       element.diasRestantes = diasRestantes;
@@ -539,25 +539,37 @@ export default {
       console.log("Fecha emision: " + element.fechaEmision);
       console.log("Fecha vencimiento: " + element.fechaCaducidad);
       console.log("Dias alerta: " + element.diasAviso);
+      console.log("Fecha que cambia de estado: " + moment(element.fechaEmision).add(element.diasAviso,"days").format("DD/MM/YYYY"))
       console.log("Dias de vigencia: " + element.diasVigencia);
       console.log("Dias restantes: " + element.diasRestantes);
+  
+      let dateArray = element.fechaEmision.split("-")
+      var diaCambio2 = new Date(dateArray[0],dateArray[1]-1,dateArray[2]);
+      diaCambio2.setDate(diaCambio2.getDate()+element.diasAviso)
+      diaCambio2.setHours(0,0,0,0)
 
+      let date2Array = element.fechaCaducidad.split("-")
+      var fechaCaducidadAux = new Date(date2Array[0],date2Array[1]-1,date2Array[2]);
+      fechaCaducidadAux.setHours(0,0,0,0)
+      
       console.log("--------------------");
+      var hoy = new Date();
+      hoy.setHours(0,0,0,0)
+
       if (diasRestantes < 1) {
         element.diasRestantes = 0;
       }
-      //   console.log("Dias de vigencia: " + element.diasVigencia);
-      //   console.log("Dias de aviso: " + element.diasAviso);
-      //   console.log("Dias restantes: " + diasRestantes);
-      //   console.log("---------------");
-      if (diasRestantes == 0) {
-        element.status = 1;
-      } else if (diasRestantes > element.diasAviso) {
-        element.status = 3;
-      } else if (diasRestantes <= element.diasAviso && diasRestantes >= 1) {
-        element.status = 2;
-      } else {
-        element.status = 1;
+      //Si el día de cambio de estado es igual al día de hoy pasa a estado por vencer
+      if(diaCambio2.getTime() <= hoy.getTime() && diasRestantes>=1){
+        element.status = 2
+      }
+      //Si el día de cambio de estado es despues del día de hoy esta vigente
+      else if(diaCambio2.getTime() > hoy.getTime()){
+        element.status = 3
+      }
+      //Quiere decir que el día de cambio no es ni igual a hoy, ni mayor que hoy por lo que puede estar vencido
+      else if (diaCambio2.getTime() <= fechaCaducidadAux.getTime()){
+        element.status = 1 
       }
     },
 

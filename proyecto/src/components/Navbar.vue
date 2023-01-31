@@ -61,7 +61,7 @@
 
       <v-list-item link to="/">
         <v-list-item-icon>
-          <v-icon>mdi-home-city</v-icon>
+          <v-icon>mdi-monitor-dashboard</v-icon>
         </v-list-item-icon>
         <v-list-item-content>
           <v-list-item-title>Dashboard</v-list-item-title>
@@ -105,7 +105,7 @@ export default {
     return {
       drawer: false,
       nombre: "Christian Lizama",
-      menu: [{ action: "mdi-ticket", items: [], title: "Sociedades" }],
+      menu: [{ action: "mdi-human-male-boy", items: [], title: "Contenedores" }],
       mini: true,
     };
   },

@@ -76,11 +76,11 @@ const getArchivos = async (req, res, next) => {
 };
 
 
-//Metodo para actualizar una sub carpeta en concreto mediante el _id
+//Metodo para actualizar un archivo en concreto mediante el _id
 const update = async (req, res, next) => {
   try {
     const id = req.body._id
-    const body = req.body.subCarpeta
+    const body = req.body.archivo
     const reg = await archivo.findByIdAndUpdate(id,body, {new: true});
     res.status(200).json(reg);
   } catch (e) {
