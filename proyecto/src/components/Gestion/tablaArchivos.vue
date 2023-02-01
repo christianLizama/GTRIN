@@ -475,12 +475,7 @@ export default {
       return fecha;
     },
     fechasIguales() {
-      if (
-        this.obtenerDiferencia(
-          this.editedItem.fechaEmision,
-          this.editedItem.fechaCaducidad
-        ) == 0
-      ) {
+      if (this.obtenerDiferencia(this.editedItem.fechaEmision,this.editedItem.fechaCaducidad) == 0) {
         this.editedItem.fechaCaducidad = moment(this.editedItem.fechaEmision)
           .add(1, "days")
           .toISOString()
