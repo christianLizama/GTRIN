@@ -1,5 +1,7 @@
 <template>
   <v-card>
+    <p>{{ carpetas }}</p>
+    <p>{{ finds }}</p>
     <v-alert v-model="aceptado" dense text type="success">
       {{ alerta }}
     </v-alert>
@@ -30,7 +32,7 @@
             v-on="on"
             @click="showDialog = !showDialog"
           >
-          <v-icon>mdi-folder-plus</v-icon>
+            <v-icon>mdi-folder-plus</v-icon>
           </v-btn>
         </template>
         <span>Agregar carpeta</span>
@@ -114,15 +116,27 @@
         <v-card-title> {{ formTitle }}</v-card-title>
         <v-card-text>
           <v-text-field
-            v-model="nombreCarpeta"
+            v-model="editedItem.nombre"
             label="Nombre carpeta"
           ></v-text-field>
           <v-text-field
-            v-model="descripcion"
+            v-model="editedItem.descripcion"
             label="Descripción"
           ></v-text-field>
         </v-card-text>
-
+        <v-card-text>
+          <h3>Apartados a controlar *</h3>
+          <v-btn icon @click="addFind">
+            <v-icon>mdi-plus</v-icon>
+          </v-btn>
+          <div v-for="(find, index) in finds" :key="find.nombre">
+            <v-text-field
+              :label="'Apartado ' + (index + 1)"
+              v-model="find.value"
+              :key="index"
+            />
+          </div>
+        </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
 
@@ -135,12 +149,13 @@
 
 <script>
 import axios from "axios";
-import loading from '../loading.vue';
+import loading from "../loading.vue";
 export default {
-  components: { loading},
+  components: { loading },
   data: () => ({
+    finds: [],
     busqueda: "",
-    isLoading:true,
+    isLoading: true,
     alerta: "",
     showDialog: false,
     padre: {},
@@ -155,7 +170,10 @@ export default {
       { title: "Editar", icon: "mdi-pencil", metodo: "editItem" },
       { title: "Eliminar", icon: "mdi-delete" },
     ],
-    editedItem: {},
+    editedItem: {
+      nombre:"",
+      descripcion:"",
+    },
   }),
   created() {
     this.initialize();
@@ -164,11 +182,8 @@ export default {
     dialogDelete(val) {
       val || this.closeDelete();
     },
-    showDialog(val) {
-      if (val) {
-        this.nombreCarpeta = "";
-        this.descripcion = "";
-      }
+    showDialog (val) {
+        val || this.close()
     },
     aceptado(new_val) {
       if (new_val) {
@@ -186,6 +201,9 @@ export default {
     },
   },
   computed: {
+    verificarRepetido(valor) {
+      return this.verificador(valor);
+    },
     formTitle() {
       return this.editedIndex === -1
         ? "Nueva Carpeta"
@@ -205,6 +223,17 @@ export default {
     },
   },
   methods: {
+    verificador(item) {
+      let resultado = this.finds.find((element) => element.value === item);
+      if (resultado) {
+        return "";
+      } else {
+        return "";
+      }
+    },
+    addFind: function () {
+      this.finds.push({ value: "" });
+    },
     obtenerFecha(fecha) {
       let retorno = fecha.split("T");
       return retorno[0];
@@ -259,12 +288,12 @@ export default {
     save() {
       if (this.editedIndex > -1) {
         const resultado = this.carpetas.find(
-          (carpeta) => carpeta.nombre === this.nombreCarpeta
+          (carpeta) => carpeta.nombre === this.editedItem.nombre
         );
         //Si no la encuentra la crea
         if (!resultado) {
-          console.log(this.nombreCarpeta);
-          if (this.nombreCarpeta.length > 3) {
+          console.log(this.editedItem.nombre);
+          if (this.editedItem.nombre.length > 3) {
             this.actualizarCarpeta(this.editedItem, this.editedIndex);
             this.alerta = "Nombre modificado exitosamente";
             this.aceptado = true;
@@ -285,9 +314,11 @@ export default {
       this.$nextTick(() => {
         this.editedIndex = -1;
         this.editedItem = Object.assign({}, {});
+        this.finds = Object.assign([],[])
       });
     },
     editItem(item) {
+      console.log(item)
       this.editedIndex = this.carpetas.indexOf(item);
       this.editedItem = Object.assign({}, item);
       this.showDialog = true;
@@ -321,8 +352,8 @@ export default {
         });
     },
     async actualizarCarpeta(carpeta, index) {
-      carpeta.nombre = this.nombreCarpeta;
-      carpeta.descripcion = this.descripcion;
+      carpeta.nombre = this.editedItem.nombre;
+      carpeta.descripcion = this.editedItem.descripcion;
       await axios
         .put("carpeta/update/", { _id: carpeta._id, carpeta: carpeta })
         .then((res) => {
@@ -362,7 +393,7 @@ export default {
         .get("sociedad/queryFolders?_id=" + id)
         .then((res) => {
           this.carpetas = res.data;
-          this.isLoading= false;
+          this.isLoading = false;
         })
         .catch((e) => {
           console.log(e);
@@ -380,22 +411,22 @@ export default {
         });
     },
     crearCarpeta() {
-      if (this.nombreCarpeta.length > 3) {
+      if (this.editedItem.nombre.length > 3) {
         var nueva = {
-          nombre: this.nombreCarpeta,
-          descripcion: this.descripcion,
+          nombre: this.editedItem.nombre,
+          descripcion: this.editedItem.descripcion,
           padre: this.padre._id,
         };
 
         //this.createServerFolder(nueva);
         this.postFolder(nueva);
       }
-      this.nombreCarpeta = "";
+      this.editedItem.nombre = "";
       this.descripcion = "";
     },
     createF() {
       const resultado = this.carpetas.find(
-        (carpeta) => carpeta.nombre === this.nombreCarpeta
+        (carpeta) => carpeta.nombre === this.editedItem.nombre
       );
       //Si no la encuentra la crea
       if (!resultado) {
@@ -407,7 +438,7 @@ export default {
     },
     //Crear carpeta en el servidor
     async createServerFolder(nueva) {
-      var ruta = this.padre.ruta + "/" + this.nombreCarpeta;
+      var ruta = this.padre.ruta + "/" + this.editedItem.nombre;
       var params = { ruta: ruta };
       await axios
         .post("sociedad/addFolder", params)
