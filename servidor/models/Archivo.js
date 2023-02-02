@@ -10,6 +10,7 @@ const archivoSchema = new Schema({
     fechaEmision: {type: Date, required: [true, 'Fecha Emision obligatoria']},
     fechaCaducidad:{type: Date, required: [true, 'Fecha caducidad obligatoria']},
     padre: { type: Schema.ObjectId, ref: 'SubCarpeta' ,required: [true, 'padre obligatorio']},
+    parametro: { type: Schema.ObjectId, ref: 'parametro' ,required: [true, 'parametro obligatorio']},
     abuelo: { type: Schema.ObjectId, ref: 'Carpeta' ,required: [true, 'carpeta padre obligatoria']},
     padreSuperior: { type: Schema.ObjectId, ref: 'Sociedad' ,required: [true, 'padre obligatorio']},
     descripcion:{type: String},

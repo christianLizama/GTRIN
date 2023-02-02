@@ -7,11 +7,8 @@
       {{ alerta }}
     </v-alert>
     <v-toolbar dense dark>
-      <v-btn @click="atras" big icon>
-        <v-icon>mdi-chevron-left</v-icon>
-      </v-btn>
       <v-toolbar-title class="white--text">
-        {{ padre.nombre }}
+        {{ nombreParametro }}
       </v-toolbar-title>
       <v-spacer></v-spacer>
 
@@ -292,6 +289,10 @@ import loading from "../loading.vue";
 
 export default {
   components: { VueJsonToCsv, loading },
+  props: {
+    Parametro: String,
+    nombreParametro: String
+  },
   data: () => ({
     alerta: "",
     e1: 1,
@@ -374,6 +375,7 @@ export default {
       padre: "",
       abuelo: "",
       padreSuperior: "",
+      parametro:""
     },
     defaultItem: {
       nombre: "",
@@ -396,6 +398,7 @@ export default {
       padre: "",
       abuelo: "",
       padreSuperior: "",
+      parametro:""
     },
   }),
   computed: {
@@ -549,7 +552,7 @@ export default {
         .get("subCarpeta/query?_id=" + this.$route.params.subFolder)
         .then((result) => {
           this.padre = result.data;
-          this.getFolders(result.data._id);
+          this.getFiles(this.Parametro);
         });
     },
     iniciarFile(element) {
@@ -572,10 +575,10 @@ export default {
 
       element.diasVigencia = diasVigencia;
       element.diasRestantes = diasRestantes;
-      console.log("nombre :" + element.nombre);
-      console.log("Dias de vigencia: " + element.diasVigencia);
-      console.log("Dias de aviso: " + element.diasAviso);
-      console.log("Dias restantes: " + diasRestantes);
+      // console.log("nombre :" + element.nombre);
+      // console.log("Dias de vigencia: " + element.diasVigencia);
+      // console.log("Dias de aviso: " + element.diasAviso);
+      // console.log("Dias restantes: " + diasRestantes);
       let dateArray = element.fechaEmision.split("-");
       var diaCambio2 = new Date(dateArray[0], dateArray[1] - 1, dateArray[2]);
       diaCambio2.setDate(diaCambio2.getDate() + element.diasAviso);
@@ -589,7 +592,7 @@ export default {
       );
       fechaCaducidadAux.setHours(0, 0, 0, 0);
 
-      console.log("--------------------");
+      // console.log("--------------------");
       var hoy = new Date();
       hoy.setHours(0, 0, 0, 0);
 
@@ -608,6 +611,22 @@ export default {
       else if (diaCambio2.getTime() <= fechaCaducidadAux.getTime()) {
         element.status = 1;
       }
+    },
+    async getFiles(id) {
+      await axios
+        .get("subCarpeta/getArchivosParam?_id=" + id)
+        .then((res) => {
+          let carpetas = res.data;
+          carpetas.forEach((element) => {
+            this.iniciarFile(element);
+          });
+          this.archivos = res.data;
+          // console.log(res.data)
+          this.isLoading = false;
+        })
+        .catch((e) => {
+          console.log(e);
+        });
     },
     async getFolders(id) {
       await axios
@@ -675,6 +694,7 @@ export default {
           this.editedItem.padre = this.padre._id;
           this.editedItem.abuelo = this.padre.padre;
           this.editedItem.padreSuperior = this.padre.padreSuperior;
+          this.editedItem.parametro = this.Parametro;
           console.log("Fecha em: " + this.fechaEm);
           console.log("Dias aviso: " + this.editedItem.diasAviso);
           this.postArchivo(this.editedItem);

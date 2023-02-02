@@ -18,5 +18,6 @@ router.put('/addFile', subCarpeta.addFile)
 router.get('/queryNombre', subCarpeta.queryNombre)
 router.put('/updateSubFolder', subCarpeta.updateHijos)
 router.get('/getAllSubFolders',subCarpeta.getAllSubFolders)
+router.get('/getArchivosParam',subCarpeta.getArchivosParametro)
 
 module.exports = router;

@@ -4,8 +4,13 @@ import moment from "moment";
 //Metodo para crear una sub carpeta
 const add = async (req, res, next) => {
   try {
-    const reg = await subCarpeta.create(req.body);
-    res.status(200).json(reg);
+    const reg = await subCarpeta.create(req.body.carpeta);
+    const buscado = await subCarpeta.findOne(reg._id);
+    req.body.parametros.forEach(element => {
+      buscado.parametros.push(element); 
+    });
+    const actualizado = await subCarpeta.findByIdAndUpdate(buscado._id, buscado, { new: true });
+    res.status(200).json(actualizado);
   } catch (e) {
     res.status(500).send({
       message: "Ocurrio un error",
@@ -52,6 +57,28 @@ const queryNombre = async (req, res, next) => {
     next(e);
   }
 };
+
+//Metodo para obtener los hijos de una carpeta
+const getArchivosParametro = async (req, res, next) => {
+  try {
+    const id = req.query._id;
+    const reg = await archivo.find({ parametro: id });
+    if (!reg) {
+      res.status(404).send({
+        message: "El registro no existe",
+      });
+    } else {
+      res.status(200).json(reg);
+    }
+  } catch (e) {
+    res.status(500).send({
+      message: "Ocurrio un error",
+    });
+    next(e);
+  }
+};
+
+
 
 //Metodo para obtener los hijos de una carpeta
 const getArchivos = async (req, res, next) => {
@@ -160,5 +187,6 @@ module.exports = {
   queryNombre,
   addFile,
   updateHijos,
-  getAllSubFolders
+  getAllSubFolders,
+  getArchivosParametro
 };

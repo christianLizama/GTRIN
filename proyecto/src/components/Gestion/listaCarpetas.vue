@@ -1,7 +1,7 @@
 <template>
   <v-card>
-    <p>{{ carpetas }}</p>
-    <p>{{ finds }}</p>
+    <!-- <p>{{ carpetas }}</p>
+    <p>{{ finds }}</p> -->
     <v-alert v-model="aceptado" dense text type="success">
       {{ alerta }}
     </v-alert>
@@ -71,12 +71,6 @@
             </v-list-item>
           </v-list>
         </v-menu>
-        <!-- <v-btn icon>
-          <v-icon class="mr-2" @click="editItem(item)"> mdi-pencil </v-icon>
-        </v-btn>
-        <v-btn icon>
-          <v-icon @click="deleteItem(item)"> mdi-delete </v-icon>
-        </v-btn> -->
         <v-list-item-action>
           <v-tooltip top>
             <template v-slot:activator="{ on, attrs }">
@@ -124,19 +118,19 @@
             label="Descripción"
           ></v-text-field>
         </v-card-text>
-        <v-card-text>
+        <!-- <v-card-text>
           <h3>Apartados a controlar *</h3>
           <v-btn icon @click="addFind">
             <v-icon>mdi-plus</v-icon>
           </v-btn>
-          <div v-for="(find, index) in finds" :key="find.nombre">
+          <div v-for="(find, index) in editedItem.parametros" :key="find.nombre">
             <v-text-field
               :label="'Apartado ' + (index + 1)"
               v-model="find.value"
               :key="index"
             />
           </div>
-        </v-card-text>
+        </v-card-text> -->
         <v-card-actions>
           <v-spacer></v-spacer>
 
@@ -153,7 +147,7 @@ import loading from "../loading.vue";
 export default {
   components: { loading },
   data: () => ({
-    finds: [],
+    // finds: [],
     busqueda: "",
     isLoading: true,
     alerta: "",
@@ -173,6 +167,12 @@ export default {
     editedItem: {
       nombre:"",
       descripcion:"",
+      // parametros:[]
+    },
+    defaulteditedItem: {
+      nombre:"",
+      descripcion:"",
+      // parametros:[]
     },
   }),
   created() {
@@ -201,9 +201,6 @@ export default {
     },
   },
   computed: {
-    verificarRepetido(valor) {
-      return this.verificador(valor);
-    },
     formTitle() {
       return this.editedIndex === -1
         ? "Nueva Carpeta"
@@ -223,14 +220,6 @@ export default {
     },
   },
   methods: {
-    verificador(item) {
-      let resultado = this.finds.find((element) => element.value === item);
-      if (resultado) {
-        return "";
-      } else {
-        return "";
-      }
-    },
     addFind: function () {
       this.finds.push({ value: "" });
     },
@@ -291,7 +280,7 @@ export default {
           (carpeta) => carpeta.nombre === this.editedItem.nombre
         );
         //Si no la encuentra la crea
-        if (!resultado) {
+        if (!resultado || resultado._id === this.editedItem._id) {
           console.log(this.editedItem.nombre);
           if (this.editedItem.nombre.length > 3) {
             this.actualizarCarpeta(this.editedItem, this.editedIndex);
@@ -401,7 +390,7 @@ export default {
     },
     async postFolder(nuevaCarpeta) {
       await axios
-        .post("carpeta/add", nuevaCarpeta)
+        .post("carpeta/add", {carpeta: nuevaCarpeta})
         .then((res) => {
           this.carpetas.push(res.data);
           this.actualizarHijos();
@@ -417,7 +406,6 @@ export default {
           descripcion: this.editedItem.descripcion,
           padre: this.padre._id,
         };
-
         //this.createServerFolder(nueva);
         this.postFolder(nueva);
       }

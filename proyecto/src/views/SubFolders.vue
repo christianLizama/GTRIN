@@ -7,7 +7,7 @@
 <script>
 import listaSubCarpetas from "@/components/Gestion/listaSubCarpetas.vue";
 export default {
-  components: { listaSubCarpetas },
+  components: { listaSubCarpetas},
   name: "subFolder",
 };
 </script>
