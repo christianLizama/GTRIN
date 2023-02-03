@@ -5,12 +5,12 @@ import moment from "moment";
 const add = async (req, res, next) => {
   try {
     const reg = await subCarpeta.create(req.body.carpeta);
-    const buscado = await subCarpeta.findOne(reg._id);
-    req.body.parametros.forEach(element => {
-      buscado.parametros.push(element); 
-    });
-    const actualizado = await subCarpeta.findByIdAndUpdate(buscado._id, buscado, { new: true });
-    res.status(200).json(actualizado);
+    // const buscado = await subCarpeta.findOne(reg._id);
+    // req.body.parametros.forEach(element => {
+    //   buscado.parametros.push(element); 
+    // });
+    // const actualizado = await subCarpeta.findByIdAndUpdate(buscado._id, buscado, { new: true });
+    res.status(200).json(reg);
   } catch (e) {
     res.status(500).send({
       message: "Ocurrio un error",

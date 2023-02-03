@@ -1,5 +1,6 @@
 <template>
-  <v-overlay :value="overlay">
+  <div>
+    <v-overlay :value="overlay"> </v-overlay>
     <v-container>
       <v-row class="fill-height" align-content="center" justify="center">
         <v-col class="text-subtitle-1 text-center" cols="12">
@@ -15,18 +16,16 @@
         </v-col>
       </v-row>
     </v-container>
-  </v-overlay>
+  </div>
 </template>
 
 <script>
 export default {
   props: {
     texto: String,
+    overlay: Boolean,
   },
-  data: () => ({
-    overlay: true,
-  }),
-  watch: {
-  },
+  data: () => ({}),
+  watch: {},
 };
 </script>

@@ -19,7 +19,7 @@ router.get('/queryNombre', folder.queryNombre)
 router.get('/querysubFolders', folder.querysubFolders)
 router.delete('/deleteSubFolders/:id', folder.removeSubFolders)
 router.get('/getAllFolders',folder.getAllFolders)
-//router.get('/addFolder',folder.addFolder)
-
+router.put('/addParams',folder.agregarParametros)
+router.put('/updateParams',folder.actualizarParametros)
 
 module.exports = router;

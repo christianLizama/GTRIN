@@ -1,6 +1,6 @@
 // importar el modelo sociedad
 import sociedad from "../../models/Sociedad";
-import carpeta from "../../models/Carpeta";
+import {Carpeta} from "../../models/Carpeta";
 
 //Metodo para añadir una sociedad
 const add = async (req, res, next) => {
@@ -52,12 +52,12 @@ const queryNombre = async (req, res, next) => {
     next(e);
   }
 };
-//Metodo para obtener carpetas de una sociedad segun el id de la sociedad
+//Metodo para obtener Carpetas de una sociedad segun el id de la sociedad
 const queryFolders = async (req, res, next) => {
   try {
     console.log(req.query._id)
     const id = req.query._id;
-    const reg = await carpeta.find({padre:id});
+    const reg = await Carpeta.find({padre:id});
     if (!reg) {
       res.status(404).send({
         message: "El registro no existe",
@@ -73,13 +73,13 @@ const queryFolders = async (req, res, next) => {
   }
 };
 
-//Metodo para agregar carpetas a una sociedad
+//Metodo para agregar Carpetas a una sociedad
 const addFolder = async (req, res, next) => {
   try {
     console.log(req.body);
     const reg = await sociedad.findByIdAndUpdate(
       { _id: req.body._id },
-      { carpetas: req.body.carpetas }
+      { Carpetas: req.body.Carpetas }
     );
     res.status(200).json(reg);
   } catch (e) {
@@ -142,7 +142,7 @@ const updateCarpetas = async (req, res, next) => {
     console.log(req.body);
     const reg = await sociedad.findByIdAndUpdate(
       { _id: req.body._id },
-      { carpetas: req.body.carpetas }
+      { Carpetas: req.body.Carpetas }
     );
     if(reg){
       res.status(200).json(reg);

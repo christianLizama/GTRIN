@@ -1,7 +1,5 @@
 <template>
   <v-card>
-    <p>soy finds: {{ finds }}</p>
-    <p>ultimos parametros: {{ ultimosParametros }}</p>
     <v-alert v-model="aceptado" dense text type="success">
       {{ alerta }}
     </v-alert>
@@ -33,6 +31,7 @@
             v-bind="attrs"
             v-on="on"
             @click="showDialog = !showDialog"
+            :disabled="addPermission"
           >
             <v-icon>mdi-folder-plus</v-icon>
           </v-btn>
@@ -140,19 +139,6 @@
             label="Descripción"
           ></v-text-field>
         </v-card-text>
-        <v-card-text>
-          <h3>Apartados a controlar *</h3>
-          <v-btn icon @click="addFind">
-            <v-icon>mdi-plus</v-icon>
-          </v-btn>
-          <div v-for="(find, index) in finds" :key="find.nombre">
-            <v-text-field
-              :label="'Apartado ' + (index + 1)"
-              v-model="find.value"
-              :key="index"
-            />
-          </div>
-        </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn text color="primary" @click="save"> Guardar </v-btn>
@@ -160,28 +146,43 @@
       </v-card>
     </v-dialog>
     <!-- Dialogo de parametrización -->
+
     <v-dialog v-model="dialogParam" max-width="500px">
-      <v-card>
-        <v-card-title>Crear Parametrización de carpeta</v-card-title>
+      <v-card v-if="isUpload">
+        <loading
+          texto="Subiendo Datos"
+          :overlay="false"
+          v-if="isUpload"
+        ></loading>
+      </v-card>
+      <v-card v-if="!isUpload">
+        <v-card-title>{{ encabezado }}</v-card-title>
         <v-card-text>
           <!-- <h3>Apartados a controlar: *</h3> -->
           <h4>
             Agregar Apartado
             <v-btn icon @click="addFind">
-              <v-icon>mdi-plus</v-icon>
+              <v-icon color="green">mdi-plus</v-icon>
             </v-btn>
           </h4>
 
           <div v-for="(find, index) in finds" :key="find.nombre">
             <v-container>
-              <v-row>
+              <v-row >
                 <v-col>
                   <v-text-field
                     :label="'Apartado ' + (index + 1)"
                     v-model="find.value"
                     :key="index"
+                    a
                   >
-                    <v-icon @click="deleteFind(find)" slot="prepend" color="red"> mdi-minus </v-icon>
+                    <v-icon
+                      @click="deleteFind(find)"
+                      slot="append-outer"
+                      color="red"
+                    >
+                      mdi-minus
+                    </v-icon>
                   </v-text-field>
                 </v-col>
               </v-row>
@@ -191,10 +192,39 @@
 
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn text color="primary" @click="guardarParams"> Guardar </v-btn>
+          <v-btn text color="secondary" @click="dialogParam = !dialogParam"
+            >Cancelar</v-btn
+          >
+          <v-btn text color="primary" @click="updateParams()"> Guardar </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
+    <v-snackbar
+      v-model="snackbar.visible"
+      :color="snackbar.color"
+      :multi-line="snackbar.mode === 'multi-line'"
+      :timeout="snackbar.timeout"
+      :top="snackbar.position === 'top'"
+    >
+      <v-container>
+        <v-row align="center" justify="center" class="d-flex">
+          <v-col cols="auto">
+            <v-icon dark large>{{ snackbar.icon }}</v-icon>
+          </v-col>
+          <v-col cols="auto">
+            <div>
+              <strong>{{ snackbar.title }}</strong>
+            </div>
+            <div>{{ snackbar.text }}</div>
+          </v-col>
+          <v-col cols="auto">
+            <v-btn icon @click="snackbar.visible = false">
+              <v-icon>mdi-close-thick</v-icon>
+            </v-btn>
+          </v-col>
+        </v-row>
+      </v-container>
+    </v-snackbar>
   </v-card>
 </template>
 
@@ -204,20 +234,33 @@ import loading from "../loading.vue";
 export default {
   components: { loading },
   data: () => ({
+    snackbar: {
+      color: null,
+      icon: null,
+      mode: null,
+      position: "top",
+      text: null,
+      timeout: 7500,
+      title: null,
+      visible: false,
+    },
+    timeout: 7500,
+    encabezado: "",
+    addPermission: true,
     alerta: "",
     finds: [],
+    eliminados: [],
     showDialog: false,
     dialogParam: false,
     isLoading: true,
+    isUpload: false,
     padre: {},
     busqueda: "",
-    descripcion: "",
     carpetas: {},
     editedIndex: -1,
     aceptado: false,
     rechazado: false,
     dialogDelete: false,
-    ultimosParametros: [],
     items: [
       { title: "Editar", icon: "mdi-pencil", metodo: "editItem" },
       { title: "Eliminar", icon: "mdi-delete" },
@@ -273,12 +316,117 @@ export default {
     },
   },
   methods: {
+    SnackbarShow(type,texto) {
+      if (!type) return;
+      switch (type) {
+        case "error":
+          this.snackbar = {
+            color: "error",
+            icon: "mdi-car-brake-alert",
+            mode: "multi-line",
+            position: "top",
+            timeout: 7500,
+            title: "Error",
+            text: texto,
+            visible: true,
+          };
+          break;
+        case "info":
+          this.snackbar = {
+            color: "info",
+            icon: "mdi-info",
+            mode: "multi-line",
+            position: "top",
+            timeout: 0,
+            title: "Information",
+            text: texto,
+            visible: true,
+          };
+          break;
+        case "success":
+          this.snackbar = {
+            color: "success",
+            icon: "mdi-check-circle-outline",
+            mode: "multi-line",
+            position: "top",
+            timeout: 7500,
+            title: "Exitoso",
+            text: texto,
+            visible: true,
+          };
+          break;
+        case "warning":
+          this.snackbar = {
+            color: "warning",
+            icon: "mdi-car-brake-alert",
+            mode: "multi-line",
+            position: "top",
+            timeout: 7500,
+            title: "Warning",
+            text: texto,
+            visible: true,
+          };
+          break;
+      }
+    },
+    async updateParams() {
+      this.isUpload = true;
+      await axios
+        .put("/carpeta/updateParams/", {
+          id: this.padre._id,
+          parametros: this.finds,
+          eliminados: this.eliminados,
+        })
+        .then((result) => {
+          console.log(result);
+          this.SnackbarShow("success","Parametros agregados correctamente");
+          // this.textSnackbar = "Parametros agregados correctamente";
+          // this.snackbar = true;
+          this.eliminados=[]
+          this.isUpload = false;
+          this.dialogParam = false;
+          this.addPermission = false;
+        })
+        .catch((e) => {
+          console.log(e);
+          this.SnackbarShow("error","Error agregando los parametros");
+          this.isUpload = false;
+        });
+    },
+    async addParams() {
+      this.isUpload = true;
+      await axios
+        .put("/carpeta/addParams/", {
+          id: this.padre._id,
+          parametros: this.finds,
+        })
+        .then((result) => {
+          console.log(result);
+          
+          this.SnackbarShow("success","Parametros agregados correctamente");
+          // this.textSnackbar = "Parametros agregados correctamente";
+          // this.snackbar = true;
+          this.isUpload = false;
+          this.dialogParam = false;
+        })
+        .catch((e) => {
+          console.log(e);
+          this.SnackbarShow("error");
+          // this.textSnackbar = "Ha ocurrido un error";
+          // this.snackbar = true;
+        });
+    },
     addFind: function () {
       this.finds.push({ value: "" });
     },
     deleteFind(item) {
+      console.log(this.finds)
       let index = this.finds.indexOf(item);
-      this.finds.splice(index, 1);
+      let key = "_id"
+      var hasKey = (index[key] !== undefined);
+      console.log(hasKey)
+      let borrado = this.finds.splice(index, 1);
+      this.eliminados.push(borrado[0]);
     },
     obtenerFecha(fecha) {
       let retorno = fecha.split("T");
@@ -307,8 +455,10 @@ export default {
         .delete("/carpeta/deleteSubFolders/" + item._id)
         .then((result) => {
           console.log(result);
-          this.alerta = "Carpeta eliminada correctamente";
-          this.aceptado = true;
+          this.SnackbarShow("success","Carpeta eliminada correctamente");
+          // this.alerta = "Carpeta eliminada correctamente";
+          // this.snackbar = true;
+          // this.textSnackbar = "Carpeta eliminada correctamente";
           this.actualizarHijos();
         });
     },
@@ -342,19 +492,24 @@ export default {
           console.log(this.editedItem.nombre);
           if (this.editedItem.nombre.length > 3) {
             this.actualizarSubCarpeta(this.editedItem, this.editedIndex);
-            this.alerta = "Nombre modificado exitosamente";
-            this.aceptado = true;
+
+            this.SnackbarShow("success","Carpeta modificada exitosamente");
+            // this.textSnackbar = "Carpeta modificada exitosamente";
+            // this.snackbar = true;
+            // this.alerta = "Nombre modificado exitosamente";
+            // this.aceptado = true;
           }
           //this.aceptado = true;
           //this.actualizarSociedad2()
         } else {
-          this.alerta = "El nombre utilizado de carpeta ya existe";
-          this.rechazado = true;
+          this.SnackbarShow("error","El nombre utilizado de carpeta ya existe");
+          // this.alerta = "El nombre utilizado de carpeta ya existe";
+          // this.rechazado = true;
         }
       } else {
-        if (this.ultimosParametros.length > 1) {
-          this.finds = this.ultimosParametros;
-        }
+        // if (this.ultimosParametros.length > 1) {
+        //   this.finds = this.ultimosParametros;
+        // }
         this.createF();
       }
       this.close();
@@ -364,14 +519,14 @@ export default {
       this.$nextTick(() => {
         this.editedIndex = -1;
         this.editedItem = Object.assign({}, {});
-        this.finds = this.ultimosParametros;
+        // this.finds = this.ultimosParametros;
         // this.editedItem.parametros = Object.assign([],[])
       });
     },
     editItem(item) {
       this.editedIndex = this.carpetas.indexOf(item);
       this.editedItem = Object.assign({}, item);
-      this.finds = item.parametros;
+      // this.finds = item.parametros;
       this.showDialog = true;
     },
     async actualizarHijos() {
@@ -384,8 +539,11 @@ export default {
         .put("carpeta/updateHijos/", { _id: this.padre._id, hijos: newIds })
         .then((res) => {
           console.log(res);
-          this.alerta = "Cambios realizados exitosamente";
-          this.aceptado = true;
+          this.SnackbarShow("success","Cambios realizados exitosamente");
+          // this.textSnackbar = "Cambios realizados exitosamente";
+          // this.snackbar = true;
+          // this.alerta = "Cambios realizados exitosamente";
+          // this.aceptado = true;
         })
         .catch((e) => {
           console.log(e.response);
@@ -397,11 +555,18 @@ export default {
         .then((result) => {
           this.padre = result.data;
           this.getSubFolders(result.data._id);
+          this.finds = result.data.parametros;
+          if (result.data.parametros.length >= 1) {
+            this.addPermission = false;
+            this.encabezado = "Editar Parametros";
+          } else {
+            this.encabezado = "Agregar Parametros";
+          }
         });
     },
     async actualizarSubCarpeta(carpeta, index) {
       carpeta.nombre = this.editedItem.nombre;
-      carpeta.descripcion = this.descripcion;
+      carpeta.descripcion = this.editedItem.descripcion;
       await axios
         .put("subCarpeta/update/", { _id: carpeta._id, subCarpeta: carpeta })
         .then((res) => {
@@ -430,25 +595,22 @@ export default {
         .then((res) => {
           this.carpetas = res.data;
           this.isLoading = false;
-          if (this.carpetas.length >= 1) {
-            console.log("holaa");
-            this.ultimosParametros = this.carpetas[0].parametros;
-            this.finds = this.ultimosParametros;
-          }
+          // if (this.carpetas.length >= 1) {
+          //   this.ultimosParametros = this.carpetas[0].parametros;
+          //   this.finds = this.ultimosParametros;
+          // }
         })
         .catch((e) => {
           console.log(e);
         });
     },
-    async postFolder(nuevaCarpeta, parametros) {
+    async postFolder(nuevaCarpeta) {
       await axios
         .post("subCarpeta/add", {
           carpeta: nuevaCarpeta,
-          parametros: parametros,
         })
         .then((res) => {
           this.carpetas.push(res.data);
-          this.ultimosParametros = res.data.parametros;
           this.actualizarHijos();
         })
         .catch((e) => {
@@ -463,27 +625,25 @@ export default {
           padre: this.padre._id,
           padreSuperior: this.padre.padre,
         };
-        const parametros = this.finds;
-        console.log(this.finds);
-        console.log("----------");
         //this.createServerFolder(nueva);
-        this.postFolder(nueva, parametros);
-
+        this.postFolder(nueva);
         this.dialog = false;
       }
-      this.nombreCarpeta = "";
-      this.descripcion = "";
     },
     createF() {
       const resultado = this.carpetas.find(
         (carpeta) => carpeta.nombre === this.editedItem.nombre
       );
+      console.log(resultado);
       //Si no la encuentra la crea
       if (!resultado) {
         this.crearCarpeta();
       } else {
-        this.alerta = "El nombre de carpeta ingresado ya existe";
-        this.rechazado = true;
+        this.SnackbarShow("error","El nombre de carpeta ingresado ya existe");
+        // this.textSnackbar = "El nombre de carpeta ingresado ya existe";
+        // this.snackbar = true;
+        // this.alerta = "El nombre de carpeta ingresado ya existe";
+        // this.rechazado = true;
       }
     },
     //Crear carpeta en el servidor
