@@ -10,13 +10,17 @@
       <v-spacer></v-spacer>
 
       <v-text-field
+        @focus="searchClosed = false"
+        @blur="searchClosed = true"
         v-model="busqueda"
-        label="Buscador"
-        hide-details
-        single-line
+        clearable
+        dense
         filled
+        rounded
+        placeholder="Buscar"
         prepend-inner-icon="mdi-magnify"
-        class="shrink"
+        class="pt-6 expanding-search"
+        :class="{'closed' :searchClosed && !busqueda}"
       ></v-text-field>
     </v-toolbar>
     <v-data-table
@@ -57,6 +61,7 @@ import tablaArchivos from "../Gestion/tablaArchivos.vue";
 export default {
   components: { tablaArchivos },
   data: () => ({
+    searchClosed:true,
     dialog: false,
     busqueda: "",
     parametroID: "",
@@ -132,3 +137,16 @@ export default {
   },
 };
 </script>
+
+<style lang="sass">
+  .v-input.expanding-search
+    transition: max-width 0.3s
+    .v-input__slot
+      cursor: pointer !important
+      &:before, &:after
+        border-color: transparent !important
+    &.closed
+      max-width: 50px
+      .v-input__slot 
+        background: transparent !important
+</style>

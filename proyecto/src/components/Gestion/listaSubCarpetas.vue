@@ -1,5 +1,7 @@
 <template>
   <v-card>
+    <p>{{ finds }}</p>
+    <p>{{ primerosParametros}}</p>
     <v-toolbar dense dark>
       <v-btn @click="atras" big icon>
         <v-icon>mdi-chevron-left</v-icon>
@@ -10,12 +12,17 @@
       <v-spacer></v-spacer>
 
       <v-text-field
-        label="Buscador"
-        hide-details
-        single-line
+        @focus="searchClosed = false"
+        @blur="searchClosed = true"
         v-model="busqueda"
+        clearable
+        dense
+        filled
+        rounded
+        placeholder="Buscar"
         prepend-inner-icon="mdi-magnify"
-        class="shrink"
+        class="pt-6 expanding-search"
+        :class="{ closed: searchClosed && !busqueda }"
       ></v-text-field>
 
       <v-tooltip bottom>
@@ -119,7 +126,28 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+    <v-dialog v-model="dialogFindDelete" max-width="400px">
+      <v-card>
+        <v-card-title class="text-h5">
+          ¿Estás seguro que deseas guardar esta parametrización?
+        </v-card-title>
+        <v-divider inset></v-divider>
+        <v-card-text>
+          Si hay parametros eliminados se borraran los archivos asociados a
+          tales parametros.
+        </v-card-text>
 
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="blue darken-1" text @click="closefindDelete"
+            >Cancelar</v-btn
+          >
+          <v-btn color="blue darken-1" text @click="updateParams()"
+            >Actualizar</v-btn
+          >
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
     <v-dialog v-model="showDialog" max-width="500px">
       <v-card>
         <v-card-title> {{ formTitle }}</v-card-title>
@@ -140,7 +168,6 @@
       </v-card>
     </v-dialog>
     <!-- Dialogo de parametrización -->
-
     <v-dialog v-model="dialogParam" max-width="500px">
       <v-card v-if="isUpload">
         <loading
@@ -163,12 +190,29 @@
           <div v-for="(find, index) in finds" :key="find.nombre">
             <v-container>
               <v-row>
+                <v-col cols="3">
+                  <v-select
+                    :items="options"
+                    v-model="find.option"
+                    dense
+                    hide-details
+                    class="my-5"
+                    label="Requerido"
+                    return-object
+                  >
+                    <template slot="item" slot-scope="data">
+                      {{yesOrNo(data.item)}}
+                    </template>
+                    <template slot="selection" slot-scope="data">
+                      {{yesOrNo(data.item)}}
+                    </template>
+                  </v-select>
+                </v-col>
                 <v-col>
                   <v-text-field
                     :label="'Apartado ' + (index + 1)"
                     v-model="find.value"
                     :key="index"
-                    a
                   >
                     <v-icon
                       @click="deleteFind(find)"
@@ -189,7 +233,13 @@
           <v-btn text color="secondary" @click="dialogParam = !dialogParam"
             >Cancelar</v-btn
           >
-          <v-btn text color="primary" @click="updateParams()"> Guardar </v-btn>
+          <v-btn
+            text
+            color="primary"
+            @click="dialogFindDelete = !dialogFindDelete"
+          >
+            Guardar
+          </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -204,6 +254,7 @@ import Snackbar from "../snackbar.vue";
 export default {
   components: { loading, Snackbar },
   data: () => ({
+    searchClosed: true,
     timeout: 7500,
     encabezado: "",
     addPermission: true,
@@ -218,6 +269,9 @@ export default {
     carpetas: {},
     editedIndex: -1,
     dialogDelete: false,
+    dialogFindDelete: false,
+    primerosParametros: [],
+    options: [true, false],
     items: [
       { title: "Editar", icon: "mdi-pencil", metodo: "editItem" },
       { title: "Eliminar", icon: "mdi-delete" },
@@ -257,8 +311,18 @@ export default {
     showDialog(val) {
       val || this.close();
     },
+    dialogParam(val) {
+      val || this.cancelUpdateParams();
+    },
   },
   methods: {
+    yesOrNo(value) {
+      if (value) {
+        return "Si";
+      } else {
+        return "No";
+      }
+    },
     async updateParams() {
       this.isUpload = true;
       await axios
@@ -269,7 +333,7 @@ export default {
         })
         .then((result) => {
           this.finds = result.data.parametros;
-
+          this.primerosParametros = Object.assign([], result.data.parametros);
           // this.$root.Snackbar.SnackbarShow("success", "Parametros modificados exitosamente");
           this.$refs.childComponent.SnackbarShow(
             "success",
@@ -283,6 +347,7 @@ export default {
           } else {
             this.addPermission = false;
           }
+          this.dialogFindDelete = false;
         })
         .catch((e) => {
           console.log(e);
@@ -323,10 +388,9 @@ export default {
         });
     },
     addFind: function () {
-      this.finds.push({ value: "", del: 0 });
+      this.finds.push({ value: "", del: 0 , option:false});
     },
     deleteFind(item) {
-      console.log(this.finds);
       let index = this.finds.indexOf(item);
       if (item.del != 0) {
         let borrado = this.finds.splice(index, 1);
@@ -356,7 +420,14 @@ export default {
         this.editedIndex = -1;
       });
     },
-
+    closefindDelete() {
+      this.dialogFindDelete = false;
+    },
+    cancelUpdateParams() {
+      this.eliminados = [];
+      this.dialogParam = false;
+      this.finds = Object.assign([], this.primerosParametros);
+    },
     async deleteFiles(item) {
       await axios
         .delete("/carpeta/deleteSubFolders/" + item._id)
@@ -475,6 +546,7 @@ export default {
           this.padre = result.data;
           this.getSubFolders(result.data._id);
           this.finds = result.data.parametros;
+          this.primerosParametros = this.$data.finds;
           if (result.data.parametros.length >= 1) {
             this.addPermission = false;
             this.encabezado = "Editar Parametros";
@@ -609,3 +681,16 @@ export default {
   },
 };
 </script>
+
+<style lang="sass">
+.v-input.expanding-search
+  transition: max-width 0.3s
+  .v-input__slot
+    cursor: pointer !important
+    &before, &:after
+      border-color: transparent !important
+  &.closed
+    max-width: 50px
+    .v-input__slot
+      background-color: transparent !important
+</style>

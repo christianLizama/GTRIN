@@ -9,14 +9,18 @@
       </v-toolbar-title>
 
       <v-spacer></v-spacer>
-
       <v-text-field
+        @focus="searchClosed = false"
+        @blur="searchClosed = true"
         v-model="busqueda"
-        label="Buscador"
-        hide-details
-        single-line
+        clearable
+        dense
+        filled
+        rounded
+        placeholder="Buscar"
         prepend-inner-icon="mdi-magnify"
-        class="shrink"
+        class="pt-6 expanding-search"
+        :class="{'closed' :searchClosed && !busqueda}"
       ></v-text-field>
 
       <v-tooltip bottom>
@@ -144,6 +148,7 @@ export default {
   components: { loading, Snackbar },
   data: () => ({
     // finds: [],
+    searchClosed:true,
     busqueda: "",
     isLoading: true,
     showDialog: false,
@@ -226,7 +231,6 @@ export default {
       this.dialogDelete = true;
     },
     deleteItemConfirm() {
-      
       this.deleteFolder(this.editedItem);
       this.closeDelete();
     },
@@ -456,3 +460,16 @@ export default {
   },
 };
 </script>
+
+<style lang="sass">
+  .v-input.expanding-search
+    transition: max-width 0.3s
+    .v-input__slot
+      cursor: pointer !important
+      &before, &:after
+        border-color: transparent !important
+    &.closed
+      max-width: 50px
+      .v-input__slot
+        background-color: transparent !important 
+</style>

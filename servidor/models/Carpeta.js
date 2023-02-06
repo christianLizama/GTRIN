@@ -3,6 +3,7 @@ const Schema = mongoose.Schema;
 
 const parametrosSchema = new Schema({
     value: {type: String, required: [true]},
+    option: {type: Boolean, required:[true]}
 });
 
 const Parametro = mongoose.model('Parametro',parametrosSchema)
