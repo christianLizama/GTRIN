@@ -79,7 +79,7 @@ const addFolder = async (req, res, next) => {
     console.log(req.body);
     const reg = await sociedad.findByIdAndUpdate(
       { _id: req.body._id },
-      { Carpetas: req.body.Carpetas }
+      { carpetas: req.body.carpetas }
     );
     res.status(200).json(reg);
   } catch (e) {
@@ -142,7 +142,7 @@ const updateCarpetas = async (req, res, next) => {
     console.log(req.body);
     const reg = await sociedad.findByIdAndUpdate(
       { _id: req.body._id },
-      { Carpetas: req.body.Carpetas }
+      { carpetas: req.body.carpetas }
     );
     if(reg){
       res.status(200).json(reg);

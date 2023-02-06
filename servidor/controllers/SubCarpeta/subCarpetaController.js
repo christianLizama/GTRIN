@@ -62,7 +62,8 @@ const queryNombre = async (req, res, next) => {
 const getArchivosParametro = async (req, res, next) => {
   try {
     const id = req.query._id;
-    const reg = await archivo.find({ parametro: id });
+    const idPadre = req.query.padre;
+    const reg = await archivo.find({ parametro: id , padre:idPadre});
     if (!reg) {
       res.status(404).send({
         message: "El registro no existe",

@@ -5,7 +5,7 @@
         <v-icon>mdi-chevron-left</v-icon>
       </v-btn>
       <v-toolbar-title class="white--text">
-        {{ padre.nombre }}
+        {{ folder.nombre }}
       </v-toolbar-title>
       <v-spacer></v-spacer>
 
@@ -32,10 +32,11 @@
           <v-spacer></v-spacer>
           <v-dialog v-model="dialog" max-width="80%">
             <v-card>
-              <v-card-title>
-                <span class="text-h5">Subir Archivos</span>
-              </v-card-title>
-              <tabla-archivos :key="parametroID" :Parametro="parametroID" :nombre-parametro="parametroNombre"></tabla-archivos>
+              <tabla-archivos
+                :key="parametroID"
+                :Parametro="parametroID"
+                :nombre-parametro="parametroNombre"
+              ></tabla-archivos>
             </v-card>
           </v-dialog>
         </v-toolbar>
@@ -60,6 +61,7 @@ export default {
     busqueda: "",
     parametroID: "",
     parametroNombre: "",
+    folder: {},
     padre: {},
     headers: [
       { text: "Cumplimiento", value: "cumplimiento", sortable: false },
@@ -96,12 +98,21 @@ export default {
     this.initialize();
   },
   methods: {
+    async obtenerPadreSuperior(id) {
+      await axios
+        .get("carpeta/query?_id=" + id)
+        .then((result) => {
+          this.padre = result.data;
+          this.parametros = result.data.parametros
+        });
+    },
     async initialize() {
       await axios
         .get("subCarpeta/query?_id=" + this.$route.params.subFolder)
         .then((result) => {
-          this.padre = result.data;
-          this.parametros = result.data.parametros;
+          this.folder = result.data;
+          let idPadre = result.data.padre;
+          this.obtenerPadreSuperior(idPadre);
         });
     },
     editItem(item) {

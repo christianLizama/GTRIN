@@ -1,11 +1,5 @@
 <template>
   <v-card>
-    <v-alert v-model="aceptado" dense text type="success">
-      {{ alerta }}
-    </v-alert>
-    <v-alert v-model="rechazado" dense outlined type="error">
-      {{ alerta }}
-    </v-alert>
     <v-toolbar dense dark>
       <v-btn @click="atras" big icon>
         <v-icon>mdi-chevron-left</v-icon>
@@ -30,13 +24,12 @@
             dark
             v-bind="attrs"
             v-on="on"
-            @click="showDialog = !showDialog"
-            :disabled="addPermission"
+            @click="dialogParam = !dialogParam"
           >
-            <v-icon>mdi-folder-plus</v-icon>
+            <v-icon>mdi-folder-cog</v-icon>
           </v-btn>
         </template>
-        <span>Agregar carpeta</span>
+        <span>{{ encabezado }}</span>
       </v-tooltip>
       <v-tooltip bottom>
         <template v-slot:activator="{ on, attrs }">
@@ -44,12 +37,13 @@
             dark
             v-bind="attrs"
             v-on="on"
-            @click="dialogParam = !dialogParam"
+            @click="showDialog = !showDialog"
+            :disabled="addPermission"
           >
-            <v-icon>mdi-folder-cog</v-icon>
+            <v-icon>mdi-folder-plus</v-icon>
           </v-btn>
         </template>
-        <span>Crear Parametrización</span>
+        <span>Agregar carpeta</span>
       </v-tooltip>
     </v-toolbar>
     <loading texto="Cargando Datos" v-if="isLoading"></loading>
@@ -168,7 +162,7 @@
 
           <div v-for="(find, index) in finds" :key="find.nombre">
             <v-container>
-              <v-row >
+              <v-row>
                 <v-col>
                   <v-text-field
                     :label="'Apartado ' + (index + 1)"
@@ -199,55 +193,20 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
-    <v-snackbar
-      v-model="snackbar.visible"
-      :color="snackbar.color"
-      :multi-line="snackbar.mode === 'multi-line'"
-      :timeout="snackbar.timeout"
-      :top="snackbar.position === 'top'"
-    >
-      <v-container>
-        <v-row align="center" justify="center" class="d-flex">
-          <v-col cols="auto">
-            <v-icon dark large>{{ snackbar.icon }}</v-icon>
-          </v-col>
-          <v-col cols="auto">
-            <div>
-              <strong>{{ snackbar.title }}</strong>
-            </div>
-            <div>{{ snackbar.text }}</div>
-          </v-col>
-          <v-col cols="auto">
-            <v-btn icon @click="snackbar.visible = false">
-              <v-icon>mdi-close-thick</v-icon>
-            </v-btn>
-          </v-col>
-        </v-row>
-      </v-container>
-    </v-snackbar>
+    <Snackbar ref="childComponent"></Snackbar>
   </v-card>
 </template>
 
 <script>
 import axios from "axios";
 import loading from "../loading.vue";
+import Snackbar from "../snackbar.vue";
 export default {
-  components: { loading },
+  components: { loading, Snackbar },
   data: () => ({
-    snackbar: {
-      color: null,
-      icon: null,
-      mode: null,
-      position: "top",
-      text: null,
-      timeout: 7500,
-      title: null,
-      visible: false,
-    },
     timeout: 7500,
     encabezado: "",
     addPermission: true,
-    alerta: "",
     finds: [],
     eliminados: [],
     showDialog: false,
@@ -258,8 +217,6 @@ export default {
     busqueda: "",
     carpetas: {},
     editedIndex: -1,
-    aceptado: false,
-    rechazado: false,
     dialogDelete: false,
     items: [
       { title: "Editar", icon: "mdi-pencil", metodo: "editItem" },
@@ -300,75 +257,8 @@ export default {
     showDialog(val) {
       val || this.close();
     },
-    aceptado(new_val) {
-      if (new_val) {
-        setTimeout(() => {
-          this.aceptado = false;
-        }, 3000);
-      }
-    },
-    rechazado(new_val) {
-      if (new_val) {
-        setTimeout(() => {
-          this.rechazado = false;
-        }, 3000);
-      }
-    },
   },
   methods: {
-    SnackbarShow(type,texto) {
-      if (!type) return;
-      switch (type) {
-        case "error":
-          this.snackbar = {
-            color: "error",
-            icon: "mdi-car-brake-alert",
-            mode: "multi-line",
-            position: "top",
-            timeout: 7500,
-            title: "Error",
-            text: texto,
-            visible: true,
-          };
-          break;
-        case "info":
-          this.snackbar = {
-            color: "info",
-            icon: "mdi-info",
-            mode: "multi-line",
-            position: "top",
-            timeout: 0,
-            title: "Information",
-            text: texto,
-            visible: true,
-          };
-          break;
-        case "success":
-          this.snackbar = {
-            color: "success",
-            icon: "mdi-check-circle-outline",
-            mode: "multi-line",
-            position: "top",
-            timeout: 7500,
-            title: "Exitoso",
-            text: texto,
-            visible: true,
-          };
-          break;
-        case "warning":
-          this.snackbar = {
-            color: "warning",
-            icon: "mdi-car-brake-alert",
-            mode: "multi-line",
-            position: "top",
-            timeout: 7500,
-            title: "Warning",
-            text: texto,
-            visible: true,
-          };
-          break;
-      }
-    },
     async updateParams() {
       this.isUpload = true;
       await axios
@@ -378,18 +268,28 @@ export default {
           eliminados: this.eliminados,
         })
         .then((result) => {
-          console.log(result);
-          this.SnackbarShow("success","Parametros agregados correctamente");
-          // this.textSnackbar = "Parametros agregados correctamente";
-          // this.snackbar = true;
-          this.eliminados=[]
+          this.finds = result.data.parametros;
+
+          // this.$root.Snackbar.SnackbarShow("success", "Parametros modificados exitosamente");
+          this.$refs.childComponent.SnackbarShow(
+            "success",
+            "Parametros modificados exitosamente"
+          );
+          this.eliminados = [];
           this.isUpload = false;
           this.dialogParam = false;
-          this.addPermission = false;
+          if (result.data.parametros.length < 1) {
+            this.addPermission = true;
+          } else {
+            this.addPermission = false;
+          }
         })
         .catch((e) => {
           console.log(e);
-          this.SnackbarShow("error","Error agregando los parametros");
+          this.$refs.childComponent.SnackbarShow(
+            "error",
+            "Error agregando los parametros"
+          );
           this.isUpload = false;
         });
     },
@@ -402,8 +302,11 @@ export default {
         })
         .then((result) => {
           console.log(result);
-          
-          this.SnackbarShow("success","Parametros agregados correctamente");
+
+          this.$refs.childComponent.SnackbarShow(
+            "success",
+            "Parametros agregados correctamente"
+          );
           // this.textSnackbar = "Parametros agregados correctamente";
           // this.snackbar = true;
           this.isUpload = false;
@@ -411,22 +314,26 @@ export default {
         })
         .catch((e) => {
           console.log(e);
-          this.SnackbarShow("error");
+          this.$refs.childComponent.SnackbarShow(
+            "error",
+            "Error agregando los parametros"
+          );
           // this.textSnackbar = "Ha ocurrido un error";
           // this.snackbar = true;
         });
     },
     addFind: function () {
-      this.finds.push({ value: "" });
+      this.finds.push({ value: "", del: 0 });
     },
     deleteFind(item) {
-      console.log(this.finds)
+      console.log(this.finds);
       let index = this.finds.indexOf(item);
-      let key = "_id"
-      var hasKey = (index[key] !== undefined);
-      console.log(hasKey)
-      let borrado = this.finds.splice(index, 1);
-      this.eliminados.push(borrado[0]);
+      if (item.del != 0) {
+        let borrado = this.finds.splice(index, 1);
+        this.eliminados.push(borrado[0]);
+      } else {
+        this.finds.splice(index, 1);
+      }
     },
     obtenerFecha(fecha) {
       let retorno = fecha.split("T");
@@ -455,7 +362,10 @@ export default {
         .delete("/carpeta/deleteSubFolders/" + item._id)
         .then((result) => {
           console.log(result);
-          this.SnackbarShow("success","Carpeta eliminada correctamente");
+          this.$refs.childComponent.SnackbarShow(
+            "success",
+            "Carpeta eliminada correctamente"
+          );
           // this.alerta = "Carpeta eliminada correctamente";
           // this.snackbar = true;
           // this.textSnackbar = "Carpeta eliminada correctamente";
@@ -493,7 +403,10 @@ export default {
           if (this.editedItem.nombre.length > 3) {
             this.actualizarSubCarpeta(this.editedItem, this.editedIndex);
 
-            this.SnackbarShow("success","Carpeta modificada exitosamente");
+            this.$refs.childComponent.SnackbarShow(
+              "success",
+              "Carpeta modificada exitosamente"
+            );
             // this.textSnackbar = "Carpeta modificada exitosamente";
             // this.snackbar = true;
             // this.alerta = "Nombre modificado exitosamente";
@@ -502,7 +415,10 @@ export default {
           //this.aceptado = true;
           //this.actualizarSociedad2()
         } else {
-          this.SnackbarShow("error","El nombre utilizado de carpeta ya existe");
+          this.$refs.childComponent.SnackbarShow(
+            "error",
+            "El nombre utilizado de carpeta ya existe"
+          );
           // this.alerta = "El nombre utilizado de carpeta ya existe";
           // this.rechazado = true;
         }
@@ -539,7 +455,10 @@ export default {
         .put("carpeta/updateHijos/", { _id: this.padre._id, hijos: newIds })
         .then((res) => {
           console.log(res);
-          this.SnackbarShow("success","Cambios realizados exitosamente");
+          this.$refs.childComponent.SnackbarShow(
+            "success",
+            "Cambios realizados exitosamente"
+          );
           // this.textSnackbar = "Cambios realizados exitosamente";
           // this.snackbar = true;
           // this.alerta = "Cambios realizados exitosamente";
@@ -628,6 +547,11 @@ export default {
         //this.createServerFolder(nueva);
         this.postFolder(nueva);
         this.dialog = false;
+      } else {
+        this.$refs.childComponent.SnackbarShow(
+          "error",
+          "El nombre de la carpeta debe contener un largo minimo de 3 caracteres"
+        );
       }
     },
     createF() {
@@ -639,7 +563,10 @@ export default {
       if (!resultado) {
         this.crearCarpeta();
       } else {
-        this.SnackbarShow("error","El nombre de carpeta ingresado ya existe");
+        this.$refs.childComponent.SnackbarShow(
+          "error",
+          "El nombre de carpeta ingresado ya existe"
+        );
         // this.textSnackbar = "El nombre de carpeta ingresado ya existe";
         // this.snackbar = true;
         // this.alerta = "El nombre de carpeta ingresado ya existe";

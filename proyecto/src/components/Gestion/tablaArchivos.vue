@@ -1,5 +1,6 @@
 <template>
   <div>
+    <snackbar ref="childComponent"></snackbar>
     <v-alert v-model="aceptado2" dense text type="success">
       {{ alerta }}
     </v-alert>
@@ -75,10 +76,10 @@
 
             <loading texto="Subiendo Archivo" v-if="isUpload"></loading>
             <v-stepper v-else v-model="e1">
-              
-              <v-alert v-model="rechazado" dense outlined type="error">
+              <snackbar2 ref="childComponent2"></snackbar2>
+              <!-- <v-alert v-model="rechazado" dense outlined type="error">
                 {{ message }}
-              </v-alert>
+              </v-alert> -->
               <v-stepper-header>
                 <v-stepper-step :complete="e1 > 1" step="1">
                   Nombre archivo
@@ -286,9 +287,10 @@ moment.updateLocale("es", location);
 import UploadService from "../../services/UploadFilesService";
 import VueJsonToCsv from "vue-json-to-csv";
 import loading from "../loading.vue";
-
+import Snackbar from '../snackbar.vue';
+import Snackbar2 from '../snackbar.vue'
 export default {
-  components: { VueJsonToCsv, loading },
+  components: { VueJsonToCsv, loading, Snackbar, Snackbar2 },
   props: {
     Parametro: String,
     nombreParametro: String
@@ -303,6 +305,7 @@ export default {
     rechazado2: false,
     busqueda: "",
     isLoading: true,
+    snackTipe:false,
     isUpload: false,
     nombre: "",
     currentFile: undefined,
@@ -552,7 +555,7 @@ export default {
         .get("subCarpeta/query?_id=" + this.$route.params.subFolder)
         .then((result) => {
           this.padre = result.data;
-          this.getFiles(this.Parametro);
+          this.getFiles(this.Parametro,this.padre);
         });
     },
     iniciarFile(element) {
@@ -612,9 +615,15 @@ export default {
         element.status = 1;
       }
     },
-    async getFiles(id) {
+    async getFiles(id,padre) {
+      const request = {
+        params: {
+          _id:id,
+          padre: padre._id,
+        }
+      }
       await axios
-        .get("subCarpeta/getArchivosParam?_id=" + id)
+        .get("subCarpeta/getArchivosParam",request)
         .then((res) => {
           let carpetas = res.data;
           carpetas.forEach((element) => {
@@ -653,23 +662,27 @@ export default {
       );
       // console.log("Soy el resultado: " + this.editedItem.nombre);
       if (this.editedItem.nombre.length < 3) {
-        this.message = "Por favor ingrese un nombre con al menos 4 caracteres";
+
+        this.$refs.childComponent2.SnackbarShow("error","Por favor ingrese un nombre con al menos 4 caracteres")
+        // this.message = "Por favor ingrese un nombre con al menos 4 caracteres";
         this.isUpload = false;
-        this.rechazado = true;
+        // this.rechazado = true;
         this.e1 = 1;
         return;
       }
       if (resultado) {
-        this.message = "Por favor ingrese otro nombre de archivo";
+        this.$refs.childComponent2.SnackbarShow("error","Por favor ingrese otro nombre de archivo")
+        // this.message = "Por favor ingrese otro nombre de archivo";
         this.isUpload = false;
-        this.rechazado = true;
+        // this.rechazado = true;
         this.e1 = 1;
         return;
       }
       if (!this.currentFile) {
-        this.message = "Por favor seleccione un archivo";
+        this.$refs.childComponent2.SnackbarShow("error","Por favor seleccione un archivo")
+        // this.message = "Por favor seleccione un archivo";
         this.isUpload = false;
-        this.rechazado = true;
+        // this.rechazado = true;
         this.e1 = 1;
         return;
       }
@@ -700,9 +713,10 @@ export default {
           this.postArchivo(this.editedItem);
         })
         .catch(() => {
-          this.message = "No se puede subir archivo Excede máximo de 2 mb";
+          this.$refs.childComponent.SnackbarShow("error","No se puede subir archivo Excede máximo de 2 mb")
+          // this.message = "No se puede subir archivo Excede máximo de 2 mb";
           this.isUpload = false;
-          this.rechazado = true;
+          // this.rechazado = true;
           this.currentFile = undefined;
         });
     },
@@ -745,13 +759,15 @@ export default {
         })
         .then((res) => {
           console.log(res);
-          this.alerta = "Cambios realizados exitosamente";
-          this.aceptado2 = true;
+          this.$refs.childComponent.SnackbarShow("success","Cambios realizados exitosamente")
+          // this.alerta = "Cambios realizados exitosamente";
+          // this.aceptado2 = true;
           this.close();
         })
         .catch((e) => {
           console.log(e.response);
           this.isLoading = false;
+          this.$refs.childComponent.SnackbarShow("error","No se ha podido actualizar la subcarpeta")
         });
     },
     editItem(item) {
@@ -799,16 +815,22 @@ export default {
           console.log(this.editedItem.nombre);
           if (this.editedItem.nombre.length > 3) {
             this.actualizarArchivo(this.editedItem, this.editedIndex);
-            this.alerta = "Archivo modificado exitosamente";
-            this.aceptado2 = true;
+            this.snackTipe = true
+            this.$refs.childComponent.SnackbarShow("success","Archivo modificado exitosamente")
+            // this.alerta = "Archivo modificado exitosamente";
+            // this.aceptado2 = true;
           } else {
-            this.message =
-              "El nombre del archivo debe tener un largo mayor a 3 caracteres";
-            this.rechazado = true;
+            this.snackTipe = false
+            this.e1=1
+            this.$refs.childComponent2.SnackbarShow("error","El nombre del archivo debe tener un largo mayor a 3 caracteres")
+            // this.message =
+            //   "El nombre del archivo debe tener un largo mayor a 3 caracteres";
+            // this.rechazado = true;
           }
         } else {
-          this.message = "Ya existe un archivo con ese nombre";
-          this.rechazado = true;
+          this.$refs.childComponent.SnackbarShow("error","Ya existe un archivo con ese nombre")
+          // this.message = "Ya existe un archivo con ese nombre";
+          // this.rechazado = true;
           return;
         }
       } else {

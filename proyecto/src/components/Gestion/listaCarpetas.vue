@@ -2,12 +2,7 @@
   <v-card>
     <!-- <p>{{ carpetas }}</p>
     <p>{{ finds }}</p> -->
-    <v-alert v-model="aceptado" dense text type="success">
-      {{ alerta }}
-    </v-alert>
-    <v-alert v-model="rechazado" dense outlined type="error">
-      {{ alerta }}
-    </v-alert>
+    <snackbar ref="childComponent"></snackbar>
     <v-toolbar dense dark>
       <v-toolbar-title class="white--text">
         {{ padre.nombre }}
@@ -144,21 +139,19 @@
 <script>
 import axios from "axios";
 import loading from "../loading.vue";
+import Snackbar from '../snackbar.vue';
 export default {
-  components: { loading },
+  components: { loading, Snackbar },
   data: () => ({
     // finds: [],
     busqueda: "",
     isLoading: true,
-    alerta: "",
     showDialog: false,
     padre: {},
     nombreCarpeta: "",
     descripcion: "",
     carpetas: {},
     editedIndex: -1,
-    aceptado: false,
-    rechazado: false,
     dialogDelete: false,
     items: [
       { title: "Editar", icon: "mdi-pencil", metodo: "editItem" },
@@ -233,7 +226,7 @@ export default {
       this.dialogDelete = true;
     },
     deleteItemConfirm() {
-      this.carpetas.splice(this.editedIndex, 1);
+      
       this.deleteFolder(this.editedItem);
       this.closeDelete();
     },
@@ -246,21 +239,23 @@ export default {
     },
 
     async deleteSubFolders(item) {
+      console.log(item)
       await axios
         .delete("/carpeta/deleteSubFolders/" + item._id)
         .then((result) => {
           console.log(result);
-          this.alerta = "Carpeta eliminada correctamente";
-          this.aceptado = true;
+          this.carpetas.splice(this.editedIndex, 1);
+          this.$refs.childComponent.SnackbarShow("success","Carpeta eliminada correctamente")
           this.actualizarHijos();
         });
     },
     async deleteFolder(item) {
-      console.log(item);
       await axios.delete("/carpeta/remove/" + item._id).then((result) => {
-        console.log(result);
-        this.deleteSubFolders(item);
-      });
+        this.deleteSubFolders(result.data);
+      }).catch((e)=>{
+        console.log(e)
+        this.$refs.childComponent.SnackbarShow("error","No se ha podido elminar la carpeta")
+      })
     },
 
     deleteOrEdit(item, opcion) {
@@ -284,14 +279,16 @@ export default {
           console.log(this.editedItem.nombre);
           if (this.editedItem.nombre.length > 3) {
             this.actualizarCarpeta(this.editedItem, this.editedIndex);
-            this.alerta = "Nombre modificado exitosamente";
-            this.aceptado = true;
+            this.$refs.childComponent.SnackbarShow("success","Nombre modificado exitosamente")
+            // this.alerta = "Nombre modificado exitosamente";
+            // this.aceptado = true;
           }
           //this.aceptado = true;
           //this.actualizarSociedad2()
         } else {
-          this.alerta = "El nombre utilizado de carpeta ya existe";
-          this.rechazado = true;
+          this.$refs.childComponent.SnackbarShow("error","El nombre ingresado de carpeta ya existe")
+          // this.alerta = "El nombre utilizado de carpeta ya existe";
+          // this.rechazado = true;
         }
       } else {
         this.createF();
@@ -318,6 +315,9 @@ export default {
         newIds.push(element._id);
       });
 
+      console.log("Las carpetas son:")
+      console.log(this.carpetas)
+
       await axios
         .put("sociedad/updateCarpetas/", {
           _id: this.padre._id,
@@ -325,8 +325,9 @@ export default {
         })
         .then((res) => {
           console.log(res);
-          this.alerta = "Cambios realizados exitosamente";
-          this.aceptado = true;
+          this.$refs.childComponent.SnackbarShow("success","Cambios realizados exitosamente")
+          // this.alerta = "Cambios realizados exitosamente";
+          // this.aceptado = true;
         })
         .catch((e) => {
           console.log(e.response);
@@ -346,9 +347,7 @@ export default {
       await axios
         .put("carpeta/update/", { _id: carpeta._id, carpeta: carpeta })
         .then((res) => {
-          console.log(res);
-          console.log(this.editedItem);
-          Object.assign(this.carpetas[index], carpeta);
+          Object.assign(this.carpetas[index], res.data);
         })
         .catch((e) => {
           console.log(e.response);
@@ -360,8 +359,9 @@ export default {
         .put("sociedad/update/", { _id: sociedad._id, sociedad: sociedad })
         .then((res) => {
           console.log(res);
-          this.alerta = "Carpeta creada exitosamente";
-          this.aceptado = true;
+          this.$refs.childComponent.SnackbarShow("success","Carpeta creada exitosamente")
+          // this.alerta = "Carpeta creada exitosamente";
+          // this.aceptado = true;
         })
         .catch((e) => {
           console.log(e.response);
@@ -409,6 +409,9 @@ export default {
         //this.createServerFolder(nueva);
         this.postFolder(nueva);
       }
+      else{
+        this.$refs.childComponent.SnackbarShow("error","El nombre de la carpeta debe contener un largo minimo de 3 caracteres")
+      }
       this.editedItem.nombre = "";
       this.descripcion = "";
     },
@@ -420,8 +423,9 @@ export default {
       if (!resultado) {
         this.crearCarpeta();
       } else {
-        this.alerta = "El nombre de carpeta ingresado ya existe";
-        this.rechazado = true;
+        this.$refs.childComponent.SnackbarShow("error", "El nombre ingresado de carpeta ya existe")
+        // this.alerta = "El nombre de carpeta ingresado ya existe";
+        // this.rechazado = true;
       }
     },
     //Crear carpeta en el servidor

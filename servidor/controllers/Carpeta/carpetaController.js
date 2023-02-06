@@ -4,7 +4,7 @@ import subCarpeta from "../../models/SubCarpeta";
 //Metodo para crear una Carpeta
 const add = async (req, res, next) => {
   try {
-    const reg = await Carpeta.create(req.body.Carpeta);
+    const reg = await Carpeta.create(req.body.carpeta);
     // const buscado = await Carpeta.findOne(reg._id);
     // req.body.parametros.forEach(element => {
     //   buscado.parametros.push(element); 
@@ -160,17 +160,9 @@ const addFolder = async (req, res, next) => {
 const update = async (req, res, next) => {
   try {
     const id = req.body._id;
-    const body = req.body.Carpeta;
+    const body = req.body.carpeta;
+    console.log(body)
     const reg = await Carpeta.findByIdAndUpdate(id, body, { new: true });
-    // const subCarpetas = await subCarpeta.find();
-    // subCarpetas.forEach(async Carpeta => {
-    //   if(Carpeta.padre == id){
-    //     await subCarpeta.findByIdAndUpdate(
-    //       { _id: Carpeta._id},
-    //       { parametros: reg.parametros }
-    //     );
-    //   }  
-    // });
     res.status(200).json(reg);
   } catch (e) {
     res.status(500).send({
@@ -186,7 +178,7 @@ const remove = async (req, res, next) => {
     console.log(id);
     const reg = await Carpeta.findByIdAndDelete({ _id: id.id });
     if (reg) {
-      res.status(200).json(true);
+      res.status(200).json(reg);
     }
   } catch (e) {
     res.status(500).send({
