@@ -23,52 +23,63 @@
         :class="{ closed: searchClosed && !busqueda }"
       ></v-text-field>
     </v-toolbar>
-    <v-data-table
-      :headers="headers"
-      :items="resultadoBusqueda"
-      sort-by="calories"
-      class="elevation-1"
-    >
-      <template v-slot:[`item.cantidad`]="{ item }">
-        <v-icon xl :color="obtenerCumplimiento(item).color">{{obtenerCumplimiento(item).icon}}</v-icon>
-      </template>
+    <kpi-parametros
+      :parametros="parametros"
+      :archivos-requeridos="archivosRequeridos"
+      :archivosSubidos="archivosSubidos"
+    ></kpi-parametros>
 
-      <template v-slot:[`item.option`]="{ item }">
-        <div v-if="item.option">Si</div>
-        <div v-else>No</div>
-      </template>
-      <template v-slot:top>
-        <v-toolbar flat>
-          <v-toolbar-title>Mis Parametros</v-toolbar-title>
-          <v-divider class="mx-4" inset vertical></v-divider>
-          <v-spacer></v-spacer>
-          <v-dialog v-model="dialog" max-width="80%">
-            <v-card>
-              <tabla-archivos
-                :key="parametroID"
-                :Parametro="parametroID"
-                :nombre-parametro="parametroNombre"
-              ></tabla-archivos>
-            </v-card>
-          </v-dialog>
-        </v-toolbar>
-      </template>
-      <template v-slot:[`item.actions`]="{ item }">
-        <v-icon class="mr-2" @click="editItem(item)"> mdi-file-plus </v-icon>
-      </template>
+    <v-card elevation="5" outlined class="mx-auto mb-8" max-width="98.6%">
+      <v-data-table
+        :headers="headers"
+        :items="resultadoBusqueda"
+        sort-by="calories"
+        class="elevation-1"
+      >
+        <template v-slot:[`item.cantidad`]="{ item }">
+          <v-icon xl :color="obtenerCumplimiento(item).color">{{
+            obtenerCumplimiento(item).icon
+          }}</v-icon>
+        </template>
 
-      <template v-slot:no-data>
-        <v-btn color="primary" @click="initialize"> Reset </v-btn>
-      </template>
-    </v-data-table>
+        <template v-slot:[`item.option`]="{ item }">
+          <div v-if="item.option">Si</div>
+          <div v-else>No</div>
+        </template>
+        <template v-slot:top>
+          <v-toolbar flat>
+            <v-toolbar-title>Mis Parametros</v-toolbar-title>
+            <v-divider class="mx-4" inset vertical></v-divider>
+            <v-spacer></v-spacer>
+            <v-dialog v-model="dialog" max-width="80%">
+              <v-card>
+                <tabla-archivos
+                  :key="parametroID"
+                  :Parametro="parametroID"
+                  :nombre-parametro="parametroNombre"
+                ></tabla-archivos>
+              </v-card>
+            </v-dialog>
+          </v-toolbar>
+        </template>
+        <template v-slot:[`item.actions`]="{ item }">
+          <v-icon class="mr-2" @click="editItem(item)"> mdi-file-plus </v-icon>
+        </template>
+
+        <template v-slot:no-data>
+          <v-btn color="primary" @click="initialize"> Reset </v-btn>
+        </template>
+      </v-data-table>
+    </v-card>
   </div>
 </template>
 
 <script>
 import axios from "axios";
 import tablaArchivos from "../Gestion/tablaArchivos.vue";
+import KpiParametros from "../KpiParametros.vue";
 export default {
-  components: { tablaArchivos },
+  components: { tablaArchivos, KpiParametros },
   data: () => ({
     searchClosed: true,
     dialog: false,
@@ -76,9 +87,16 @@ export default {
     parametroID: "",
     parametroNombre: "",
     folder: {},
+    archivosRequeridos: 0,
+    archivosSubidos: 0,
     padre: {},
     headers: [
-      { text: "Archivo subido?", value:"cantidad",sortable: false,align: "center" },
+      {
+        text: "Archivo subido?",
+        value: "cantidad",
+        sortable: false,
+        align: "center",
+      },
       {
         text: "Nombre",
         align: "start",
@@ -91,7 +109,7 @@ export default {
         sortable: false,
         value: "option",
       },
-      { text: "Actions", align: "center", value: "actions", sortable: false },
+      { text: "Acciones", align: "center", value: "actions", sortable: false },
     ],
     parametros: [],
   }),
@@ -121,24 +139,23 @@ export default {
     obtenerCumplimiento(parametro) {
       if (parametro.option) {
         if (parametro.cantidad > 0) {
-          return {color:"green", icon:"mdi-note-check"};
-        }
-        else{
-          return {color:"red",icon:"mdi-note-remove"}
+          return { color: "green", icon: "mdi-note-check" };
+        } else {
+          return { color: "red", icon: "mdi-note-remove" };
         }
       } else {
         return "No aplica";
       }
     },
-    async contar(parametros) {
-      await parametros.forEach((parametro) => {
+    contar(parametros) {
+      parametros.forEach(async (parametro) => {
         const request = {
           params: {
             _id: parametro._id,
             padre: this.$route.params.subFolder,
           },
         };
-        axios.get("archivo/countFiles", request).then((result) => {
+        await axios.get("archivo/countFiles", request).then((result) => {
           const nuevo = {
             _id: parametro._id,
             value: parametro.value,
@@ -147,6 +164,12 @@ export default {
           let index = parametros.indexOf(parametro);
           Object.assign(parametros[index], nuevo);
           this.parametros.push(parametro);
+          if (parametro.option) {
+            if (parametro.cantidad > 0) {
+              this.archivosSubidos = this.archivosSubidos + 1;
+            }
+            this.archivosRequeridos = this.archivosRequeridos + 1;
+          }
         });
       });
     },

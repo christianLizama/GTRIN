@@ -231,6 +231,7 @@ export default {
       this.dialogDelete = true;
     },
     deleteItemConfirm() {
+      console.log(this.editedItem)
       this.deleteFolder(this.editedItem);
       this.closeDelete();
     },
@@ -319,8 +320,8 @@ export default {
         newIds.push(element._id);
       });
 
-      console.log("Las carpetas son:")
-      console.log(this.carpetas)
+      // console.log("Las carpetas son:")
+      // console.log(this.carpetas)
 
       await axios
         .put("sociedad/updateCarpetas/", {

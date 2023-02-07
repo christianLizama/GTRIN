@@ -43,8 +43,8 @@
       <template v-slot:[`item.archivo`]="{ item }">
         <div class="text-truncate" style="max-width: 140px">
           <v-icon class="mr-2"> mdi-file-pdf-box</v-icon>
-          <a class="texto" :href="link + 'uploadFile/files/' + item.archivo"
-            >{{ item.archivo }}
+          <a class="texto">
+            {{ item.archivo }}
           </a>
         </div>
       </template>
@@ -315,8 +315,9 @@ export default {
     menu: false,
     menu2: false,
     items: [
-      { title: "Editar", icon: "mdi-pencil", metodo: "editItem" },
+      { title: "Editar", icon: "mdi-pencil"},
       { title: "Eliminar", icon: "mdi-delete" },
+      { title: "Descargar", icon: "mdi-download"}
     ],
     headers: [
       {
@@ -514,6 +515,7 @@ export default {
         });
     },
     deleteOrEdit(item, opcion) {
+      console.log(opcion)
       opcion = opcion + 1;
       //Si es editar
       if (opcion == 1) {
@@ -522,6 +524,9 @@ export default {
       //eliminar
       else if (opcion == 2) {
         this.deleteItem(item);
+      }
+      else if(opcion == 3){
+        this.downloadFile(item.archivo)
       }
     },
     obtenerDiferencia(fechaEmision, fechaVencimiento) {
@@ -545,7 +550,14 @@ export default {
     downloadFile(file) {
       UploadService.download(file)
         .then((response) => {
-          console.log(response);
+          var fileURL = window.URL.createObjectURL(new Blob([response.data]));
+          var fileLink = document.createElement("a");
+
+          fileLink.href = fileURL;
+          fileLink.setAttribute("download", file);
+          document.body.appendChild(fileLink);
+
+          fileLink.click();
         })
         .catch(() => {
           this.message = "No se puede descargar el archivo";
@@ -804,21 +816,18 @@ export default {
       this.dialogDelete = true;
     },
     deleteItemConfirm() {
-      this.borrarArchivo(this.archivos[this.editedIndex])
+      this.borrarArchivo(this.archivos[this.editedIndex]);
       this.closeDelete();
     },
     async borrarArchivo(archivo) {
       var data = {
-          id: archivo._id,
-          fileName: archivo.archivo,
-      }
-      await axios.delete("archivo/remove",{data}).then(result => {
-        this.$refs.childComponent.SnackbarShow(
-          "success",
-          result.data.message
-        );
+        id: archivo._id,
+        fileName: archivo.archivo,
+      };
+      await axios.delete("archivo/remove", { data }).then((result) => {
+        this.$refs.childComponent.SnackbarShow("success", result.data.message);
         this.archivos.splice(this.editedIndex, 1);
-      })
+      });
     },
     close() {
       this.dialog = false;

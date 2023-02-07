@@ -107,7 +107,7 @@ const update = async (req, res, next) => {
     next(e);
   }
 };
-//Metodo para eliminar una sub carpeta mediante _id
+//Metodo para eliminar un archivo mediante _id y su nombre
 const remove = async (req, res, next) => {
   try {
     const {id,fileName} = req.body;

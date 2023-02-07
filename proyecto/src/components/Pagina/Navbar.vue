@@ -1,7 +1,10 @@
 <template>
   <div>
-    <v-app-bar  color="" app height="56%" elevation="1">
-      <v-app-bar-nav-icon class="hidden-md-and-up" @click="drawer = true"></v-app-bar-nav-icon>
+    <v-app-bar color="" app height="56%" elevation="1">
+      <v-app-bar-nav-icon
+        class="hidden-md-and-up"
+        @click="drawer = true"
+      ></v-app-bar-nav-icon>
       <v-img
         class="imagen"
         max-height="55"
@@ -20,7 +23,10 @@
             <v-list>
               <v-list-item>
                 <v-list-item-avatar>
-                  <img src="https://cdn.vuetifyjs.com/images/john.jpg" alt="John" />
+                  <img
+                    src="https://cdn.vuetifyjs.com/images/john.jpg"
+                    alt="John"
+                  />
                 </v-list-item-avatar>
 
                 <v-list-item-content>
@@ -34,7 +40,7 @@
 
             <v-card-actions>
               <v-spacer></v-spacer>
-              <v-btn color="primary" text > Salir </v-btn>
+              <v-btn color="primary" text> Salir </v-btn>
             </v-card-actions>
           </v-card>
         </v-menu>
@@ -59,17 +65,18 @@
 
       <v-divider elevation="1"></v-divider>
 
-      <v-list-item link to="/">
-        <v-list-item-icon>
-          <v-icon>mdi-monitor-dashboard</v-icon>
-        </v-list-item-icon>
-        <v-list-item-content>
-          <v-list-item-title>Dashboard</v-list-item-title>
-        </v-list-item-content>
-      </v-list-item>
-
-      <v-list>
+          
+      <v-list shaped>
+        <v-list-item active-class="red--text"  link to="/">
+          <v-list-item-icon>
+            <v-icon>mdi-monitor-dashboard</v-icon>
+          </v-list-item-icon>
+          <v-list-item-content>
+            <v-list-item-title>Dashboard</v-list-item-title>
+          </v-list-item-content>
+        </v-list-item>
         <v-list-group
+          active-class="red--text"
           v-for="item in menu"
           :key="item.title"
           v-model="item.active"
@@ -83,6 +90,7 @@
           </template>
 
           <v-list-item
+            active-class="red--text"
             link
             :to="'/archivos/' + child.nombre"
             v-for="child in item.items"
@@ -105,7 +113,9 @@ export default {
     return {
       drawer: false,
       nombre: "Christian Lizama",
-      menu: [{ action: "mdi-human-male-boy", items: [], title: "Contenedores" }],
+      menu: [
+        { action: "mdi-human-male-boy", items: [], title: "Contenedores" },
+      ],
       mini: true,
     };
   },
