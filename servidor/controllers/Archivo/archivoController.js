@@ -1,17 +1,18 @@
 import archivo from "../../models/Archivo";
+const fs = require("fs");
 
 //Metodo para crear una sub carpeta
 const add = async (req, res, next) => {
-    try {
-      console.log(req.body)
-      const reg = await archivo.create(req.body);
-      res.status(200).json(reg);
-    } catch (e) {
-      res.status(500).send({
-        message: "Ocurrio un error",
-      });
-      next(e);
-    }
+  try {
+    console.log(req.body);
+    const reg = await archivo.create(req.body);
+    res.status(200).json(reg);
+  } catch (e) {
+    res.status(500).send({
+      message: "Ocurrio un error",
+    });
+    next(e);
+  }
 };
 
 //Metodo para obtener un archivo mediante su id
@@ -53,12 +54,29 @@ const getAllFiles = async (req, res, next) => {
   }
 };
 
+//Metodo para obtener la cantidad de archivos de un parametro y sub carpeta
+const countFiles = async (req, res, next) => {
+  try {
+    const id = req.query._id;
+    const idPadre = req.query.padre;
+
+    console.log("soy el id:" + id);
+    console.log("soy el padre: " + idPadre);
+    const reg = await archivo.find({ parametro: id, padre: idPadre }).count();
+    res.status(200).json(reg);
+  } catch (e) {
+    res.status(500).send({
+      message: "Ocurrio un error",
+    });
+    next(e);
+  }
+};
 
 //Metodo para obtener los archivos de una sub carpeta
 const getArchivos = async (req, res, next) => {
   try {
     const id = req.query._id;
-    const reg = await archivo.find({padre:id});
+    const reg = await archivo.find({ padre: id });
 
     if (!reg) {
       res.status(404).send({
@@ -75,13 +93,12 @@ const getArchivos = async (req, res, next) => {
   }
 };
 
-
 //Metodo para actualizar un archivo en concreto mediante el _id
 const update = async (req, res, next) => {
   try {
-    const id = req.body._id
-    const body = req.body.archivo
-    const reg = await archivo.findByIdAndUpdate(id,body, {new: true});
+    const id = req.body._id;
+    const body = req.body.archivo;
+    const reg = await archivo.findByIdAndUpdate(id, body, { new: true });
     res.status(200).json(reg);
   } catch (e) {
     res.status(500).send({
@@ -93,11 +110,20 @@ const update = async (req, res, next) => {
 //Metodo para eliminar una sub carpeta mediante _id
 const remove = async (req, res, next) => {
   try {
-    const id  = req.params;
-    console.log(id)
-    const reg = await archivo.findByIdAndDelete({ _id: id.id });
-    if(reg){
-      res.status(200).json(reg);
+    const {id,fileName} = req.body;
+    const reg = await archivo.findByIdAndDelete({ _id: id });
+    if (reg) {
+      const directoryPath = __basedir + "/uploads/";
+      fs.unlink(directoryPath + fileName, (err) => {
+        if (err) {
+          res.status(500).send({
+            message: "Could not delete the file. " + err,
+          });
+        }
+        res.status(200).send({
+          message: "El archivo " + fileName + " ha sido borrado",
+        });
+      });
     }
   } catch (e) {
     res.status(500).send({
@@ -114,4 +140,5 @@ module.exports = {
   remove,
   getArchivos,
   getAllFiles,
+  countFiles,
 };

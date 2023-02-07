@@ -1,7 +1,7 @@
 <template>
   <v-card>
-    <p>{{ finds }}</p>
-    <p>{{ primerosParametros}}</p>
+    <!-- <p>{{ finds }}</p>
+    <p>{{ primerosParametros}}</p> -->
     <v-toolbar dense dark>
       <v-btn @click="atras" big icon>
         <v-icon>mdi-chevron-left</v-icon>

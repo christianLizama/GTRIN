@@ -17,10 +17,10 @@
         dense
         filled
         rounded
-        placeholder="Buscar"
+        placeholder="Buscar categoria"
         prepend-inner-icon="mdi-magnify"
         class="pt-6 expanding-search"
-        :class="{'closed' :searchClosed && !busqueda}"
+        :class="{ closed: searchClosed && !busqueda }"
       ></v-text-field>
     </v-toolbar>
     <v-data-table
@@ -29,6 +29,14 @@
       sort-by="calories"
       class="elevation-1"
     >
+      <template v-slot:[`item.cantidad`]="{ item }">
+        <v-icon xl :color="obtenerCumplimiento(item).color">{{obtenerCumplimiento(item).icon}}</v-icon>
+      </template>
+
+      <template v-slot:[`item.option`]="{ item }">
+        <div v-if="item.option">Si</div>
+        <div v-else>No</div>
+      </template>
       <template v-slot:top>
         <v-toolbar flat>
           <v-toolbar-title>Mis Parametros</v-toolbar-title>
@@ -48,6 +56,7 @@
       <template v-slot:[`item.actions`]="{ item }">
         <v-icon class="mr-2" @click="editItem(item)"> mdi-file-plus </v-icon>
       </template>
+
       <template v-slot:no-data>
         <v-btn color="primary" @click="initialize"> Reset </v-btn>
       </template>
@@ -61,7 +70,7 @@ import tablaArchivos from "../Gestion/tablaArchivos.vue";
 export default {
   components: { tablaArchivos },
   data: () => ({
-    searchClosed:true,
+    searchClosed: true,
     dialog: false,
     busqueda: "",
     parametroID: "",
@@ -69,12 +78,18 @@ export default {
     folder: {},
     padre: {},
     headers: [
-      { text: "Cumplimiento", value: "cumplimiento", sortable: false },
+      { text: "Archivo subido?", value:"cantidad",sortable: false,align: "center" },
       {
         text: "Nombre",
         align: "start",
         sortable: false,
         value: "value",
+      },
+      {
+        text: "Requerido",
+        align: "center",
+        sortable: false,
+        value: "option",
       },
       { text: "Actions", align: "center", value: "actions", sortable: false },
     ],
@@ -103,13 +118,43 @@ export default {
     this.initialize();
   },
   methods: {
-    async obtenerPadreSuperior(id) {
-      await axios
-        .get("carpeta/query?_id=" + id)
-        .then((result) => {
-          this.padre = result.data;
-          this.parametros = result.data.parametros
+    obtenerCumplimiento(parametro) {
+      if (parametro.option) {
+        if (parametro.cantidad > 0) {
+          return {color:"green", icon:"mdi-note-check"};
+        }
+        else{
+          return {color:"red",icon:"mdi-note-remove"}
+        }
+      } else {
+        return "No aplica";
+      }
+    },
+    async contar(parametros) {
+      await parametros.forEach((parametro) => {
+        const request = {
+          params: {
+            _id: parametro._id,
+            padre: this.$route.params.subFolder,
+          },
+        };
+        axios.get("archivo/countFiles", request).then((result) => {
+          const nuevo = {
+            _id: parametro._id,
+            value: parametro.value,
+            cantidad: result.data,
+          };
+          let index = parametros.indexOf(parametro);
+          Object.assign(parametros[index], nuevo);
+          this.parametros.push(parametro);
         });
+      });
+    },
+    async obtenerPadreSuperior(id) {
+      await axios.get("carpeta/query?_id=" + id).then((result) => {
+        this.padre = result.data;
+        this.contar(result.data.parametros, result.data._id);
+      });
     },
     async initialize() {
       await axios
@@ -139,14 +184,14 @@ export default {
 </script>
 
 <style lang="sass">
-  .v-input.expanding-search
-    transition: max-width 0.3s
+.v-input.expanding-search
+  transition: max-width 0.3s
+  .v-input__slot
+    cursor: pointer !important
+    &:before, &:after
+      border-color: transparent !important
+  &.closed
+    max-width: 50px
     .v-input__slot
-      cursor: pointer !important
-      &:before, &:after
-        border-color: transparent !important
-    &.closed
-      max-width: 50px
-      .v-input__slot 
-        background: transparent !important
+      background: transparent !important
 </style>

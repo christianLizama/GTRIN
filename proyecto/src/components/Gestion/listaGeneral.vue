@@ -7,49 +7,7 @@
 
     <loading v-if="isLoading" texto="Obteniendo información"></loading>
     <v-container v-if="!isLoading" :fluid="true">
-      <v-row>
-        <v-col v-for="item in kpi" :key="item.nombre">
-          <v-hover v-slot="{ hover }">
-            <v-card
-              dark
-              elevation="5"
-              :color="item.color"
-              class="mx-auto"
-              height="140"
-              outlined
-            >
-              <v-expand-transition>
-                <div
-                  v-if="hover"
-                  class="caja transition-fast-in-fast-out darken-2 v-card--reveal text-h5 white--text"
-                  style="height: 100%"
-                >
-                  <v-progress-circular
-                    :rotate="-90"
-                    :size="100"
-                    :width="10"
-                    :value="item.porcentaje"
-                    color="white"
-                  >
-                    {{ item.porcentaje }}%
-                  </v-progress-circular>
-                </div>
-              </v-expand-transition>
-              <v-list-item three-line>
-                <v-list-item-content>
-                  <h1>{{ item.total }}</h1>
-                  <v-list-item-title class="text-h7 mb-1">
-                    {{ item.nombre }}
-                  </v-list-item-title>
-                </v-list-item-content>
-                <v-list-item-avatar tile size="100">
-                  <v-icon color="white" size="65"> {{ item.icon }}</v-icon>
-                </v-list-item-avatar>
-              </v-list-item>
-            </v-card>
-          </v-hover>
-        </v-col>
-      </v-row>
+      <Kpi :items="kpi"></Kpi>
     </v-container>
     <div class="contenedor" v-if="!isLoading">
       <v-card elevation="5" outlined class="mx-auto" max-width="98.6%">
@@ -200,10 +158,11 @@
 import axios from "axios";
 import moment from "moment";
 import VueJsonToCsv from "vue-json-to-csv";
+import Kpi from "../Kpi.vue";
 import loading from "../loading.vue";
 import Trigger from "../trigger.vue";
 export default {
-  components: { VueJsonToCsv, loading, Trigger },
+  components: { VueJsonToCsv, loading, Trigger, Kpi },
   data: () => ({
     showScheduleForm: false,
     link: process.env.VUE_APP_SERVER_URL,

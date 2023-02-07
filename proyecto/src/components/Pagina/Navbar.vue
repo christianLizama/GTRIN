@@ -6,7 +6,7 @@
         class="imagen"
         max-height="55"
         max-width="55"
-        src="../assets/logo.e34e8d2.png"
+        src="../../assets/logo.e34e8d2.png"
       ></v-img>
       <v-spacer></v-spacer>
       <div class="text-center">

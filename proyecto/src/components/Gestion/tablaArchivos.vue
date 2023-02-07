@@ -287,13 +287,13 @@ moment.updateLocale("es", location);
 import UploadService from "../../services/UploadFilesService";
 import VueJsonToCsv from "vue-json-to-csv";
 import loading from "../loading.vue";
-import Snackbar from '../snackbar.vue';
-import Snackbar2 from '../snackbar.vue'
+import Snackbar from "../snackbar.vue";
+import Snackbar2 from "../snackbar.vue";
 export default {
   components: { VueJsonToCsv, loading, Snackbar, Snackbar2 },
   props: {
     Parametro: String,
-    nombreParametro: String
+    nombreParametro: String,
   },
   data: () => ({
     alerta: "",
@@ -305,7 +305,7 @@ export default {
     rechazado2: false,
     busqueda: "",
     isLoading: true,
-    snackTipe:false,
+    snackTipe: false,
     isUpload: false,
     nombre: "",
     currentFile: undefined,
@@ -378,7 +378,7 @@ export default {
       padre: "",
       abuelo: "",
       padreSuperior: "",
-      parametro:""
+      parametro: "",
     },
     defaultItem: {
       nombre: "",
@@ -401,7 +401,7 @@ export default {
       padre: "",
       abuelo: "",
       padreSuperior: "",
-      parametro:""
+      parametro: "",
     },
   }),
   computed: {
@@ -481,7 +481,12 @@ export default {
       return fecha;
     },
     fechasIguales() {
-      if (this.obtenerDiferencia(this.editedItem.fechaEmision,this.editedItem.fechaCaducidad) == 0) {
+      if (
+        this.obtenerDiferencia(
+          this.editedItem.fechaEmision,
+          this.editedItem.fechaCaducidad
+        ) == 0
+      ) {
         this.editedItem.fechaCaducidad = moment(this.editedItem.fechaEmision)
           .add(1, "days")
           .toISOString()
@@ -555,7 +560,7 @@ export default {
         .get("subCarpeta/query?_id=" + this.$route.params.subFolder)
         .then((result) => {
           this.padre = result.data;
-          this.getFiles(this.Parametro,this.padre);
+          this.getFiles(this.Parametro, this.padre);
         });
     },
     iniciarFile(element) {
@@ -615,15 +620,15 @@ export default {
         element.status = 1;
       }
     },
-    async getFiles(id,padre) {
+    async getFiles(id, padre) {
       const request = {
         params: {
-          _id:id,
+          _id: id,
           padre: padre._id,
-        }
-      }
+        },
+      };
       await axios
-        .get("subCarpeta/getArchivosParam",request)
+        .get("subCarpeta/getArchivosParam", request)
         .then((res) => {
           let carpetas = res.data;
           carpetas.forEach((element) => {
@@ -662,8 +667,10 @@ export default {
       );
       // console.log("Soy el resultado: " + this.editedItem.nombre);
       if (this.editedItem.nombre.length < 3) {
-
-        this.$refs.childComponent2.SnackbarShow("error","Por favor ingrese un nombre con al menos 4 caracteres")
+        this.$refs.childComponent2.SnackbarShow(
+          "error",
+          "Por favor ingrese un nombre con al menos 4 caracteres"
+        );
         // this.message = "Por favor ingrese un nombre con al menos 4 caracteres";
         this.isUpload = false;
         // this.rechazado = true;
@@ -671,7 +678,10 @@ export default {
         return;
       }
       if (resultado) {
-        this.$refs.childComponent2.SnackbarShow("error","Por favor ingrese otro nombre de archivo")
+        this.$refs.childComponent2.SnackbarShow(
+          "error",
+          "Por favor ingrese otro nombre de archivo"
+        );
         // this.message = "Por favor ingrese otro nombre de archivo";
         this.isUpload = false;
         // this.rechazado = true;
@@ -679,7 +689,10 @@ export default {
         return;
       }
       if (!this.currentFile) {
-        this.$refs.childComponent2.SnackbarShow("error","Por favor seleccione un archivo")
+        this.$refs.childComponent2.SnackbarShow(
+          "error",
+          "Por favor seleccione un archivo"
+        );
         // this.message = "Por favor seleccione un archivo";
         this.isUpload = false;
         // this.rechazado = true;
@@ -713,7 +726,10 @@ export default {
           this.postArchivo(this.editedItem);
         })
         .catch(() => {
-          this.$refs.childComponent.SnackbarShow("error","No se puede subir archivo Excede máximo de 2 mb")
+          this.$refs.childComponent.SnackbarShow(
+            "error",
+            "No se puede subir archivo Excede máximo de 2 mb"
+          );
           // this.message = "No se puede subir archivo Excede máximo de 2 mb";
           this.isUpload = false;
           // this.rechazado = true;
@@ -759,7 +775,10 @@ export default {
         })
         .then((res) => {
           console.log(res);
-          this.$refs.childComponent.SnackbarShow("success","Cambios realizados exitosamente")
+          this.$refs.childComponent.SnackbarShow(
+            "success",
+            "Cambios realizados exitosamente"
+          );
           // this.alerta = "Cambios realizados exitosamente";
           // this.aceptado2 = true;
           this.close();
@@ -767,7 +786,10 @@ export default {
         .catch((e) => {
           console.log(e.response);
           this.isLoading = false;
-          this.$refs.childComponent.SnackbarShow("error","No se ha podido actualizar la subcarpeta")
+          this.$refs.childComponent.SnackbarShow(
+            "error",
+            "No se ha podido actualizar la subcarpeta"
+          );
         });
     },
     editItem(item) {
@@ -782,8 +804,21 @@ export default {
       this.dialogDelete = true;
     },
     deleteItemConfirm() {
-      this.archivos.splice(this.editedIndex, 1);
+      this.borrarArchivo(this.archivos[this.editedIndex])
       this.closeDelete();
+    },
+    async borrarArchivo(archivo) {
+      var data = {
+          id: archivo._id,
+          fileName: archivo.archivo,
+      }
+      await axios.delete("archivo/remove",{data}).then(result => {
+        this.$refs.childComponent.SnackbarShow(
+          "success",
+          result.data.message
+        );
+        this.archivos.splice(this.editedIndex, 1);
+      })
     },
     close() {
       this.dialog = false;
@@ -815,20 +850,29 @@ export default {
           console.log(this.editedItem.nombre);
           if (this.editedItem.nombre.length > 3) {
             this.actualizarArchivo(this.editedItem, this.editedIndex);
-            this.snackTipe = true
-            this.$refs.childComponent.SnackbarShow("success","Archivo modificado exitosamente")
+            this.snackTipe = true;
+            this.$refs.childComponent.SnackbarShow(
+              "success",
+              "Archivo modificado exitosamente"
+            );
             // this.alerta = "Archivo modificado exitosamente";
             // this.aceptado2 = true;
           } else {
-            this.snackTipe = false
-            this.e1=1
-            this.$refs.childComponent2.SnackbarShow("error","El nombre del archivo debe tener un largo mayor a 3 caracteres")
+            this.snackTipe = false;
+            this.e1 = 1;
+            this.$refs.childComponent2.SnackbarShow(
+              "error",
+              "El nombre del archivo debe tener un largo mayor a 3 caracteres"
+            );
             // this.message =
             //   "El nombre del archivo debe tener un largo mayor a 3 caracteres";
             // this.rechazado = true;
           }
         } else {
-          this.$refs.childComponent.SnackbarShow("error","Ya existe un archivo con ese nombre")
+          this.$refs.childComponent.SnackbarShow(
+            "error",
+            "Ya existe un archivo con ese nombre"
+          );
           // this.message = "Ya existe un archivo con ese nombre";
           // this.rechazado = true;
           return;

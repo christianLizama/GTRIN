@@ -13,8 +13,9 @@ router.get('/', function(req, res, next) {
 router.post('/add', archivo.add);
 router.get('/query',archivo.query);
 router.put('/update',archivo.update);
-router.delete('/remove/:id', archivo.remove)
+router.delete('/remove/', archivo.remove)
 router.get('/getArchivos', archivo.getArchivos)
 router.get('/allFiles', archivo.getAllFiles)
+router.get('/countFiles', archivo.countFiles)
 
 module.exports = router;
