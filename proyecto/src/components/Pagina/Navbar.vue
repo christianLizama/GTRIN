@@ -67,7 +67,7 @@
 
           
       <v-list shaped>
-        <v-list-item active-class="red--text"  link to="/">
+        <v-list-item active-class="white--text"  link to="/">
           <v-list-item-icon>
             <v-icon>mdi-monitor-dashboard</v-icon>
           </v-list-item-icon>
@@ -76,7 +76,7 @@
           </v-list-item-content>
         </v-list-item>
         <v-list-group
-          active-class="red--text"
+          active-class="white--text"
           v-for="item in menu"
           :key="item.title"
           v-model="item.active"
@@ -90,7 +90,7 @@
           </template>
 
           <v-list-item
-            active-class="red--text"
+            active-class="white--text"
             link
             :to="'/archivos/' + child.nombre"
             v-for="child in item.items"

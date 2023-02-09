@@ -26,6 +26,7 @@
                 >
                   {{ 100 - calularPorcentaje() }}%
                 </v-progress-circular>
+                <h2>Archivos Faltantes</h2>
               </div>
             </v-expand-transition>
             <v-list-item three-line>
@@ -67,7 +68,7 @@
                 >
                   {{ calularPorcentaje() }}%
                 </v-progress-circular>
-                <h1>Archivos Subidos</h1>
+                <h2>Archivos Subidos</h2>
               </div>
             </v-expand-transition>
             <v-list-item three-line>
