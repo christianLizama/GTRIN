@@ -2,57 +2,87 @@
   <v-container :fluid="true">
     <v-row>
       <v-col>
-        <v-card max-height="100%" height="100%">
-          <v-toolbar color="black" dark>
-            <v-toolbar-title> Cumplimiento de Parametros </v-toolbar-title>
-          </v-toolbar>
-          <v-carousel height="auto" hide-delimiter-background show-arrows-on-hover cycle>
-            <v-carousel-item
-            >
-              <div class="caja">
+        <v-hover v-slot="{ hover }">
+          <v-card
+            dark
+            elevation="5"
+            color="red"
+            class="mx-auto"
+            height="140"
+            outlined
+          >
+            <v-expand-transition>
+              <div
+                v-if="hover"
+                class="caja transition-fast-in-fast-out darken-2 v-card--reveal text-h5 white--text"
+                style="height: 100%"
+              >
                 <v-progress-circular
                   :rotate="90"
                   :size="100"
                   :width="10"
-                  :value="calularPorcentaje()"
-                  color="green"
+                  :value="100 - calularPorcentaje()"
+                  color="white"
+                >
+                  {{ 100 - calularPorcentaje() }}%
+                </v-progress-circular>
+              </div>
+            </v-expand-transition>
+            <v-list-item three-line>
+              <v-list-item-content>
+                <h1>Archivos faltantes</h1>
+                <v-list-item-title class="text-h7 mb-1">
+                  {{ archivosRequeridos - archivosSubidos }}
+                </v-list-item-title>
+              </v-list-item-content>
+              <v-list-item-avatar tile size="100">
+                <v-icon color="white" size="65"> mdi-note-remove</v-icon>
+              </v-list-item-avatar>
+            </v-list-item>
+          </v-card>
+        </v-hover>
+      </v-col>
+      <v-col>
+        <v-hover v-slot="{ hover }">
+          <v-card
+            dark
+            elevation="5"
+            color="green"
+            class="mx-auto"
+            height="140"
+            outlined
+          >
+            <v-expand-transition>
+              <div
+                v-if="hover"
+                class="caja transition-fast-in-fast-out darken-2 v-card--reveal text-h5 white--text"
+                style="height: 100%"
+              >
+                <v-progress-circular
+                  :rotate="90"
+                  :size="100"
+                  :width="10"
+                  :value="100 - calularPorcentaje()"
+                  color="white"
                 >
                   {{ calularPorcentaje() }}%
                 </v-progress-circular>
-                <h2>Parametros completados {{archivosSubidos}}</h2>
+                <h1>Archivos Subidos</h1>
               </div>
-            </v-carousel-item>
-            <v-carousel-item
-            >
-              <div class="caja">
-                <v-progress-circular
-                  :rotate="90"
-                  :size="100"
-                  :width="10"
-                  :value="100-calularPorcentaje()"
-                  color="red"
-                >
-                  {{100-calularPorcentaje() }}%
-                </v-progress-circular>
-                <h1>Archivos faltantes {{ archivosRequeridos-archivosSubidos}}</h1>
-              </div>
-            </v-carousel-item>
-            <v-carousel-item>
-              <div class="caja">
-                <v-progress-circular
-                  :rotate="90"
-                  :size="100"
-                  :width="10"
-                  :value="100-calularPorcentaje()"
-                  color="red"
-                >
-                  {{100-calularPorcentaje() }}%
-                </v-progress-circular>
-                <h1>Archivos faltantes {{ archivosRequeridos-archivosSubidos}}</h1>
-              </div>
-            </v-carousel-item>
-          </v-carousel>
-        </v-card>
+            </v-expand-transition>
+            <v-list-item three-line>
+              <v-list-item-content>
+                <h1>Archivos Subidos</h1>
+                <v-list-item-title class="text-h7 mb-1">
+                  {{ archivosSubidos }}
+                </v-list-item-title>
+              </v-list-item-content>
+              <v-list-item-avatar tile size="100">
+                <v-icon color="white" size="65">mdi-note-check</v-icon>
+              </v-list-item-avatar>
+            </v-list-item>
+          </v-card>
+        </v-hover>
       </v-col>
     </v-row>
   </v-container>
