@@ -487,7 +487,13 @@ export default {
           this.editedItem.fechaEmision,
           this.editedItem.fechaCaducidad
         ) == 0
-      ) {
+      
+        ||
+        this.obtenerDiferencia(
+          this.editedItem.fechaEmision,
+          this.editedItem.fechaCaducidad
+        ) < 0
+        ) {
         this.editedItem.fechaCaducidad = moment(this.editedItem.fechaEmision)
           .add(1, "days")
           .toISOString()
