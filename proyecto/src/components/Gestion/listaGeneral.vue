@@ -86,8 +86,14 @@
             {{ obtenerNombreSociedad(item.padreSuperior) }}
           </template>
 
-          <template v-slot:[`item.diasAviso`]="{ item }">
-            {{ obtenerFechaAviso(item) }} {{ item.diasAviso }}
+          <template v-slot:[`item.fechaCambioEstado`]="{ item }">
+            {{ fechaFormateada(item.fechaCambioEstado) }}
+          </template>
+          <template v-slot:[`item.fechaEmision`]="{ item }">
+            {{ fechaFormateada(item.fechaEmision) }}
+          </template>
+          <template v-slot:[`item.fechaCaducidad`]="{ item }">
+            {{ fechaFormateada(item.fechaCaducidad) }}
           </template>
 
           <template v-slot:[`item.abuelo`]="{ item }">
@@ -128,9 +134,15 @@
                 <vue-json-to-csv
                   :json-data="archivos"
                   :labels="{
-                    nombre: { title: 'Nombre' },
-                    status: { title: 'Status del documento' },
-                    diasVigencia: { title: 'Dias de vigencia' },
+                    nombreSociedad: { title: 'Nombre Contenedor' },
+                    nombreCarpeta:{title:'Carpeta'},
+                    nombreSubCarpeta: {title: 'SubCarpeta'},
+                    archivo: {title: 'Archivo'},
+                    estado: { title: 'Status del documento' },
+                    fechaEmision: { title: 'Fecha emision' },
+                    fechaCambioEstado: {title: 'Fecha de alerta'},
+                    fechaCaducidad: {title: 'Fecha Caducidad '}
+                    
                   }"
                   csv-title="archivo"
                   :separator="';'"
@@ -274,12 +286,7 @@ export default {
         sortable: true,
         value: "status",
       },
-      {
-        text: "Fecha aviso alerta",
-        sortable: false,
-        align: "center",
-        value: "diasAviso",
-      },
+      
       {
         text: "Dias de vigencia archivo",
         align: "center",
@@ -294,9 +301,15 @@ export default {
       },
       { text: "Archivo", sortable: false, value: "archivo" },
       { text: "Tamaño", value: "peso" },
-      { text: "Fecha Subida", value: "fechaCreacion" },
       { text: "Fecha Emisión", value: "fechaEmision" },
+      {
+        text: "Fecha estado por vencer",
+        sortable: false,
+        align: "center",
+        value: "fechaCambioEstado",
+      },
       { text: "Fecha Caducidad", value: "fechaCaducidad" },
+      
     ],
     message: "",
     archivos: [],
@@ -324,6 +337,10 @@ export default {
     this.initialize();
   },
   methods: {
+    fechaFormateada(fecha){
+      let fechaFormat = moment(fecha).format("DD/MM/YYYY")
+      return fechaFormat
+    },
     obtenerFechaAviso(item) {
       let fecha = moment(item.fechaEmision)
         .add(item.diasAviso, "days")
@@ -442,6 +459,7 @@ export default {
     },
     async initialize() {
       await axios.get("archivo/allFiles").then((result) => {
+        console.log(result.data)
         result.data.forEach((element) => {
           this.iniciarFile(element);
         });
@@ -475,12 +493,17 @@ export default {
       });
     },
     iniciarFile(element) {
+      element.nombreSociedad = this.obtenerNombreSociedad(element.padreSuperior)
+      element.nombreCarpeta = this.obtenerNombreCarpeta(element.abuelo)
+      element.nombreSubCarpeta = this.obtenerNombreSubCarpeta(element.padre)
       let fechaCrea = element.fechaCreacion.split("T");
       let fechaEmi = element.fechaEmision.split("T");
       let fechaCadu = element.fechaCaducidad.split("T");
+      let fechaAviso = element.fechaCambioEstado.split("T");
       element.fechaCreacion = fechaCrea[0];
       element.fechaEmision = fechaEmi[0];
       element.fechaCaducidad = fechaCadu[0];
+      element.fechaCambioEstado = fechaAviso[0]
 
       var today = new Date();
       var now = today.toISOString();
@@ -494,13 +517,13 @@ export default {
 
       element.diasVigencia = diasVigencia;
       element.diasRestantes = diasRestantes;
-      console.log(element.nombre);
-      console.log("Fecha emision: " + element.fechaEmision);
-      console.log("Fecha vencimiento: " + element.fechaCaducidad);
-      console.log("Dias alerta: " + element.diasAviso);
-      console.log("Fecha que cambia de estado: " + moment(element.fechaEmision).add(element.diasAviso,"days").format("DD/MM/YYYY"))
-      console.log("Dias de vigencia: " + element.diasVigencia);
-      console.log("Dias restantes: " + element.diasRestantes);
+      // console.log(element.nombre);
+      // console.log("Fecha emision: " + element.fechaEmision);
+      // console.log("Fecha vencimiento: " + element.fechaCaducidad);
+      // console.log("Dias alerta: " + element.diasAviso);
+      // console.log("Fecha que cambia de estado: " + moment(element.fechaEmision).add(element.diasAviso,"days").format("DD/MM/YYYY"))
+      // console.log("Dias de vigencia: " + element.diasVigencia);
+      // console.log("Dias restantes: " + element.diasRestantes);
   
       let dateArray = element.fechaEmision.split("-")
       var diaCambio2 = new Date(dateArray[0],dateArray[1]-1,dateArray[2]);
@@ -511,7 +534,7 @@ export default {
       var fechaCaducidadAux = new Date(date2Array[0],date2Array[1]-1,date2Array[2]);
       fechaCaducidadAux.setHours(0,0,0,0)
       
-      console.log("--------------------");
+      // console.log("--------------------");
       var hoy = new Date();
       hoy.setHours(0,0,0,0)
 
@@ -521,14 +544,17 @@ export default {
       //Si el día de cambio de estado es igual al día de hoy pasa a estado por vencer
       if(diaCambio2.getTime() <= hoy.getTime() && diasRestantes>=1){
         element.status = 2
+        element.estado = "Por Vencer"
       }
       //Si el día de cambio de estado es despues del día de hoy esta vigente
       else if(diaCambio2.getTime() > hoy.getTime()){
         element.status = 3
+        element.estado = "Vigente"
       }
       //Quiere decir que el día de cambio no es ni igual a hoy, ni mayor que hoy por lo que puede estar vencido
       else if (diaCambio2.getTime() <= fechaCaducidadAux.getTime()){
         element.status = 1 
+        element.estado = "Vencido"
       }
     },
 

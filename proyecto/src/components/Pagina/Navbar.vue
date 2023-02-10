@@ -18,6 +18,13 @@
             <v-btn text v-bind="attrs" v-on="on"
               ><v-icon>mdi-account</v-icon> {{ nombre }}
             </v-btn>
+            <v-btn icon @click="changeThemeColor">
+              <v-icon>{{
+                $vuetify.theme.dark
+                  ? "mdi-white-balance-sunny"
+                  : "mdi-weather-night"
+              }}</v-icon>
+            </v-btn>
           </template>
           <v-card>
             <v-list>
@@ -65,9 +72,8 @@
 
       <v-divider elevation="1"></v-divider>
 
-          
       <v-list shaped>
-        <v-list-item active-class="white--text"  link to="/">
+        <v-list-item active-class="white--text" link to="/">
           <v-list-item-icon>
             <v-icon>mdi-monitor-dashboard</v-icon>
           </v-list-item-icon>
@@ -127,6 +133,13 @@ export default {
       await axios.get("/sociedad/getPadres").then((result) => {
         this.menu[0].items = result.data;
       });
+    },
+    changeThemeColor() {
+      if (this.$vuetify.theme.dark === true) {
+        this.$vuetify.theme.dark = false;
+      } else {
+        this.$vuetify.theme.dark = true;
+      }
     },
     toRoute(nombre) {
       this.$router.push(nombre);

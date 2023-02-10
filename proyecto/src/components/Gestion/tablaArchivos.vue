@@ -31,8 +31,14 @@
       class="elevation-1"
       v-if="!isLoading"
     >
-      <template v-slot:[`item.diasAviso`]="{ item }">
-        {{ obtenerFechaAviso(item) }}
+      <template v-slot:[`item.fechaCambioEstado`]="{ item }">
+        {{ fechaFormateada(item.fechaCambioEstado)}}
+      </template>
+      <template v-slot:[`item.fechaEmision`]="{ item }">
+        {{ fechaFormateada(item.fechaEmision) }}
+      </template>
+      <template v-slot:[`item.fechaCaducidad`]="{ item }">
+        {{ fechaFormateada(item.fechaCaducidad) }}
       </template>
       <template v-slot:[`item.status`]="{ item }">
         <v-chip :color="getColor(item.status, item)" dark>
@@ -218,7 +224,15 @@
                         Día en que el archivo pasa a estado por vencer:
                         <b>{{ obtenerFecha(editedItem.diasAviso) }}</b>
                       </p>
-                      <p>Maxima Cantidad de dias de aviso: {{ fechaEm - 1 }}</p>
+                      <p>
+                        Días antes de la fecha de vencimiento:
+                        <b>{{calcularDias(editedItem.diasAviso,editedItem.fechaCaducidad) }}</b>
+                      </p>
+                      <p>
+                        Fecha de vencimiento:
+                        <b>{{fechaFormateada(editedItem.fechaCaducidad)}}</b>
+                      </p>
+                      <p>Maxima Cantidad de dias de aviso: <b>{{ fechaEm - 1 }}</b></p>
                     </v-card-text>
                   </v-card>
                   <v-btn color="primary" @click="e1 = 2" text> Atras </v-btn>
@@ -353,7 +367,7 @@ export default {
         text: "Fecha estado por vencer",
         sortable: true,
         align: "center",
-        value: "diasAviso",
+        value: "fechaCambioEstado",
       },
       { text: "Fecha Caducidad", value: "fechaCaducidad", align: "center" },
       { text: "Acciones", value: "actions", sortable: false, align: "center" },
@@ -376,6 +390,7 @@ export default {
         .toISOString()
         .substr(0, 10),
       fechaCaducidad: moment().add(1, "days").toISOString().substr(0, 10),
+      fechaCambioEstado: "",
       padre: "",
       abuelo: "",
       padreSuperior: "",
@@ -399,6 +414,7 @@ export default {
       )
         .toISOString()
         .substr(0, 10),
+      fechaCambioEstado: "",
       padre: "",
       abuelo: "",
       padreSuperior: "",
@@ -475,6 +491,15 @@ export default {
     this.initialize();
   },
   methods: {
+    fechaFormateada(fecha){
+      let fechaFormat = moment(fecha).format("DD/MM/YYYY")
+      return fechaFormat
+    },
+    calcularDias(dias,fechaCaducidad){
+      let fecha1 = moment(this.editedItem.fechaEmision).add(dias, "days")
+      let fecha2 = moment(fechaCaducidad)
+      return fecha2.diff(fecha1, "days");
+    },
     obtenerFechaAviso(item) {
       let fecha = moment(item.fechaEmision)
         .add(item.diasAviso, "days")
@@ -739,8 +764,10 @@ export default {
           this.editedItem.abuelo = this.padre.padre;
           this.editedItem.padreSuperior = this.padre.padreSuperior;
           this.editedItem.parametro = this.Parametro;
-          console.log("Fecha em: " + this.fechaEm);
-          console.log("Dias aviso: " + this.editedItem.diasAviso);
+          this.editedItem.fechaCambioEstado = moment().add(this.editedItem.diasAviso,"days")
+          // console.log("Fecha em: " + this.fechaEm);
+          // console.log("Dias aviso: " + this.editedItem.diasAviso);
+          
           this.postArchivo(this.editedItem);
         })
         .catch(() => {
