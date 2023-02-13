@@ -319,8 +319,8 @@ export default {
   },
   watch: {},
   created() {
-    // this.iniciarSociedad();
-    this.componentDidMount();
+    this.iniciarSociedad();
+    //this.componentDidMount();
     // this.iniciarCarpetas();
     // this.iniciarSubCarpetas();
   },
@@ -491,58 +491,6 @@ export default {
         return "orange";
       } else return "red";
     },
-    async componentDidMount() {
-      try {
-        const [request1, request2, request3] = await Promise.all([
-          axios.get("/sociedad/getPadres"),
-          axios.get("/carpeta/getAllFolders"),
-          axios.get("/subCarpeta/getAllSubFolders"),
-        ]);
-        this.sociedades = request1.data;
-        this.sociedades.unshift({ nombre: "Todo", _id: "" });
-        this.carpetas = request2.data;
-        this.todoCarpetas = request2.data;
-        this.subCarpetas = request3.data;
-        this.todoSubCarpetas = request3.data;
-        
-        await axios.get("archivo/allFiles").then((result) => {
-          result.data.forEach((element) => {
-            this.iniciarFile(element);
-          });
-          this.archivos = result.data;
-          this.isLoading = false;
-          let total = 0;
-          var porcentaje = 0;
-          var intPorcentaje = 0;
-          this.kpi.forEach((element) => {
-            element.porcentaje = 0;
-            if (element.id == 0) {
-              element.total = this.archivos.length;
-              total = this.archivos.length;
-              element.porcentaje = 100;
-            } else if (element.id == 3) {
-              element.total = this.contadorArchivos(this.archivos, 3);
-              porcentaje = (element.total / total) * 100;
-              intPorcentaje = Math.round(porcentaje);
-              element.porcentaje = intPorcentaje;
-            } else if (element.id == 2) {
-              element.total = this.contadorArchivos(this.archivos, 2);
-              porcentaje = (element.total / total) * 100;
-              intPorcentaje = Math.round(porcentaje);
-              element.porcentaje = intPorcentaje;
-            } else {
-              element.total = this.contadorArchivos(this.archivos, 1);
-              porcentaje = (element.total / total) * 100;
-              intPorcentaje = Math.round(porcentaje);
-              element.porcentaje = intPorcentaje;
-            }
-          });
-        });
-      } catch (err) {
-        console.log(err);
-      }
-    },
-
     async initialize() {
       await this.iniciarSociedad();
 
