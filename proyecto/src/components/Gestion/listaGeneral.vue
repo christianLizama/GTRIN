@@ -15,7 +15,12 @@
           <v-btn text color="blue accent-4" @click="limpiarFiltros()">
             Limpiar Filtros
           </v-btn>
-          <v-btn text color="blue accent-4" large @click.stop="showScheduleForm = true">
+          <v-btn
+            text
+            color="blue accent-4"
+            large
+            @click.stop="showScheduleForm = true"
+          >
             Enviar Trigger
           </v-btn>
         </v-card-title>
@@ -81,7 +86,6 @@
           class="elevation-1"
           :search="search"
         >
-
           <template v-slot:[`item.fechaCambioEstado`]="{ item }">
             {{ fechaFormateada(item.fechaCambioEstado) }}
           </template>
@@ -123,14 +127,13 @@
                   :json-data="archivos"
                   :labels="{
                     nombreSociedad: { title: 'Nombre Contenedor' },
-                    nombreCarpeta:{title:'Carpeta'},
-                    nombreSubCarpeta: {title: 'SubCarpeta'},
-                    archivo: {title: 'Archivo'},
+                    nombreCarpeta: { title: 'Carpeta' },
+                    nombreSubCarpeta: { title: 'SubCarpeta' },
+                    archivo: { title: 'Archivo' },
                     estado: { title: 'Status del documento' },
                     fechaEmision: { title: 'Fecha emision' },
-                    fechaCambioEstado: {title: 'Fecha de alerta'},
-                    fechaCaducidad: {title: 'Fecha Caducidad '}
-                    
+                    fechaCambioEstado: { title: 'Fecha de alerta' },
+                    fechaCaducidad: { title: 'Fecha Caducidad ' },
                   }"
                   csv-title="resumenGeneral"
                   :separator="';'"
@@ -150,7 +153,6 @@
       </v-card>
     </div>
     <trigger v-model="showScheduleForm"></trigger>
-
   </div>
 </template>
 
@@ -296,7 +298,6 @@ export default {
         value: "fechaCambioEstado",
       },
       { text: "Fecha Caducidad", value: "fechaCaducidad" },
-      
     ],
     message: "",
     archivos: [],
@@ -319,14 +320,14 @@ export default {
   watch: {},
   created() {
     // this.iniciarSociedad();
+    this.componentDidMount();
     // this.iniciarCarpetas();
     // this.iniciarSubCarpetas();
-    this.initialize();
   },
   methods: {
-    fechaFormateada(fecha){
-      let fechaFormat = moment(fecha).format("DD/MM/YYYY")
-      return fechaFormat
+    fechaFormateada(fecha) {
+      let fechaFormat = moment(fecha).format("DD/MM/YYYY");
+      return fechaFormat;
     },
     obtenerFechaAviso(item) {
       let fecha = moment(item.fechaEmision)
@@ -411,10 +412,56 @@ export default {
       return found.nombre;
     },
     async iniciarSociedad() {
-      await axios.get("/sociedad/getPadres").then((result) => {
-        this.sociedades = result.data;
-        this.sociedades.unshift({ nombre: "Todo", _id: "" });
-      });
+      await axios
+        .get("/sociedad/getPadres")
+        .then((result) => {
+          this.sociedades = result.data;
+          this.sociedades.unshift({ nombre: "Todo", _id: "" });
+          return axios.get("/carpeta/getAllFolders");
+        })
+        .then((result) => {
+          this.carpetas = result.data;
+          this.todoCarpetas = result.data;
+          return axios.get("/subCarpeta/getAllSubFolders");
+        })
+        .then((result) => {
+          this.subCarpetas = result.data;
+          this.todoSubCarpetas = result.data;
+          return axios.get("archivo/allFiles");
+        })
+        .then((result) => {
+          result.data.forEach((element) => {
+            this.iniciarFile(element);
+          });
+          this.archivos = result.data;
+          this.isLoading = false;
+          let total = 0;
+          var porcentaje = 0;
+          var intPorcentaje = 0;
+          this.kpi.forEach((element) => {
+            element.porcentaje = 0;
+            if (element.id == 0) {
+              element.total = this.archivos.length;
+              total = this.archivos.length;
+              element.porcentaje = 100;
+            } else if (element.id == 3) {
+              element.total = this.contadorArchivos(this.archivos, 3);
+              porcentaje = (element.total / total) * 100;
+              intPorcentaje = Math.round(porcentaje);
+              element.porcentaje = intPorcentaje;
+            } else if (element.id == 2) {
+              element.total = this.contadorArchivos(this.archivos, 2);
+              porcentaje = (element.total / total) * 100;
+              intPorcentaje = Math.round(porcentaje);
+              element.porcentaje = intPorcentaje;
+            } else {
+              element.total = this.contadorArchivos(this.archivos, 1);
+              porcentaje = (element.total / total) * 100;
+              intPorcentaje = Math.round(porcentaje);
+              element.porcentaje = intPorcentaje;
+            }
+          });
+        });
     },
     async iniciarCarpetas() {
       await axios.get("/carpeta/getAllFolders").then((result) => {
@@ -444,10 +491,60 @@ export default {
         return "orange";
       } else return "red";
     },
+    async componentDidMount() {
+      try {
+        const [request1, request2, request3] = await Promise.all([
+          axios.get("/sociedad/getPadres"),
+          axios.get("/carpeta/getAllFolders"),
+          axios.get("/subCarpeta/getAllSubFolders"),
+        ]);
+        this.sociedades = request1.data;
+        this.sociedades.unshift({ nombre: "Todo", _id: "" });
+        this.carpetas = request2.data;
+        this.todoCarpetas = request2.data;
+        this.subCarpetas = request3.data;
+        this.todoSubCarpetas = request3.data;
+        
+        await axios.get("archivo/allFiles").then((result) => {
+          result.data.forEach((element) => {
+            this.iniciarFile(element);
+          });
+          this.archivos = result.data;
+          this.isLoading = false;
+          let total = 0;
+          var porcentaje = 0;
+          var intPorcentaje = 0;
+          this.kpi.forEach((element) => {
+            element.porcentaje = 0;
+            if (element.id == 0) {
+              element.total = this.archivos.length;
+              total = this.archivos.length;
+              element.porcentaje = 100;
+            } else if (element.id == 3) {
+              element.total = this.contadorArchivos(this.archivos, 3);
+              porcentaje = (element.total / total) * 100;
+              intPorcentaje = Math.round(porcentaje);
+              element.porcentaje = intPorcentaje;
+            } else if (element.id == 2) {
+              element.total = this.contadorArchivos(this.archivos, 2);
+              porcentaje = (element.total / total) * 100;
+              intPorcentaje = Math.round(porcentaje);
+              element.porcentaje = intPorcentaje;
+            } else {
+              element.total = this.contadorArchivos(this.archivos, 1);
+              porcentaje = (element.total / total) * 100;
+              intPorcentaje = Math.round(porcentaje);
+              element.porcentaje = intPorcentaje;
+            }
+          });
+        });
+      } catch (err) {
+        console.log(err);
+      }
+    },
+
     async initialize() {
-      await this.iniciarCarpetas()
-      await this.iniciarSociedad()
-      await this.iniciarSubCarpetas()
+      await this.iniciarSociedad();
 
       await axios.get("archivo/allFiles").then((result) => {
         result.data.forEach((element) => {
@@ -459,7 +556,7 @@ export default {
         var porcentaje = 0;
         var intPorcentaje = 0;
         this.kpi.forEach((element) => {
-          element.porcentaje = 0
+          element.porcentaje = 0;
           if (element.id == 0) {
             element.total = this.archivos.length;
             total = this.archivos.length;
@@ -484,9 +581,11 @@ export default {
       });
     },
     iniciarFile(element) {
-      element.nombreSociedad = this.obtenerNombreSociedad(element.padreSuperior)
-      element.nombreCarpeta = this.obtenerNombreCarpeta(element.abuelo)
-      element.nombreSubCarpeta = this.obtenerNombreSubCarpeta(element.padre)
+      element.nombreSociedad = this.obtenerNombreSociedad(
+        element.padreSuperior
+      );
+      element.nombreCarpeta = this.obtenerNombreCarpeta(element.abuelo);
+      element.nombreSubCarpeta = this.obtenerNombreSubCarpeta(element.padre);
       let fechaCrea = element.fechaCreacion.split("T");
       let fechaEmi = element.fechaEmision.split("T");
       let fechaCadu = element.fechaCaducidad.split("T");
@@ -494,7 +593,7 @@ export default {
       element.fechaCreacion = fechaCrea[0];
       element.fechaEmision = fechaEmi[0];
       element.fechaCaducidad = fechaCadu[0];
-      element.fechaCambioEstado = fechaAviso[0]
+      element.fechaCambioEstado = fechaAviso[0];
 
       var today = new Date();
       var now = today.toISOString();
@@ -515,37 +614,41 @@ export default {
       // console.log("Fecha que cambia de estado: " + moment(element.fechaEmision).add(element.diasAviso,"days").format("DD/MM/YYYY"))
       // console.log("Dias de vigencia: " + element.diasVigencia);
       // console.log("Dias restantes: " + element.diasRestantes);
-  
-      let dateArray = element.fechaEmision.split("-")
-      var diaCambio2 = new Date(dateArray[0],dateArray[1]-1,dateArray[2]);
-      diaCambio2.setDate(diaCambio2.getDate()+element.diasAviso)
-      diaCambio2.setHours(0,0,0,0)
 
-      let date2Array = element.fechaCaducidad.split("-")
-      var fechaCaducidadAux = new Date(date2Array[0],date2Array[1]-1,date2Array[2]);
-      fechaCaducidadAux.setHours(0,0,0,0)
-      
+      let dateArray = element.fechaEmision.split("-");
+      var diaCambio2 = new Date(dateArray[0], dateArray[1] - 1, dateArray[2]);
+      diaCambio2.setDate(diaCambio2.getDate() + element.diasAviso);
+      diaCambio2.setHours(0, 0, 0, 0);
+
+      let date2Array = element.fechaCaducidad.split("-");
+      var fechaCaducidadAux = new Date(
+        date2Array[0],
+        date2Array[1] - 1,
+        date2Array[2]
+      );
+      fechaCaducidadAux.setHours(0, 0, 0, 0);
+
       // console.log("--------------------");
       var hoy = new Date();
-      hoy.setHours(0,0,0,0)
+      hoy.setHours(0, 0, 0, 0);
 
       if (diasRestantes < 1) {
         element.diasRestantes = 0;
       }
       //Si el día de cambio de estado es igual al día de hoy pasa a estado por vencer
-      if(diaCambio2.getTime() <= hoy.getTime() && diasRestantes>=1){
-        element.status = 2
-        element.estado = "Por Vencer"
+      if (diaCambio2.getTime() <= hoy.getTime() && diasRestantes >= 1) {
+        element.status = 2;
+        element.estado = "Por Vencer";
       }
       //Si el día de cambio de estado es despues del día de hoy esta vigente
-      else if(diaCambio2.getTime() > hoy.getTime()){
-        element.status = 3
-        element.estado = "Vigente"
+      else if (diaCambio2.getTime() > hoy.getTime()) {
+        element.status = 3;
+        element.estado = "Vigente";
       }
       //Quiere decir que el día de cambio no es ni igual a hoy, ni mayor que hoy por lo que puede estar vencido
-      else if (diaCambio2.getTime() <= fechaCaducidadAux.getTime()){
-        element.status = 1 
-        element.estado = "Vencido"
+      else if (diaCambio2.getTime() <= fechaCaducidadAux.getTime()) {
+        element.status = 1;
+        element.estado = "Vencido";
       }
     },
 
