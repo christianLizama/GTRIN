@@ -455,6 +455,7 @@ export default {
         var porcentaje = 0;
         var intPorcentaje = 0;
         this.kpi.forEach((element) => {
+          element.porcentaje = 0
           if (element.id == 0) {
             element.total = this.archivos.length;
             total = this.archivos.length;

@@ -84,8 +84,16 @@
               <snackbar2 ref="childComponent2"></snackbar2>
               <!-- <v-alert v-model="rechazado" dense outlined type="error">
                 {{ message }}
-              </v-alert> -->
-              <v-stepper-header>
+              </v-alert> -->  
+              <v-toolbar dense dark>
+                <v-btn icon @click="close">
+                    <v-icon>mdi-close</v-icon>
+                </v-btn>
+                <v-toolbar-title> Subir un archivo</v-toolbar-title>
+              </v-toolbar>
+            
+              <v-stepper-header >
+                  
                 <v-stepper-step :complete="e1 > 1" step="1">
                   Nombre archivo
                 </v-stepper-step>

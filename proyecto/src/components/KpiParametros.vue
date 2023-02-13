@@ -32,7 +32,7 @@
             <v-list-item three-line>
               <v-list-item-content>
                 <h1>Archivos faltantes</h1>
-                <v-list-item-title class="text-h7 mb-1">
+                <v-list-item-title class="text-h5 mb-1">
                   {{ archivosRequeridos - archivosSubidos }}
                 </v-list-item-title>
               </v-list-item-content>
@@ -74,7 +74,7 @@
             <v-list-item three-line>
               <v-list-item-content>
                 <h1>Archivos Subidos</h1>
-                <v-list-item-title class="text-h7 mb-1">
+                <v-list-item-title class="text-h5 mb-1">
                   {{ archivosSubidos }}
                 </v-list-item-title>
               </v-list-item-content>

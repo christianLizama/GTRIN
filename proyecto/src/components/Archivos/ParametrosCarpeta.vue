@@ -57,7 +57,7 @@
                   <v-btn icon dark @click="dialog = !dialog">
                     <v-icon>mdi-close</v-icon>
                   </v-btn>
-                  {{ parametroNombre }}
+                  {{   parametroNombre }}
                 </v-card-title>
                 <tabla-archivos
                   :key="parametroID"
@@ -162,14 +162,15 @@ export default {
           },
         };
         await axios.get("archivo/countFiles", request).then((result) => {
-          const nuevo = {
-            _id: parametro._id,
-            value: parametro.value,
-            cantidad: result.data,
-          };
-          let index = parametros.indexOf(parametro);
-          Object.assign(parametros[index], nuevo);
-          this.parametros.push(parametro);
+          // const nuevo = {
+          //   _id: parametro._id,
+          //   value: parametro.value,
+          //   cantidad: result.data,
+          // };
+          // let index = parametros.indexOf(parametro);
+          // Object.assign(parametros[index], nuevo);
+          // this.parametros.push(parametro);
+          parametro.cantidad = result.data;
           if (parametro.option) {
             if (parametro.cantidad > 0) {
               this.archivosSubidos = this.archivosSubidos + 1;
@@ -182,6 +183,7 @@ export default {
     async obtenerPadreSuperior(id) {
       await axios.get("carpeta/query?_id=" + id).then((result) => {
         this.padre = result.data;
+        this.parametros = result.data.parametros
         this.contar(result.data.parametros, result.data._id);
       });
     },
