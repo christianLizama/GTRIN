@@ -162,14 +162,6 @@ export default {
           },
         };
         await axios.get("archivo/countFiles", request).then((result) => {
-          // const nuevo = {
-          //   _id: parametro._id,
-          //   value: parametro.value,
-          //   cantidad: result.data,
-          // };
-          // let index = parametros.indexOf(parametro);
-          // Object.assign(parametros[index], nuevo);
-          // this.parametros.push(parametro);
           parametro.cantidad = result.data;
           if (parametro.option) {
             if (parametro.cantidad > 0) {

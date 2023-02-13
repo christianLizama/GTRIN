@@ -18,7 +18,7 @@
                 style="height: 100%"
               >
                 <v-progress-circular
-                  :rotate="90"
+                  :rotate="-90"
                   :size="100"
                   :width="10"
                   :value="100 - calularPorcentaje()"
@@ -60,10 +60,10 @@
                 style="height: 100%"
               >
                 <v-progress-circular
-                  :rotate="90"
+                  :rotate="-90"
                   :size="100"
                   :width="10"
-                  :value="100 - calularPorcentaje()"
+                  :value="calularPorcentaje()"
                   color="white"
                 >
                   {{ calularPorcentaje() }}%

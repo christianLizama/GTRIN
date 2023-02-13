@@ -60,8 +60,6 @@ const countFiles = async (req, res, next) => {
     const id = req.query._id;
     const idPadre = req.query.padre;
 
-    console.log("soy el id:" + id);
-    console.log("soy el padre: " + idPadre);
     const reg = await archivo.find({ parametro: id, padre: idPadre }).count();
     res.status(200).json(reg);
   } catch (e) {
@@ -133,6 +131,57 @@ const remove = async (req, res, next) => {
   }
 };
 
+function deleteFiles(files, callback) {
+  const directoryPath = __basedir + "/uploads/";
+  if(files.length>0){
+    files.forEach((element) => {
+      fs.unlink(directoryPath + element.archivo, (err) => {
+        if (err) {
+          callback(2);
+          return;
+        }
+      });
+    });
+    callback(3);
+  }
+  else{
+    callback(1)
+  }
+}
+
+//Metodo para eliminar todos los archivos de una sub carpeta
+const removeAll = async (req, res, next) => {
+  try {
+    const { id } = req.body;
+    const archivos = await archivo.find({padre: id});
+    const reg = await archivo.deleteMany({ padre: id });
+    if (reg) {
+      deleteFiles(archivos, function(err) {
+        if (err==1) {
+          res.status(200).send({
+            message: "No hay archivos"
+          });
+        }
+        else if(err==2){
+          res.status(500).send({
+            message: "Ocurrio un error al eliminar los archivos" + err
+          });
+        }
+        else {
+          res.status(200).send({
+            message: "Archivos eliminados exitosamente"
+          })
+        }
+      });
+    }
+  } catch (e) {
+    res.status(500).send({
+      message: "Ocurrio un error",
+    });
+    next(e);
+  }
+};
+
 module.exports = {
   add,
   query,
@@ -141,4 +190,5 @@ module.exports = {
   getArchivos,
   getAllFiles,
   countFiles,
+  removeAll
 };

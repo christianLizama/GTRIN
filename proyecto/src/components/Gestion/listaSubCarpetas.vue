@@ -1,7 +1,5 @@
 <template>
   <v-card>
-    <!-- <p>{{ finds }}</p>
-    <p>{{ primerosParametros}}</p> -->
     <v-toolbar dense dark>
       <v-btn @click="atras" big icon>
         <v-icon>mdi-chevron-left</v-icon>
@@ -56,7 +54,6 @@
     <loading texto="Cargando Datos" v-if="isLoading"></loading>
     <v-list v-if="!isLoading" two-line subheader>
       <v-subheader inset> Sub-Carpetas </v-subheader>
-
       <v-list-item
         v-for="item in resultadoBusqueda"
         :key="item.nombre"
@@ -71,13 +68,14 @@
           }}</v-list-item-subtitle>
         </v-list-item-content>
 
+        <progress-file :archivosRequeridos="archivosRequeridos" :archivosSubidos="item.archivosSubidos" ></progress-file>
+
         <v-menu left top offset-y>
           <template v-slot:activator="{ on, attrs }">
             <v-btn icon v-bind="attrs" v-on="on">
               <v-icon> mdi-cog </v-icon>
             </v-btn>
           </template>
-
           <v-list nav>
             <v-list-item
               @click="deleteOrEdit(item, index)"
@@ -151,7 +149,7 @@
     <v-dialog v-model="showDialog" max-width="500px">
       <v-card>
         <v-card-title class="white--text text-h5 black lighten-2">
-          <v-btn icon dark @click="showDialog =! showDialog">
+          <v-btn icon dark @click="showDialog = !showDialog">
             <v-icon>mdi-close</v-icon>
           </v-btn>
           {{ formTitle }}
@@ -184,7 +182,7 @@
       </v-card>
       <v-card v-if="!isUpload">
         <v-card-title class="white--text text-h5 black lighten-2">
-          <v-btn icon dark @click="dialogParam =! dialogParam">
+          <v-btn icon dark @click="dialogParam = !dialogParam">
             <v-icon>mdi-close</v-icon>
           </v-btn>
           {{ encabezado }}
@@ -263,8 +261,9 @@
 import axios from "axios";
 import loading from "../loading.vue";
 import Snackbar from "../snackbar.vue";
+import ProgressFile from '../ProgressFile.vue';
 export default {
-  components: { loading, Snackbar },
+  components: { loading, Snackbar, ProgressFile },
   data: () => ({
     searchClosed: true,
     timeout: 7500,
@@ -283,6 +282,7 @@ export default {
     dialogDelete: false,
     dialogFindDelete: false,
     primerosParametros: [],
+    archivosRequeridos: 0,
     options: [true, false],
     items: [
       { title: "Editar", icon: "mdi-pencil", metodo: "editItem" },
@@ -455,11 +455,18 @@ export default {
           this.actualizarHijos();
         });
     },
+    async deleteAllFiles(idPadre) {
+      var data = {
+        id: idPadre,
+      };
+      await axios.delete("archivo/removeAll", { data }).then((result) => {
+        console.log(result.data);
+      });
+    },
     async deleteSubFolder(item) {
-      console.log(item);
       await axios.delete("/subCarpeta/remove/" + item._id).then((result) => {
-        console.log(result);
         this.actualizarHijos();
+        this.deleteAllFiles(result.data._id);
         //this.deleteFiles(item);
       });
     },
@@ -551,6 +558,35 @@ export default {
           console.log(e.response);
         });
     },
+    contarRequeridos(parametros){
+      parametros.forEach(element => {
+        if(element.option){
+          this.archivosRequeridos = this.archivosRequeridos + 1;
+        }
+      });
+    },
+    async contar(subCarpeta, parametros) {
+        let contador = 0;
+        subCarpeta.archivosSubidos = 0;
+        parametros.forEach(async (parametro) => {
+          const request = {
+            params: {
+              _id: parametro._id,
+              padre: subCarpeta._id,
+            },
+          };
+          await axios.get("archivo/countFiles", request).then((result) => {
+            parametro.cantidad = result.data;
+            if (parametro.option) {
+              if (parametro.cantidad > 0) {
+                contador = contador + 1;
+              }
+            }
+          });
+          subCarpeta.archivosSubidos = contador
+        });
+    },
+
     async initialize() {
       await axios
         .get("carpeta/query?_id=" + this.$route.params.Folder)
@@ -596,6 +632,10 @@ export default {
       await axios
         .get("carpeta/querysubFolders?_id=" + id)
         .then((res) => {
+          this.contarRequeridos(this.primerosParametros)
+          res.data.forEach(element => {
+            this.contar(element, this.primerosParametros);
+          });
           this.carpetas = res.data;
           this.isLoading = false;
           // if (this.carpetas.length >= 1) {
@@ -613,6 +653,7 @@ export default {
           carpeta: nuevaCarpeta,
         })
         .then((res) => {
+          res.data.archivosSubidos = 0
           this.carpetas.push(res.data);
           this.actualizarHijos();
         })

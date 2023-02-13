@@ -17,5 +17,6 @@ router.delete('/remove/', archivo.remove)
 router.get('/getArchivos', archivo.getArchivos)
 router.get('/allFiles', archivo.getAllFiles)
 router.get('/countFiles', archivo.countFiles)
+router.delete('/removeAll/',archivo.removeAll)
 
 module.exports = router;
