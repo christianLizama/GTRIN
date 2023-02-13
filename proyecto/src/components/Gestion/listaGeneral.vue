@@ -319,8 +319,8 @@ export default {
   },
   watch: {},
   created() {
-    this.iniciarSociedad();
-    //this.componentDidMount();
+    //this.iniciarSociedad();
+    this.componentDidMount();
     // this.iniciarCarpetas();
     // this.iniciarSubCarpetas();
   },
@@ -398,19 +398,74 @@ export default {
       this.subCarpetaSelecionada = Object.assign({}, this.defaultFilter);
       this.estadoSeleccionado = Object.assign({}, this.defaultStatusFilter);
     },
-    obtenerNombreSociedad(itemId) {
-      let found = this.sociedades.find((e) => e._id === itemId);
+    obtenerNombreSociedad(itemId,sociedades) {
+      let found = sociedades.find((e) => e._id === itemId);
       let nombreSociedad = found.nombre;
       return nombreSociedad;
     },
-    obtenerNombreCarpeta(itemId) {
-      var found = this.todoCarpetas.find((e) => e._id === itemId);
-      return found.nombre;
+    obtenerNombreCarpeta(itemId,carpetas) {
+      var found = carpetas.find((e) => e._id === itemId);
+      let nombreCarpeta = found.nombre;
+      return nombreCarpeta;
     },
-    obtenerNombreSubCarpeta(itemId) {
-      var found = this.todoSubCarpetas.find((e) => e._id === itemId);
-      return found.nombre;
+    obtenerNombreSubCarpeta(itemId,subCarpetas) {
+      var found = subCarpetas.find((e) => e._id === itemId);
+      let nombreSubCarpeta = found.nombre
+      return nombreSubCarpeta;
     },
+
+    async componentDidMount() {
+      try {
+        const [padres, carpetas, subCarpetas] = await Promise.all([
+          axios.get("/sociedad/getPadres"),
+          axios.get("/carpeta/getAllFolders"),
+          axios.get("/subCarpeta/getAllSubFolders"),
+        ])
+        this.sociedades = padres.data;
+        this.sociedades.unshift({ nombre: "Todo", _id: "" });
+        this.carpetas = carpetas.data;
+        this.todoCarpetas = carpetas.data;
+        this.subCarpetas = subCarpetas.data;
+        this.todoSubCarpetas = subCarpetas.data;
+        await axios.get("archivo/allFiles").then((result) => {
+          result.data.forEach((element) => {
+            this.iniciarFile(element,padres.data,carpetas.data,subCarpetas.data);
+          });
+          this.archivos = result.data;
+          this.isLoading = false;
+          let total = 0;
+          var porcentaje = 0;
+          var intPorcentaje = 0;
+          this.kpi.forEach((element) => {
+            element.porcentaje = 0;
+            if (element.id == 0) {
+              element.total = this.archivos.length;
+              total = this.archivos.length;
+              element.porcentaje = 100;
+            } else if (element.id == 3) {
+              element.total = this.contadorArchivos(this.archivos, 3);
+              porcentaje = (element.total / total) * 100;
+              intPorcentaje = Math.round(porcentaje);
+              element.porcentaje = intPorcentaje;
+            } else if (element.id == 2) {
+              element.total = this.contadorArchivos(this.archivos, 2);
+              porcentaje = (element.total / total) * 100;
+              intPorcentaje = Math.round(porcentaje);
+              element.porcentaje = intPorcentaje;
+            } else {
+              element.total = this.contadorArchivos(this.archivos, 1);
+              porcentaje = (element.total / total) * 100;
+              intPorcentaje = Math.round(porcentaje);
+              element.porcentaje = intPorcentaje;
+            }
+          });
+        });
+      } catch (err) {
+        console.log(err);
+      }
+    },
+
+
     async iniciarSociedad() {
       await axios
         .get("/sociedad/getPadres")
@@ -528,12 +583,10 @@ export default {
         });
       });
     },
-    iniciarFile(element) {
-      element.nombreSociedad = this.obtenerNombreSociedad(
-        element.padreSuperior
-      );
-      element.nombreCarpeta = this.obtenerNombreCarpeta(element.abuelo);
-      element.nombreSubCarpeta = this.obtenerNombreSubCarpeta(element.padre);
+    iniciarFile(element,padres,carpetas,subCarpetas) {
+      element.nombreSociedad = this.obtenerNombreSociedad(element.padreSuperior,padres);
+      element.nombreCarpeta = this.obtenerNombreCarpeta(element.abuelo,carpetas);
+      element.nombreSubCarpeta = this.obtenerNombreSubCarpeta(element.padre,subCarpetas);
       let fechaCrea = element.fechaCreacion.split("T");
       let fechaEmi = element.fechaEmision.split("T");
       let fechaCadu = element.fechaCaducidad.split("T");
