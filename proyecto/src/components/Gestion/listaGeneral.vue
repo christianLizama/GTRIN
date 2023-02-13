@@ -318,9 +318,9 @@ export default {
   },
   watch: {},
   created() {
-    this.iniciarSociedad();
-    this.iniciarCarpetas();
-    this.iniciarSubCarpetas();
+    // this.iniciarSociedad();
+    // this.iniciarCarpetas();
+    // this.iniciarSubCarpetas();
     this.initialize();
   },
   methods: {
@@ -445,6 +445,10 @@ export default {
       } else return "red";
     },
     async initialize() {
+      await this.iniciarCarpetas()
+      await this.iniciarSociedad()
+      await this.iniciarSubCarpetas()
+
       await axios.get("archivo/allFiles").then((result) => {
         result.data.forEach((element) => {
           this.iniciarFile(element);
