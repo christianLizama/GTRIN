@@ -53,6 +53,12 @@
             <v-spacer></v-spacer>
             <v-dialog v-model="dialog" max-width="80%">
               <v-card>
+                <v-card-title class="white--text text-h5 black lighten-2">
+                  <v-btn icon dark @click="dialog = !dialog">
+                    <v-icon>mdi-close</v-icon>
+                  </v-btn>
+                  {{ parametroNombre }}
+                </v-card-title>
                 <tabla-archivos
                   :key="parametroID"
                   :Parametro="parametroID"

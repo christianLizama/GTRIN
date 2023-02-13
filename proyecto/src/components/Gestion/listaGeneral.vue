@@ -4,7 +4,6 @@
       <v-toolbar-title class="white--text"> Dashboard </v-toolbar-title>
       <v-spacer></v-spacer>
     </v-toolbar>
-
     <loading v-if="isLoading" texto="Obteniendo información"></loading>
     <v-container v-if="!isLoading" :fluid="true">
       <Kpi :items="kpi"></Kpi>
@@ -82,9 +81,6 @@
           class="elevation-1"
           :search="search"
         >
-          <template v-slot:[`item.padreSuperior`]="{ item }">
-            {{ obtenerNombreSociedad(item.padreSuperior) }}
-          </template>
 
           <template v-slot:[`item.fechaCambioEstado`]="{ item }">
             {{ fechaFormateada(item.fechaCambioEstado) }}
@@ -94,14 +90,6 @@
           </template>
           <template v-slot:[`item.fechaCaducidad`]="{ item }">
             {{ fechaFormateada(item.fechaCaducidad) }}
-          </template>
-
-          <template v-slot:[`item.abuelo`]="{ item }">
-            {{ obtenerNombreCarpeta(item.abuelo) }}
-          </template>
-
-          <template v-slot:[`item.padre`]="{ item }">
-            {{ obtenerNombreSubCarpeta(item.padre) }}
           </template>
 
           <template v-slot:[`item.status`]="{ item }">
@@ -144,7 +132,7 @@
                     fechaCaducidad: {title: 'Fecha Caducidad '}
                     
                   }"
-                  csv-title="archivo"
+                  csv-title="resumenGeneral"
                   :separator="';'"
                 >
                   <v-btn icon>
@@ -260,19 +248,19 @@ export default {
         text: "Sociedad",
         align: "start",
         sortable: true,
-        value: "padreSuperior",
+        value: "nombreSociedad",
       },
       {
         text: "Carpeta",
         align: "start",
         sortable: true,
-        value: "abuelo",
+        value: "nombreCarpeta",
       },
       {
         text: "SubCarpeta",
         align: "start",
         sortable: true,
-        value: "padre",
+        value: "nombreSubCarpeta",
       },
       {
         text: "Nombre",
@@ -286,7 +274,6 @@ export default {
         sortable: true,
         value: "status",
       },
-      
       {
         text: "Dias de vigencia archivo",
         align: "center",
@@ -459,7 +446,6 @@ export default {
     },
     async initialize() {
       await axios.get("archivo/allFiles").then((result) => {
-        console.log(result.data)
         result.data.forEach((element) => {
           this.iniciarFile(element);
         });

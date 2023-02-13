@@ -1,6 +1,5 @@
 <template>
   <div>
-    <v-overlay :value="overlay"> </v-overlay>
     <v-container>
       <v-row class="fill-height" align-content="center" justify="center">
         <v-col class="text-subtitle-1 text-center" cols="12">
@@ -23,7 +22,6 @@
 export default {
   props: {
     texto: String,
-    overlay: Boolean,
   },
   data: () => ({}),
   watch: {},

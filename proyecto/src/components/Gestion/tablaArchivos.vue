@@ -1,28 +1,13 @@
 <template>
   <div>
     <snackbar ref="childComponent"></snackbar>
-    <v-alert v-model="aceptado2" dense text type="success">
-      {{ alerta }}
-    </v-alert>
-    <v-alert v-model="rechazado2" dense outlined type="error">
-      {{ alerta }}
-    </v-alert>
-    <v-toolbar dense dark>
+    <!-- <v-btn icon dark @click="show = false">
+          <v-icon>mdi-close</v-icon>
+      </v-btn>
       <v-toolbar-title class="white--text">
         {{ nombreParametro }}
-      </v-toolbar-title>
-      <v-spacer></v-spacer>
+      </v-toolbar-title> -->
 
-      <v-text-field
-        v-model="busqueda"
-        label="Buscador"
-        hide-details
-        single-line
-        filled
-        prepend-inner-icon="mdi-magnify"
-        class="shrink"
-      ></v-text-field>
-    </v-toolbar>
     <loading texto="Cargando Datos" v-if="isLoading"></loading>
     <v-data-table
       :headers="headers"
@@ -32,7 +17,7 @@
       v-if="!isLoading"
     >
       <template v-slot:[`item.fechaCambioEstado`]="{ item }">
-        {{ fechaFormateada(item.fechaCambioEstado)}}
+        {{ fechaFormateada(item.fechaCambioEstado) }}
       </template>
       <template v-slot:[`item.fechaEmision`]="{ item }">
         {{ fechaFormateada(item.fechaEmision) }}
@@ -64,6 +49,7 @@
               <v-btn icon v-bind="attrs" v-on="on">
                 <v-icon color="blue">mdi-file-document-plus-outline</v-icon>
               </v-btn>
+
               <vue-json-to-csv
                 :json-data="archivos"
                 :labels="{
@@ -78,6 +64,19 @@
                   <v-icon color="green">mdi-microsoft-excel</v-icon></v-btn
                 >
               </vue-json-to-csv>
+              <v-text-field
+                @focus="searchClosed = false"
+                @blur="searchClosed = true"
+                v-model="busqueda"
+                clearable
+                dense
+                filled
+                rounded
+                placeholder="Buscar categoria"
+                prepend-inner-icon="mdi-magnify"
+                class="pt-6 expanding-search"
+                :class="{ closed: searchClosed && !busqueda }"
+              ></v-text-field>
             </template>
 
             <loading texto="Subiendo Archivo" v-if="isUpload"></loading>
@@ -118,6 +117,7 @@
                         </v-col>
                         <v-col v-if="editedIndex == -1" cols="12" sm="6" md="4">
                           <v-file-input
+                            v-model="currentFile"
                             prepend-icon="mdi-tray-arrow-up"
                             show-size
                             label="Seleccione un archivo"
@@ -226,13 +226,21 @@
                       </p>
                       <p>
                         Días antes de la fecha de vencimiento:
-                        <b>{{calcularDias(editedItem.diasAviso,editedItem.fechaCaducidad) }}</b>
+                        <b>{{
+                          calcularDias(
+                            editedItem.diasAviso,
+                            editedItem.fechaCaducidad
+                          )
+                        }}</b>
                       </p>
                       <p>
                         Fecha de vencimiento:
-                        <b>{{fechaFormateada(editedItem.fechaCaducidad)}}</b>
+                        <b>{{ fechaFormateada(editedItem.fechaCaducidad) }}</b>
                       </p>
-                      <p>Maxima Cantidad de dias de aviso: <b>{{ fechaEm - 1 }}</b></p>
+                      <p>
+                        Maxima Cantidad de dias de aviso:
+                        <b>{{ fechaEm - 1 }}</b>
+                      </p>
                     </v-card-text>
                   </v-card>
                   <v-btn color="primary" @click="e1 = 2" text> Atras </v-btn>
@@ -310,6 +318,7 @@ export default {
     nombreParametro: String,
   },
   data: () => ({
+    searchClosed: true,
     alerta: "",
     e1: 1,
     link: process.env.VUE_APP_SERVER_URL,
@@ -329,9 +338,9 @@ export default {
     menu: false,
     menu2: false,
     items: [
-      { title: "Editar", icon: "mdi-pencil"},
+      { title: "Editar", icon: "mdi-pencil" },
       { title: "Eliminar", icon: "mdi-delete" },
-      { title: "Descargar", icon: "mdi-download"}
+      { title: "Descargar", icon: "mdi-download" },
     ],
     headers: [
       {
@@ -491,13 +500,13 @@ export default {
     this.initialize();
   },
   methods: {
-    fechaFormateada(fecha){
-      let fechaFormat = moment(fecha).format("DD/MM/YYYY")
-      return fechaFormat
+    fechaFormateada(fecha) {
+      let fechaFormat = moment(fecha).format("DD/MM/YYYY");
+      return fechaFormat;
     },
-    calcularDias(dias,fechaCaducidad){
-      let fecha1 = moment(this.editedItem.fechaEmision).add(dias, "days")
-      let fecha2 = moment(fechaCaducidad)
+    calcularDias(dias, fechaCaducidad) {
+      let fecha1 = moment(this.editedItem.fechaEmision).add(dias, "days");
+      let fecha2 = moment(fechaCaducidad);
       return fecha2.diff(fecha1, "days");
     },
     obtenerFechaAviso(item) {
@@ -511,14 +520,12 @@ export default {
         this.obtenerDiferencia(
           this.editedItem.fechaEmision,
           this.editedItem.fechaCaducidad
-        ) == 0
-      
-        ||
+        ) == 0 ||
         this.obtenerDiferencia(
           this.editedItem.fechaEmision,
           this.editedItem.fechaCaducidad
         ) < 0
-        ) {
+      ) {
         this.editedItem.fechaCaducidad = moment(this.editedItem.fechaEmision)
           .add(1, "days")
           .toISOString()
@@ -546,7 +553,7 @@ export default {
         });
     },
     deleteOrEdit(item, opcion) {
-      console.log(opcion)
+      console.log(opcion);
       opcion = opcion + 1;
       //Si es editar
       if (opcion == 1) {
@@ -555,9 +562,8 @@ export default {
       //eliminar
       else if (opcion == 2) {
         this.deleteItem(item);
-      }
-      else if(opcion == 3){
-        this.downloadFile(item.archivo)
+      } else if (opcion == 3) {
+        this.downloadFile(item.archivo);
       }
     },
     obtenerDiferencia(fechaEmision, fechaVencimiento) {
@@ -764,10 +770,13 @@ export default {
           this.editedItem.abuelo = this.padre.padre;
           this.editedItem.padreSuperior = this.padre.padreSuperior;
           this.editedItem.parametro = this.Parametro;
-          this.editedItem.fechaCambioEstado = moment().add(this.editedItem.diasAviso,"days")
+          this.editedItem.fechaCambioEstado = moment().add(
+            this.editedItem.diasAviso,
+            "days"
+          );
           // console.log("Fecha em: " + this.fechaEm);
           // console.log("Dias aviso: " + this.editedItem.diasAviso);
-          
+
           this.postArchivo(this.editedItem);
         })
         .catch(() => {
@@ -865,6 +874,7 @@ export default {
     close() {
       this.dialog = false;
       this.e1 = 1;
+      this.currentFile = undefined;
       this.$nextTick(() => {
         this.editedItem = Object.assign({}, this.defaultItem);
         this.editedIndex = -1;
@@ -932,4 +942,17 @@ export default {
 .texto {
   text-overflow: ellipsis;
 }
+</style>
+
+<style lang="sass">
+.v-input.expanding-search
+  transition: max-width 0.3s
+  .v-input__slot
+    cursor: pointer !important
+    &before, &:after
+      border-color: transparent !important
+  &.closed
+    max-width: 50px
+    .v-input__slot
+      background-color: transparent !important
 </style>

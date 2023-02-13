@@ -106,7 +106,12 @@
 
     <v-dialog v-model="showDialog" max-width="500px">
       <v-card>
-        <v-card-title> {{ formTitle }}</v-card-title>
+        <v-card-title class="white--text text-h5 black lighten-2">
+          <v-btn icon dark @click="showDialog =! showDialog">
+            <v-icon>mdi-close</v-icon>
+          </v-btn>
+          {{ formTitle }}
+        </v-card-title>
         <v-card-text>
           <v-text-field
             v-model="editedItem.nombre"

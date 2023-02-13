@@ -150,7 +150,13 @@
     </v-dialog>
     <v-dialog v-model="showDialog" max-width="500px">
       <v-card>
-        <v-card-title> {{ formTitle }}</v-card-title>
+        <v-card-title class="white--text text-h5 black lighten-2">
+          <v-btn icon dark @click="showDialog =! showDialog">
+            <v-icon>mdi-close</v-icon>
+          </v-btn>
+          {{ formTitle }}
+        </v-card-title>
+
         <v-card-text>
           <v-text-field
             v-model="editedItem.nombre"
@@ -177,7 +183,13 @@
         ></loading>
       </v-card>
       <v-card v-if="!isUpload">
-        <v-card-title>{{ encabezado }}</v-card-title>
+        <v-card-title class="white--text text-h5 black lighten-2">
+          <v-btn icon dark @click="dialogParam =! dialogParam">
+            <v-icon>mdi-close</v-icon>
+          </v-btn>
+          {{ encabezado }}
+        </v-card-title>
+
         <v-card-text>
           <!-- <h3>Apartados a controlar: *</h3> -->
           <h4>
@@ -201,10 +213,10 @@
                     return-object
                   >
                     <template slot="item" slot-scope="data">
-                      {{yesOrNo(data.item)}}
+                      {{ yesOrNo(data.item) }}
                     </template>
                     <template slot="selection" slot-scope="data">
-                      {{yesOrNo(data.item)}}
+                      {{ yesOrNo(data.item) }}
                     </template>
                   </v-select>
                 </v-col>
@@ -388,7 +400,7 @@ export default {
         });
     },
     addFind: function () {
-      this.finds.push({ value: "", del: 0 , option:false});
+      this.finds.push({ value: "", del: 0, option: false });
     },
     deleteFind(item) {
       let index = this.finds.indexOf(item);
