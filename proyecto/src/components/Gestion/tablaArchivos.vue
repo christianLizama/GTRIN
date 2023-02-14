@@ -72,7 +72,7 @@
                 dense
                 filled
                 rounded
-                placeholder="Buscar categoria"
+                placeholder="Buscar archivo"
                 prepend-inner-icon="mdi-magnify"
                 class="pt-6 expanding-search"
                 :class="{ closed: searchClosed && !busqueda }"
@@ -84,16 +84,15 @@
               <snackbar2 ref="childComponent2"></snackbar2>
               <!-- <v-alert v-model="rechazado" dense outlined type="error">
                 {{ message }}
-              </v-alert> -->  
+              </v-alert> -->
               <v-toolbar dense dark>
                 <v-btn icon @click="close">
-                    <v-icon>mdi-close</v-icon>
+                  <v-icon>mdi-close</v-icon>
                 </v-btn>
                 <v-toolbar-title> Subir un archivo</v-toolbar-title>
               </v-toolbar>
-            
-              <v-stepper-header >
-                  
+
+              <v-stepper-header>
                 <v-stepper-step :complete="e1 > 1" step="1">
                   Nombre archivo
                 </v-stepper-step>
@@ -214,9 +213,9 @@
                 <v-stepper-content step="3">
                   <v-card class="mb-12 mx-auto" outlined color="lighten-1">
                     <v-card-title>
-                      Establecer día en que el archivo deja de estar vigente
+                      Establecer día en que el archivo cambia al estado por vencer
                     </v-card-title>
-                    <v-card-text>
+                    <v-card-text class="pa-4">
                       <v-slider
                         thumb-label="always"
                         label="Día"
@@ -224,6 +223,15 @@
                         min="1"
                         :max="fechaEm - 1"
                       ></v-slider>
+                      <p class="red--text">
+                        * Días antes de la fecha de vencimiento:
+                        <b>{{
+                          calcularDias(
+                            editedItem.diasAviso,
+                            editedItem.fechaCaducidad
+                          )
+                        }}</b>
+                      </p>
                       <p v-if="editedItem.diasAviso == 0">
                         Día en que el archivo pasa a estado por vencer:
                         <b>Hoy</b>
@@ -232,15 +240,7 @@
                         Día en que el archivo pasa a estado por vencer:
                         <b>{{ obtenerFecha(editedItem.diasAviso) }}</b>
                       </p>
-                      <p>
-                        Días antes de la fecha de vencimiento:
-                        <b>{{
-                          calcularDias(
-                            editedItem.diasAviso,
-                            editedItem.fechaCaducidad
-                          )
-                        }}</b>
-                      </p>
+
                       <p>
                         Fecha de vencimiento:
                         <b>{{ fechaFormateada(editedItem.fechaCaducidad) }}</b>

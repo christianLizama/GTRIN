@@ -39,6 +39,9 @@ export default {
       }
     },
     calularPorcentaje() {
+      if(this.archivosSubidos==0){
+        return 0
+      }
       let porcentaje = (this.archivosSubidos / this.archivosRequeridos) * 100;
       let intPorcentaje = Math.round(porcentaje);
       return intPorcentaje;

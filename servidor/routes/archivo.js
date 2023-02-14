@@ -18,5 +18,6 @@ router.get('/getArchivos', archivo.getArchivos)
 router.get('/allFiles', archivo.getAllFiles)
 router.get('/countFiles', archivo.countFiles)
 router.delete('/removeAll/',archivo.removeAll)
+router.delete('/removeFolderFiles/',archivo.removeFolderFiles)
 
 module.exports = router;

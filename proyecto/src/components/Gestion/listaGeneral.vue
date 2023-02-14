@@ -80,6 +80,11 @@
     <div class="contenedor" v-if="!isLoading">
       <v-card elevation="5" outlined class="mx-auto mb-8" max-width="98.6%">
         <v-data-table
+          :single-expand="singleExpand"
+          :expanded.sync="expanded"
+          item-key="_id"
+          show-expand
+
           :headers="headers"
           :items="filtros"
           sort-by="nombre"
@@ -109,7 +114,9 @@
               </a>
             </div>
           </template>
-
+          <template v-slot:[`expanded-item`]="{ headers, item }">
+            <td :colspan="headers.length">Pertenece a: <b>{{ item.nombreParametro }}</b></td>
+          </template>
           <template v-slot:top>
             <v-toolbar flat>
               <v-toolbar-title>Archivos</v-toolbar-title>
@@ -145,7 +152,7 @@
               </template>
             </v-toolbar>
           </template>
-
+          
           <template v-slot:no-data>
             <v-btn color="primary" @click="initialize"> Reset </v-btn>
           </template>
@@ -175,6 +182,9 @@ export default {
     search: "",
     isLoading: true,
     sociedades: [],
+    expanded: [],
+    singleExpand: true,
+    parametros:[],
     sociedadSeleccionada: {
       nombre: "Todo",
       _id: "",
@@ -292,12 +302,12 @@ export default {
       { text: "Tamaño", value: "peso" },
       { text: "Fecha Emisión", value: "fechaEmision" },
       {
-        text: "Fecha estado por vencer",
-        sortable: false,
-        align: "center",
+        text: "Fecha por vencer",
+        sortable: true,
         value: "fechaCambioEstado",
       },
       { text: "Fecha Caducidad", value: "fechaCaducidad" },
+      { text: "", value: "data-table-expand" },
     ],
     message: "",
     archivos: [],
@@ -398,20 +408,25 @@ export default {
       this.subCarpetaSelecionada = Object.assign({}, this.defaultFilter);
       this.estadoSeleccionado = Object.assign({}, this.defaultStatusFilter);
     },
-    obtenerNombreSociedad(itemId,sociedades) {
+    obtenerNombreSociedad(itemId, sociedades) {
       let found = sociedades.find((e) => e._id === itemId);
       let nombreSociedad = found.nombre;
       return nombreSociedad;
     },
-    obtenerNombreCarpeta(itemId,carpetas) {
+    obtenerNombreCarpeta(itemId, carpetas) {
       var found = carpetas.find((e) => e._id === itemId);
       let nombreCarpeta = found.nombre;
       return nombreCarpeta;
     },
-    obtenerNombreSubCarpeta(itemId,subCarpetas) {
+    obtenerNombreSubCarpeta(itemId, subCarpetas) {
       var found = subCarpetas.find((e) => e._id === itemId);
-      let nombreSubCarpeta = found.nombre
+      let nombreSubCarpeta = found.nombre;
       return nombreSubCarpeta;
+    },
+    obtenerNombreParametro(parametroID, parametros) {
+      var found = parametros.find((e) => e._id === parametroID);
+      let nombreParametro = found.value;
+      return nombreParametro;
     },
 
     async componentDidMount() {
@@ -420,16 +435,26 @@ export default {
           axios.get("/sociedad/getPadres"),
           axios.get("/carpeta/getAllFolders"),
           axios.get("/subCarpeta/getAllSubFolders"),
-        ])
+        ]);
         this.sociedades = padres.data;
         this.sociedades.unshift({ nombre: "Todo", _id: "" });
         this.carpetas = carpetas.data;
         this.todoCarpetas = carpetas.data;
+        carpetas.data.forEach(folder => {
+          folder.parametros.forEach(param => {
+              this.parametros.push(param)
+          });
+        });
         this.subCarpetas = subCarpetas.data;
         this.todoSubCarpetas = subCarpetas.data;
         await axios.get("archivo/allFiles").then((result) => {
           result.data.forEach((element) => {
-            this.iniciarFile(element,padres.data,carpetas.data,subCarpetas.data);
+            this.iniciarFile(
+              element,
+              padres.data,
+              carpetas.data,
+              subCarpetas.data
+            );
           });
           this.archivos = result.data;
           this.isLoading = false;
@@ -464,7 +489,6 @@ export default {
         console.log(err);
       }
     },
-
 
     async iniciarSociedad() {
       await axios
@@ -583,10 +607,23 @@ export default {
         });
       });
     },
-    iniciarFile(element,padres,carpetas,subCarpetas) {
-      element.nombreSociedad = this.obtenerNombreSociedad(element.padreSuperior,padres);
-      element.nombreCarpeta = this.obtenerNombreCarpeta(element.abuelo,carpetas);
-      element.nombreSubCarpeta = this.obtenerNombreSubCarpeta(element.padre,subCarpetas);
+    iniciarFile(element, padres, carpetas, subCarpetas) {
+      element.nombreSociedad = this.obtenerNombreSociedad(
+        element.padreSuperior,
+        padres
+      );
+      element.nombreCarpeta = this.obtenerNombreCarpeta(
+        element.abuelo,
+        carpetas
+      );
+      element.nombreSubCarpeta = this.obtenerNombreSubCarpeta(
+        element.padre,
+        subCarpetas
+      );
+
+      element.nombreParametro = this.obtenerNombreParametro(element.parametro,this.parametros);
+
+
       let fechaCrea = element.fechaCreacion.split("T");
       let fechaEmi = element.fechaEmision.split("T");
       let fechaCadu = element.fechaCaducidad.split("T");

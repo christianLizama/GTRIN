@@ -20,7 +20,7 @@
         placeholder="Buscar"
         prepend-inner-icon="mdi-magnify"
         class="pt-6 expanding-search"
-        :class="{'closed' :searchClosed && !busqueda}"
+        :class="{ closed: searchClosed && !busqueda }"
       ></v-text-field>
 
       <v-tooltip bottom>
@@ -84,42 +84,65 @@
       </v-list-item>
     </v-list>
 
-    <v-dialog v-model="dialogDelete" max-width="400px">
+    <v-dialog
+      v-model="dialogDelete"
+      max-width="400px"
+      @keydown.esc="closeDelete"
+    >
       <v-card>
-        <v-card-title class="text-h5"> Borrar Carpeta </v-card-title>
-        <v-divider inset></v-divider>
-        <v-card-text>
-          Estas seguro que deseas borrar esta carpeta y todo su contenido?
+        <v-toolbar dark color="grey darken-3" dense flat>
+          <v-toolbar-title class="text-body-4 font-weight-bold white--text">
+            Borrar Carpeta
+          </v-toolbar-title>
+        </v-toolbar>
+
+        <v-card-text class="pa-4 black--text"
+          >Estás seguro que deseas borrar esta carpeta y todo su contenido?
         </v-card-text>
 
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn color="blue darken-1" text @click="closeDelete"
+          <v-btn
+            color="grey"
+            text
+            class="body-2 font-weight-bold"
+            @click="closeDelete"
             >Cancelar</v-btn
           >
-          <v-btn color="blue darken-1" text @click="deleteItemConfirm"
-            >OK</v-btn
+          <v-btn
+            color="primary"
+            class="body-2 font-weight-bold"
+            outlined
+            @click="deleteItemConfirm"
           >
+            OK
+          </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
 
     <v-dialog v-model="showDialog" max-width="500px">
       <v-card>
-        <v-card-title class="white--text text-h5 black lighten-2">
-          <v-btn icon dark @click="showDialog =! showDialog">
+        <v-toolbar dark color="black lighten-3" dense flat>
+          <v-btn icon dark @click="showDialog = !showDialog">
             <v-icon>mdi-close</v-icon>
           </v-btn>
-          {{ formTitle }}
-        </v-card-title>
-        <v-card-text>
+          <v-toolbar-title class="text-body-4 font-weight-bold white--text">
+            {{ formTitle }}
+          </v-toolbar-title>
+        </v-toolbar>
+        <v-card-text class="pa-4">
           <v-text-field
+            outlined
             v-model="editedItem.nombre"
-            label="Nombre carpeta"
+            label="Nombre"
+            placeholder="Ingrese nombre de la carpeta"
           ></v-text-field>
           <v-text-field
+            outlined          
             v-model="editedItem.descripcion"
             label="Descripción"
+            placeholder="Ingrese descripción"
           ></v-text-field>
         </v-card-text>
         <!-- <v-card-text>
@@ -138,7 +161,14 @@
         <v-card-actions>
           <v-spacer></v-spacer>
 
-          <v-btn text color="primary" @click="save"> Guardar </v-btn>
+          <v-btn
+            color="primary"
+            class="body-2 font-weight-bold"
+            outlined
+            @click="save"
+          >
+            Guardar
+          </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -148,12 +178,12 @@
 <script>
 import axios from "axios";
 import loading from "../loading.vue";
-import Snackbar from '../snackbar.vue';
+import Snackbar from "../snackbar.vue";
 export default {
   components: { loading, Snackbar },
   data: () => ({
     // finds: [],
-    searchClosed:true,
+    searchClosed: true,
     busqueda: "",
     isLoading: true,
     showDialog: false,
@@ -168,13 +198,13 @@ export default {
       { title: "Eliminar", icon: "mdi-delete" },
     ],
     editedItem: {
-      nombre:"",
-      descripcion:"",
+      nombre: "",
+      descripcion: "",
       // parametros:[]
     },
     defaulteditedItem: {
-      nombre:"",
-      descripcion:"",
+      nombre: "",
+      descripcion: "",
       // parametros:[]
     },
   }),
@@ -185,8 +215,8 @@ export default {
     dialogDelete(val) {
       val || this.closeDelete();
     },
-    showDialog (val) {
-        val || this.close()
+    showDialog(val) {
+      val || this.close();
     },
     aceptado(new_val) {
       if (new_val) {
@@ -236,7 +266,7 @@ export default {
       this.dialogDelete = true;
     },
     deleteItemConfirm() {
-      console.log(this.editedItem)
+      this.carpetas.splice(this.editedIndex, 1);
       this.deleteFolder(this.editedItem);
       this.closeDelete();
     },
@@ -247,25 +277,43 @@ export default {
         this.editedIndex = -1;
       });
     },
-
+    async deleteAllFiles(idPadre) {
+      var data = {
+        id: idPadre,
+      };
+      await axios
+        .delete("archivo/removeFolderFiles", { data })
+        .then((result) => {
+          console.log(result.data);
+        });
+    },
     async deleteSubFolders(item) {
-      console.log(item)
+      console.log(item);
       await axios
         .delete("/carpeta/deleteSubFolders/" + item._id)
         .then((result) => {
           console.log(result);
-          this.carpetas.splice(this.editedIndex, 1);
-          this.$refs.childComponent.SnackbarShow("success","Carpeta eliminada correctamente")
+          this.$refs.childComponent.SnackbarShow(
+            "success",
+            "Carpeta eliminada correctamente"
+          );
           this.actualizarHijos();
         });
     },
     async deleteFolder(item) {
-      await axios.delete("/carpeta/remove/" + item._id).then((result) => {
-        this.deleteSubFolders(result.data);
-      }).catch((e)=>{
-        console.log(e)
-        this.$refs.childComponent.SnackbarShow("error","No se ha podido elminar la carpeta")
-      })
+      await axios
+        .delete("/carpeta/remove/" + item._id)
+        .then((result) => {
+          this.deleteSubFolders(result.data);
+          this.deleteAllFiles(item._id);
+        })
+        .catch((e) => {
+          console.log(e);
+          this.$refs.childComponent.SnackbarShow(
+            "error",
+            "No se ha podido elminar la carpeta"
+          );
+        });
     },
 
     deleteOrEdit(item, opcion) {
@@ -289,14 +337,20 @@ export default {
           console.log(this.editedItem.nombre);
           if (this.editedItem.nombre.length > 3) {
             this.actualizarCarpeta(this.editedItem, this.editedIndex);
-            this.$refs.childComponent.SnackbarShow("success","Nombre modificado exitosamente")
+            this.$refs.childComponent.SnackbarShow(
+              "success",
+              "Nombre modificado exitosamente"
+            );
             // this.alerta = "Nombre modificado exitosamente";
             // this.aceptado = true;
           }
           //this.aceptado = true;
           //this.actualizarSociedad2()
         } else {
-          this.$refs.childComponent.SnackbarShow("error","El nombre ingresado de carpeta ya existe")
+          this.$refs.childComponent.SnackbarShow(
+            "error",
+            "El nombre ingresado de carpeta ya existe"
+          );
           // this.alerta = "El nombre utilizado de carpeta ya existe";
           // this.rechazado = true;
         }
@@ -310,11 +364,11 @@ export default {
       this.$nextTick(() => {
         this.editedIndex = -1;
         this.editedItem = Object.assign({}, {});
-        this.finds = Object.assign([],[])
+        this.finds = Object.assign([], []);
       });
     },
     editItem(item) {
-      console.log(item)
+      console.log(item);
       this.editedIndex = this.carpetas.indexOf(item);
       this.editedItem = Object.assign({}, item);
       this.showDialog = true;
@@ -335,7 +389,10 @@ export default {
         })
         .then((res) => {
           console.log(res);
-          this.$refs.childComponent.SnackbarShow("success","Cambios realizados exitosamente")
+          this.$refs.childComponent.SnackbarShow(
+            "success",
+            "Cambios realizados exitosamente"
+          );
           // this.alerta = "Cambios realizados exitosamente";
           // this.aceptado = true;
         })
@@ -369,7 +426,10 @@ export default {
         .put("sociedad/update/", { _id: sociedad._id, sociedad: sociedad })
         .then((res) => {
           console.log(res);
-          this.$refs.childComponent.SnackbarShow("success","Carpeta creada exitosamente")
+          this.$refs.childComponent.SnackbarShow(
+            "success",
+            "Carpeta creada exitosamente"
+          );
           // this.alerta = "Carpeta creada exitosamente";
           // this.aceptado = true;
         })
@@ -400,7 +460,7 @@ export default {
     },
     async postFolder(nuevaCarpeta) {
       await axios
-        .post("carpeta/add", {carpeta: nuevaCarpeta})
+        .post("carpeta/add", { carpeta: nuevaCarpeta })
         .then((res) => {
           this.carpetas.push(res.data);
           this.actualizarHijos();
@@ -418,9 +478,11 @@ export default {
         };
         //this.createServerFolder(nueva);
         this.postFolder(nueva);
-      }
-      else{
-        this.$refs.childComponent.SnackbarShow("error","El nombre de la carpeta debe contener un largo minimo de 3 caracteres")
+      } else {
+        this.$refs.childComponent.SnackbarShow(
+          "error",
+          "El nombre de la carpeta debe contener un largo minimo de 3 caracteres"
+        );
       }
       this.editedItem.nombre = "";
       this.descripcion = "";
@@ -433,7 +495,10 @@ export default {
       if (!resultado) {
         this.crearCarpeta();
       } else {
-        this.$refs.childComponent.SnackbarShow("error", "El nombre ingresado de carpeta ya existe")
+        this.$refs.childComponent.SnackbarShow(
+          "error",
+          "El nombre ingresado de carpeta ya existe"
+        );
         // this.alerta = "El nombre de carpeta ingresado ya existe";
         // this.rechazado = true;
       }
@@ -468,14 +533,14 @@ export default {
 </script>
 
 <style lang="sass">
-  .v-input.expanding-search
-    transition: max-width 0.3s
+.v-input.expanding-search
+  transition: max-width 0.3s
+  .v-input__slot
+    cursor: pointer !important
+    &before, &:after
+      border-color: transparent !important
+  &.closed
+    max-width: 50px
     .v-input__slot
-      cursor: pointer !important
-      &before, &:after
-        border-color: transparent !important
-    &.closed
-      max-width: 50px
-      .v-input__slot
-        background-color: transparent !important 
+      background-color: transparent !important
 </style>

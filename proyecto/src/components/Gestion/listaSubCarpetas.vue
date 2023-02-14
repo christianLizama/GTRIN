@@ -67,9 +67,10 @@
             obtenerFecha(item.fechaCreacion)
           }}</v-list-item-subtitle>
         </v-list-item-content>
-
-        <progress-file :archivosRequeridos="archivosRequeridos" :archivosSubidos="item.archivosSubidos" ></progress-file>
-
+        <progress-file
+          :archivosRequeridos="archivosRequeridos"
+          :archivosSubidos="item.archivosSubidos"
+        ></progress-file>
         <v-menu left top offset-y>
           <template v-slot:activator="{ on, attrs }">
             <v-btn icon v-bind="attrs" v-on="on">
@@ -107,20 +108,33 @@
 
     <v-dialog v-model="dialogDelete" max-width="400px">
       <v-card>
-        <v-card-title class="text-h5"> Borrar Carpeta </v-card-title>
-        <v-divider inset></v-divider>
-        <v-card-text>
-          Estas seguro que deseas borrar esta carpeta y todo su contenido?
+        <v-toolbar dark color="grey darken-3" dense flat>
+          <v-toolbar-title class="text-body-4 font-weight-bold white--text">
+            Borrar Carpeta
+          </v-toolbar-title>
+        </v-toolbar>
+
+        <v-card-text class="pa-4 black--text"
+          >Estás seguro que deseas borrar esta carpeta y todo su contenido?
         </v-card-text>
 
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn color="blue darken-1" text @click="closeDelete"
+          <v-btn
+            color="grey"
+            text
+            class="body-2 font-weight-bold"
+            @click="closeDelete"
             >Cancelar</v-btn
           >
-          <v-btn color="blue darken-1" text @click="deleteItemConfirm"
-            >OK</v-btn
+          <v-btn
+            color="primary"
+            class="body-2 font-weight-bold"
+            outlined
+            @click="deleteItemConfirm"
           >
+            OK
+          </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -148,26 +162,42 @@
     </v-dialog>
     <v-dialog v-model="showDialog" max-width="500px">
       <v-card>
-        <v-card-title class="white--text text-h5 black lighten-2">
+        <v-toolbar dark color="black lighten-3" dense flat>
           <v-btn icon dark @click="showDialog = !showDialog">
             <v-icon>mdi-close</v-icon>
           </v-btn>
-          {{ formTitle }}
-        </v-card-title>
+          <v-toolbar-title class="text-body-4 font-weight-bold white--text">
+            {{ formTitle }}
+          </v-toolbar-title>
+        </v-toolbar>
 
-        <v-card-text>
+        <v-card-text class="pa-4">
           <v-text-field
+            outlined
+            dense
             v-model="editedItem.nombre"
-            label="Nombre carpeta"
+            label="Nombre"
+            placeholder="Ingrese nombre de la carpeta"
           ></v-text-field>
           <v-text-field
+            outlined
+            dense
             v-model="editedItem.descripcion"
             label="Descripción"
+            placeholder="Ingrese descripción"
           ></v-text-field>
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn text color="primary" @click="save"> Guardar </v-btn>
+          <v-btn
+            color="primary"
+            class="body-2 font-weight-bold"
+            outlined
+            text
+            @click="save"
+          >
+            Guardar
+          </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -181,14 +211,16 @@
         ></loading>
       </v-card>
       <v-card v-if="!isUpload">
-        <v-card-title class="white--text text-h5 black lighten-2">
+        <v-toolbar dark color="black darken-3" dense flat>
           <v-btn icon dark @click="dialogParam = !dialogParam">
             <v-icon>mdi-close</v-icon>
           </v-btn>
-          {{ encabezado }}
-        </v-card-title>
+          <v-toolbar-title class="text-body-4 font-weight-bold white--text">
+            {{ encabezado }}
+          </v-toolbar-title>
+        </v-toolbar>
 
-        <v-card-text>
+        <v-card-text class="pa-4">
           <!-- <h3>Apartados a controlar: *</h3> -->
           <h4>
             Agregar Apartado
@@ -240,12 +272,17 @@
 
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn text color="secondary" @click="dialogParam = !dialogParam"
+          <v-btn
+            color="grey"
+            text
+            class="body-2 font-weight-bold"
+            @click="dialogParam = !dialogParam"
             >Cancelar</v-btn
           >
           <v-btn
-            text
             color="primary"
+            class="body-2 font-weight-bold"
+            outlined
             @click="dialogFindDelete = !dialogFindDelete"
           >
             Guardar
@@ -261,7 +298,7 @@
 import axios from "axios";
 import loading from "../loading.vue";
 import Snackbar from "../snackbar.vue";
-import ProgressFile from '../ProgressFile.vue';
+import ProgressFile from "../ProgressFile.vue";
 export default {
   components: { loading, Snackbar, ProgressFile },
   data: () => ({
@@ -558,33 +595,33 @@ export default {
           console.log(e.response);
         });
     },
-    contarRequeridos(parametros){
-      parametros.forEach(element => {
-        if(element.option){
+    contarRequeridos(parametros) {
+      parametros.forEach((element) => {
+        if (element.option) {
           this.archivosRequeridos = this.archivosRequeridos + 1;
         }
       });
     },
     async contar(subCarpeta, parametros) {
-        let contador = 0;
-        subCarpeta.archivosSubidos = 0;
-        parametros.forEach(async (parametro) => {
-          const request = {
-            params: {
-              _id: parametro._id,
-              padre: subCarpeta._id,
-            },
-          };
-          await axios.get("archivo/countFiles", request).then((result) => {
-            parametro.cantidad = result.data;
-            if (parametro.option) {
-              if (parametro.cantidad > 0) {
-                contador = contador + 1;
-              }
+      let contador = 0;
+      subCarpeta.archivosSubidos = 0;
+      parametros.forEach(async (parametro) => {
+        const request = {
+          params: {
+            _id: parametro._id,
+            padre: subCarpeta._id,
+          },
+        };
+        await axios.get("archivo/countFiles", request).then((result) => {
+          parametro.cantidad = result.data;
+          if (parametro.option) {
+            if (parametro.cantidad > 0) {
+              contador = contador + 1;
             }
-          });
-          subCarpeta.archivosSubidos = contador
+          }
         });
+        subCarpeta.archivosSubidos = contador;
+      });
     },
 
     async initialize() {
@@ -632,8 +669,8 @@ export default {
       await axios
         .get("carpeta/querysubFolders?_id=" + id)
         .then((res) => {
-          this.contarRequeridos(this.primerosParametros)
-          res.data.forEach(element => {
+          this.contarRequeridos(this.primerosParametros);
+          res.data.forEach((element) => {
             this.contar(element, this.primerosParametros);
           });
           this.carpetas = res.data;
@@ -653,8 +690,10 @@ export default {
           carpeta: nuevaCarpeta,
         })
         .then((res) => {
-          res.data.archivosSubidos = 0
-          this.carpetas.push(res.data);
+          res.data.archivosSubidos = 0;
+          let nueva = res.data;
+          nueva.archivosSubidos = 0;
+          this.carpetas.push(nueva);
           this.actualizarHijos();
         })
         .catch((e) => {

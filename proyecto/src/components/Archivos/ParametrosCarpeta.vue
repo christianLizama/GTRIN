@@ -17,7 +17,7 @@
         dense
         filled
         rounded
-        placeholder="Buscar categoria"
+        placeholder="Buscar parametro"
         prepend-inner-icon="mdi-magnify"
         class="pt-6 expanding-search"
         :class="{ closed: searchClosed && !busqueda }"
@@ -51,14 +51,28 @@
             <v-toolbar-title>Mis Parametros</v-toolbar-title>
             <v-divider class="mx-4" inset vertical></v-divider>
             <v-spacer></v-spacer>
+            <v-tooltip bottom>
+              <template v-slot:activator="{ on, attrs }">
+                <v-btn icon v-bind="attrs" v-on="on" @click="reloadPage" >
+                  <v-icon>mdi-reload</v-icon>
+                </v-btn>
+              </template>
+              <span>Refrescar</span>
+            </v-tooltip>
+
             <v-dialog v-model="dialog" max-width="80%">
               <v-card>
-                <v-card-title class="white--text text-h5 black lighten-2">
+                <v-toolbar dark color="black lighten-3" dense flat>
                   <v-btn icon dark @click="dialog = !dialog">
                     <v-icon>mdi-close</v-icon>
                   </v-btn>
-                  {{   parametroNombre }}
-                </v-card-title>
+                  <v-toolbar-title
+                    class="text-body-3 font-weight-bold white--text"
+                  >
+                    {{ parametroNombre }}
+                  </v-toolbar-title>
+                </v-toolbar>
+
                 <tabla-archivos
                   :key="parametroID"
                   :Parametro="parametroID"
@@ -142,6 +156,9 @@ export default {
     this.initialize();
   },
   methods: {
+    reloadPage() {
+      window.location.reload();
+    },
     obtenerCumplimiento(parametro) {
       if (parametro.option) {
         if (parametro.cantidad > 0) {
@@ -175,7 +192,7 @@ export default {
     async obtenerPadreSuperior(id) {
       await axios.get("carpeta/query?_id=" + id).then((result) => {
         this.padre = result.data;
-        this.parametros = result.data.parametros
+        this.parametros = result.data.parametros;
         this.contar(result.data.parametros, result.data._id);
       });
     },

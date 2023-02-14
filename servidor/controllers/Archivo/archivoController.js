@@ -182,6 +182,42 @@ const removeAll = async (req, res, next) => {
   }
 };
 
+
+//Metodo para eliminar todos los archivos de una carpeta
+const removeFolderFiles = async (req, res, next) => {
+  try {
+    const { id } = req.body;
+    const archivos = await archivo.find({abuelo: id});
+    const reg = await archivo.deleteMany({ abuelo: id });
+    if (reg) {
+      deleteFiles(archivos, function(err) {
+        if (err==1) {
+          res.status(200).send({
+            message: "No hay archivos"
+          });
+        }
+        else if(err==2){
+          res.status(500).send({
+            message: "Ocurrio un error al eliminar los archivos" + err
+          });
+        }
+        else {
+          res.status(200).send({
+            message: "Archivos eliminados exitosamente"
+          })
+        }
+      });
+    }
+  } catch (e) {
+    res.status(500).send({
+      message: "Ocurrio un error",
+    });
+    next(e);
+  }
+};
+
+
+
 module.exports = {
   add,
   query,
@@ -190,5 +226,6 @@ module.exports = {
   getArchivos,
   getAllFiles,
   countFiles,
-  removeAll
+  removeAll,
+  removeFolderFiles
 };

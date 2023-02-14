@@ -5,53 +5,27 @@
         class="hidden-md-and-up"
         @click="drawer = true"
       ></v-app-bar-nav-icon>
+
+      <v-spacer></v-spacer>
       <v-img
-        class="imagen"
+        class="imagen mr-3"
         max-height="55"
         max-width="55"
         src="../../assets/logo.e34e8d2.png"
       ></v-img>
-      <v-spacer></v-spacer>
-      <div class="text-center">
-        <v-menu offset-y>
-          <template v-slot:activator="{ on, attrs }">
-            <v-btn text v-bind="attrs" v-on="on"
-              ><v-icon>mdi-account</v-icon> {{ nombre }}
-            </v-btn>
-            <v-btn icon @click="changeThemeColor">
-              <v-icon>{{
-                $vuetify.theme.dark
-                  ? "mdi-white-balance-sunny"
-                  : "mdi-weather-night"
-              }}</v-icon>
-            </v-btn>
-          </template>
-          <v-card>
-            <v-list>
-              <v-list-item>
-                <v-list-item-avatar>
-                  <img
-                    src="https://cdn.vuetifyjs.com/images/john.jpg"
-                    alt="John"
-                  />
-                </v-list-item-avatar>
 
-                <v-list-item-content>
-                  <v-list-item-title>Christian Lizama</v-list-item-title>
-                  <v-list-item-subtitle>Admin</v-list-item-subtitle>
-                </v-list-item-content>
-              </v-list-item>
-            </v-list>
-
-            <v-divider></v-divider>
-
-            <v-card-actions>
-              <v-spacer></v-spacer>
-              <v-btn color="primary" text> Salir </v-btn>
-            </v-card-actions>
-          </v-card>
-        </v-menu>
-      </div>
+      <v-tooltip bottom>
+        <template v-slot:activator="{ on, attrs }">
+          <v-btn v-bind="attrs" v-on="on" icon @click="changeThemeColor">
+            <v-icon>{{
+              $vuetify.theme.dark
+                ? "mdi-white-balance-sunny"
+                : "mdi-weather-night"
+            }}</v-icon>
+          </v-btn>
+        </template>
+        <span>Tema {{$vuetify.theme.dark ? "Claro" : "Oscuro"}}</span>
+      </v-tooltip>
     </v-app-bar>
     <v-navigation-drawer
       v-model="drawer"
@@ -107,6 +81,32 @@
             </v-list-item-content>
           </v-list-item>
         </v-list-group>
+        <v-divider></v-divider>
+        <v-list-group
+          no-action
+          prepend-icon="mdi-folder-wrench-outline"
+          active-class="red--text"
+        >
+          <template v-slot:activator>
+            <v-list-item-content active-class="red--text">
+              <v-list-item-title>Configurar</v-list-item-title>
+            </v-list-item-content>
+          </template>
+
+          <v-list-item
+            active-class="red--text"
+            v-for="item in cruds"
+            :key="item.title"
+            link
+            :to="'/Configuracion/' + item.to"
+          >
+            <v-list-item-title v-text="item.title"></v-list-item-title>
+
+            <v-list-item-icon>
+              <v-icon v-text="item.icon"></v-icon>
+            </v-list-item-icon>
+          </v-list-item>
+        </v-list-group>
       </v-list>
     </v-navigation-drawer>
   </div>
@@ -121,6 +121,11 @@ export default {
       nombre: "Christian Lizama",
       menu: [
         { action: "mdi-human-male-boy", items: [], title: "Contenedores" },
+      ],
+      cruds: [
+        { title: "Crear", icon: "mdi-plus", to: "crear" },
+        { title: "Modificar", icon: "mdi-update", to: "editar" },
+        { title: "Eliminar", icon: "mdi-delete", to: "eliminar" },
       ],
       mini: true,
     };
