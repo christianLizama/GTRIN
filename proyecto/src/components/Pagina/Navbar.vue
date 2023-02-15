@@ -24,7 +24,7 @@
             }}</v-icon>
           </v-btn>
         </template>
-        <span>Tema {{$vuetify.theme.dark ? "Claro" : "Oscuro"}}</span>
+        <span>Tema {{ $vuetify.theme.dark ? "Claro" : "Oscuro" }}</span>
       </v-tooltip>
     </v-app-bar>
     <v-navigation-drawer
@@ -46,7 +46,7 @@
 
       <v-divider elevation="1"></v-divider>
 
-      <v-list shaped>
+      <v-list >
         <v-list-item active-class="white--text" link to="/">
           <v-list-item-icon>
             <v-icon>mdi-monitor-dashboard</v-icon>
@@ -82,38 +82,21 @@
           </v-list-item>
         </v-list-group>
         <v-divider></v-divider>
-        <v-list-group
-          no-action
-          prepend-icon="mdi-folder-wrench-outline"
-          active-class="red--text"
-        >
-          <template v-slot:activator>
-            <v-list-item-content active-class="red--text">
-              <v-list-item-title>Configurar</v-list-item-title>
-            </v-list-item-content>
-          </template>
-
-          <v-list-item
-            active-class="red--text"
-            v-for="item in cruds"
-            :key="item.title"
-            link
-            :to="'/Configuracion/' + item.to"
-          >
-            <v-list-item-title v-text="item.title"></v-list-item-title>
-
-            <v-list-item-icon>
-              <v-icon v-text="item.icon"></v-icon>
-            </v-list-item-icon>
-          </v-list-item>
-        </v-list-group>
+        <v-list-item active-class="white--text" link to="/configuracion">
+          <v-list-item-icon>
+            <v-icon>mdi-folder-wrench-outline</v-icon>
+          </v-list-item-icon>
+          <v-list-item-content>
+            <v-list-item-title>Configurar</v-list-item-title>
+          </v-list-item-content>
+        </v-list-item>
       </v-list>
     </v-navigation-drawer>
   </div>
 </template>
 
 <script>
-import axios from "axios";
+import axios from 'axios';
 export default {
   data() {
     return {
@@ -122,22 +105,24 @@ export default {
       menu: [
         { action: "mdi-human-male-boy", items: [], title: "Contenedores" },
       ],
-      cruds: [
-        { title: "Crear", icon: "mdi-plus", to: "crear" },
-        { title: "Modificar", icon: "mdi-update", to: "editar" },
-        { title: "Eliminar", icon: "mdi-delete", to: "eliminar" },
-      ],
       mini: true,
     };
   },
   created() {
-    this.initialize();
+    this.obtenerContenedores()
   },
   methods: {
-    async initialize() {
-      await axios.get("/sociedad/getPadres").then((result) => {
-        this.menu[0].items = result.data;
-      });
+    async obtenerContenedores() {
+      try {
+        await axios.get("/sociedad/getPadres").then((result) => {
+          this.menu[0].items= result.data
+        });
+      } catch (error) {
+        console.log(error)   
+      }
+    },
+    initialize() {
+      this.menu[0].items = this.$store.getters.getContenedores;
     },
     changeThemeColor() {
       if (this.$vuetify.theme.dark === true) {

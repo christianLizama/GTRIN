@@ -1,7 +1,7 @@
 import archivo from "../../models/Archivo";
 const fs = require("fs");
 
-//Metodo para crear una sub carpeta
+//Metodo para crear un archivo
 const add = async (req, res, next) => {
   try {
     console.log(req.body);
@@ -108,15 +108,13 @@ const update = async (req, res, next) => {
 //Metodo para eliminar un archivo mediante _id y su nombre
 const remove = async (req, res, next) => {
   try {
-    const {id,fileName} = req.body;
+    const { id, fileName } = req.body;
     const reg = await archivo.findByIdAndDelete({ _id: id });
     if (reg) {
       const directoryPath = __basedir + "/uploads/";
       fs.unlink(directoryPath + fileName, (err) => {
         if (err) {
-          res.status(500).send({
-            message: "Could not delete the file. " + err,
-          });
+          console.log("Este archivo no existe")
         }
         res.status(200).send({
           message: "El archivo " + fileName + " ha sido borrado",
@@ -131,48 +129,27 @@ const remove = async (req, res, next) => {
   }
 };
 
-function deleteFiles(files, callback) {
-  const directoryPath = __basedir + "/uploads/";
-  if(files.length>0){
-    files.forEach((element) => {
-      fs.unlink(directoryPath + element.archivo, (err) => {
-        if (err) {
-          callback(2);
-          return;
-        }
-      });
-    });
-    callback(3);
-  }
-  else{
-    callback(1)
-  }
-}
-
 //Metodo para eliminar todos los archivos de una sub carpeta
 const removeAll = async (req, res, next) => {
   try {
     const { id } = req.body;
-    const archivos = await archivo.find({padre: id});
+    const archivos = await archivo.find({ padre: id });
     const reg = await archivo.deleteMany({ padre: id });
     if (reg) {
-      deleteFiles(archivos, function(err) {
-        if (err==1) {
-          res.status(200).send({
-            message: "No hay archivos"
-          });
-        }
-        else if(err==2){
-          res.status(500).send({
-            message: "Ocurrio un error al eliminar los archivos" + err
-          });
-        }
-        else {
-          res.status(200).send({
-            message: "Archivos eliminados exitosamente"
-          })
-        }
-      });
+      const directoryPath = __basedir + "/uploads/";
+      if (archivos.length > 0) {
+        archivos.forEach((element) => {
+          fs.unlink(directoryPath + element.archivo);
+        });
+        res.status(200).send({
+          message: "Todos los archivos han sido borrados",
+        });
+      }
+      else{
+        res.status(200).send({
+          message: "La carpeta no posee ningún archivo"
+        });
+      }
     }
   } catch (e) {
     res.status(500).send({
@@ -181,32 +158,30 @@ const removeAll = async (req, res, next) => {
     next(e);
   }
 };
-
 
 //Metodo para eliminar todos los archivos de una carpeta
 const removeFolderFiles = async (req, res, next) => {
   try {
     const { id } = req.body;
-    const archivos = await archivo.find({abuelo: id});
+    const archivos = await archivo.find({ abuelo: id });
     const reg = await archivo.deleteMany({ abuelo: id });
     if (reg) {
-      deleteFiles(archivos, function(err) {
-        if (err==1) {
-          res.status(200).send({
-            message: "No hay archivos"
+      const directoryPath = __basedir + "/uploads/";
+      if (archivos.length > 0) {
+        archivos.forEach((element) => {
+          fs.unlink(directoryPath + element.archivo ,(err)=>{
+            if (err) console.log(err);
           });
-        }
-        else if(err==2){
-          res.status(500).send({
-            message: "Ocurrio un error al eliminar los archivos" + err
-          });
-        }
-        else {
-          res.status(200).send({
-            message: "Archivos eliminados exitosamente"
-          })
-        }
-      });
+        });
+        res.status(200).send({
+          message: "Todos los archivos han sido borrados",
+        });
+      }
+      else{
+        res.status(200).send({
+          message: "La carpeta no posee ningún archivo"
+        });
+      }
     }
   } catch (e) {
     res.status(500).send({
@@ -215,8 +190,6 @@ const removeFolderFiles = async (req, res, next) => {
     next(e);
   }
 };
-
-
 
 module.exports = {
   add,
@@ -227,5 +200,5 @@ module.exports = {
   getAllFiles,
   countFiles,
   removeAll,
-  removeFolderFiles
+  removeFolderFiles,
 };

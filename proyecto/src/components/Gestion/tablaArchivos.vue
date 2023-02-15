@@ -561,7 +561,6 @@ export default {
         });
     },
     deleteOrEdit(item, opcion) {
-      console.log(opcion);
       opcion = opcion + 1;
       //Si es editar
       if (opcion == 1) {
@@ -778,7 +777,7 @@ export default {
           this.editedItem.abuelo = this.padre.padre;
           this.editedItem.padreSuperior = this.padre.padreSuperior;
           this.editedItem.parametro = this.Parametro;
-          this.editedItem.fechaCambioEstado = moment().add(
+          this.editedItem.fechaCambioEstado = moment(this.editedItem.fechaEmision).add(
             this.editedItem.diasAviso,
             "days"
           );
@@ -857,7 +856,6 @@ export default {
     editItem(item) {
       this.editedIndex = this.archivos.indexOf(item);
       this.editedItem = Object.assign({}, item);
-      console.log(item);
       this.dialog = true;
     },
     deleteItem(item) {
@@ -866,17 +864,17 @@ export default {
       this.dialogDelete = true;
     },
     deleteItemConfirm() {
-      this.borrarArchivo(this.archivos[this.editedIndex]);
+      this.borrarArchivo(this.archivos[this.editedIndex],this.editedIndex);
       this.closeDelete();
     },
-    async borrarArchivo(archivo) {
+    async borrarArchivo(archivo,index) {
       var data = {
         id: archivo._id,
         fileName: archivo.archivo,
       };
       await axios.delete("archivo/remove", { data }).then((result) => {
         this.$refs.childComponent.SnackbarShow("success", result.data.message);
-        this.archivos.splice(this.editedIndex, 1);
+        this.archivos.splice(index, 1);
       });
     },
     close() {
@@ -907,7 +905,6 @@ export default {
 
         //Si no la encuentra hace el update
         if (!resultado || resultado._id === this.editedItem._id) {
-          console.log(this.editedItem.nombre);
           if (this.editedItem.nombre.length > 3) {
             this.actualizarArchivo(this.editedItem, this.editedIndex);
             this.snackTipe = true;

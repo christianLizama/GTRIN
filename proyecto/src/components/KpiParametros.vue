@@ -26,15 +26,15 @@
                 >
                   {{ 100 - calularPorcentaje() }}%
                 </v-progress-circular>
-                <h2>Archivos Faltantes</h2>
+                <h3>Archivos Faltantes</h3>
               </div>
             </v-expand-transition>
             <v-list-item three-line>
               <v-list-item-content>
-                <h1>Archivos faltantes</h1>
                 <v-list-item-title class="text-h5 mb-1">
                   {{ archivosRequeridos - archivosSubidos }}
                 </v-list-item-title>
+                <h2>Archivos faltantes</h2>
               </v-list-item-content>
               <v-list-item-avatar tile size="100">
                 <v-icon color="white" size="65"> mdi-note-remove</v-icon>
@@ -53,7 +53,7 @@
             height="140"
             outlined
           >
-            <v-expand-transition>
+            <v-expand-transition mode="in-out">
               <div
                 v-if="hover"
                 class="caja transition-fast-in-fast-out darken-2 v-card--reveal text-h5 white--text"
@@ -68,15 +68,15 @@
                 >
                   {{ calularPorcentaje() }}%
                 </v-progress-circular>
-                <h2>Archivos Subidos</h2>
+                <h3>Archivos Subidos</h3>
               </div>
             </v-expand-transition>
             <v-list-item three-line>
               <v-list-item-content>
-                <h1>Archivos Subidos</h1>
                 <v-list-item-title class="text-h5 mb-1">
                   {{ archivosSubidos }}
                 </v-list-item-title>
+                <h2>Archivos Subidos</h2>
               </v-list-item-content>
               <v-list-item-avatar tile size="100">
                 <v-icon color="white" size="65">mdi-note-check</v-icon>

@@ -115,7 +115,7 @@
             </div>
           </template>
           <template v-slot:[`expanded-item`]="{ headers, item }">
-            <td :colspan="headers.length">Pertenece a: <b>{{ item.nombreParametro }}</b></td>
+            <td :colspan="headers.length">Pertenece al parametro: <b>{{ item.nombreParametro }}</b></td>
           </template>
           <template v-slot:top>
             <v-toolbar flat>

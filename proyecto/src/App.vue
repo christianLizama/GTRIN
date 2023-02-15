@@ -17,5 +17,8 @@ export default {
   data: () => ({
     //
   }),
+  created(){
+    this.$store.dispatch("obtenerContenedores");
+  },
 };
 </script>
