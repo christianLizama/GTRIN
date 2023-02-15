@@ -57,7 +57,7 @@
         </v-list-item>
         <v-list-group
           active-class="white--text"
-          v-for="item in menu"
+          v-for="item in obtenerLista"
           :key="item.title"
           v-model="item.active"
           :prepend-icon="item.action"
@@ -110,6 +110,15 @@ export default {
   },
   created() {
     this.obtenerContenedores()
+  },
+  computed: {
+    obtenerLista(){
+      if(this.$store.getters.getContenedores){
+        this.initialize()
+        return this.menu
+      }
+      return this.menu
+    }  
   },
   methods: {
     async obtenerContenedores() {

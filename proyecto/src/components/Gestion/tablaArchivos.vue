@@ -49,21 +49,7 @@
               <v-btn icon v-bind="attrs" v-on="on">
                 <v-icon color="blue">mdi-file-document-plus-outline</v-icon>
               </v-btn>
-
-              <vue-json-to-csv
-                :json-data="archivos"
-                :labels="{
-                  nombre: { title: 'Nombre' },
-                  status: { title: 'Status del documento' },
-                  diasVigencia: { title: 'Dias de vigencia' },
-                }"
-                :csv-title="padre.nombre"
-                :separator="';'"
-              >
-                <v-btn icon>
-                  <v-icon color="green">mdi-microsoft-excel</v-icon></v-btn
-                >
-              </vue-json-to-csv>
+              
               <v-text-field
                 @focus="searchClosed = false"
                 @blur="searchClosed = true"
@@ -137,7 +123,7 @@
                   </v-card>
 
                   <v-btn color="primary" text @click="close"> Cancelar </v-btn>
-                  <v-btn color="primary" @click="e1 = 2"> Siguiente </v-btn>
+                  <v-btn color="primary" @click="comprobar()"> Siguiente </v-btn>
                 </v-stepper-content>
 
                 <v-stepper-content step="2">
@@ -213,34 +199,34 @@
                 <v-stepper-content step="3">
                   <v-card class="mb-12 mx-auto" outlined color="lighten-1">
                     <v-card-title>
-                      Establecer día en que el archivo cambia al estado por vencer
+                      Establecer el día en que el archivo cambia al estado por vencer
                     </v-card-title>
                     <v-card-text class="pa-4">
                       <v-slider
                         thumb-label="always"
-                        label="Día"
+                        label="Día(s)"
                         v-model="editedItem.diasAviso"
                         min="1"
                         :max="fechaEm - 1"
                       ></v-slider>
                       <p class="red--text">
-                        * Días antes de la fecha de vencimiento:
+                        Notificación 
                         <b>{{
                           calcularDias(
                             editedItem.diasAviso,
                             editedItem.fechaCaducidad
                           )
                         }}</b>
+                        día(s) antes de la fecha de vencimiento
                       </p>
-                      <p v-if="editedItem.diasAviso == 0">
+                      <p class="red--text" v-if="editedItem.diasAviso == 0">
                         Día en que el archivo pasa a estado por vencer:
                         <b>Hoy</b>
                       </p>
-                      <p v-else>
+                      <p class="red--text" v-else>
                         Día en que el archivo pasa a estado por vencer:
                         <b>{{ obtenerFecha(editedItem.diasAviso) }}</b>
                       </p>
-
                       <p>
                         Fecha de vencimiento:
                         <b>{{ fechaFormateada(editedItem.fechaCaducidad) }}</b>
@@ -315,12 +301,11 @@ import moment from "moment";
 import location from "moment/dist/locale/es";
 moment.updateLocale("es", location);
 import UploadService from "../../services/UploadFilesService";
-import VueJsonToCsv from "vue-json-to-csv";
 import loading from "../loading.vue";
 import Snackbar from "../snackbar.vue";
 import Snackbar2 from "../snackbar.vue";
 export default {
-  components: { VueJsonToCsv, loading, Snackbar, Snackbar2 },
+  components: {loading, Snackbar, Snackbar2 },
   props: {
     Parametro: String,
     nombreParametro: String,
@@ -508,6 +493,17 @@ export default {
     this.initialize();
   },
   methods: {
+    comprobar(){
+      if(this.editedItem.nombre.length>0 && this.currentFile!=undefined){
+        this.e1 = 2
+      }
+      else{
+        this.$refs.childComponent2.SnackbarShow(
+          "error",
+          "Por favor rellene todos los campos"
+        );
+      }
+    },
     fechaFormateada(fecha) {
       let fechaFormat = moment(fecha).format("DD/MM/YYYY");
       return fechaFormat;

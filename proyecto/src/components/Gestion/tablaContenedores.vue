@@ -21,7 +21,7 @@
                   v-bind="attrs"
                   v-on="on"
                 >
-                  New Item
+                  Agregar
                 </v-btn>
               </template>
               <v-card>
@@ -62,16 +62,34 @@
             </v-dialog>
             <v-dialog v-model="dialogDelete" max-width="500px">
               <v-card>
-                <v-card-title class="text-h5"
-                  >Are you sure you want to delete this item?</v-card-title
-                >
+                <v-toolbar dark color="grey darken-3" dense flat>
+                  <v-icon color="red" class="mr-2">mdi-alert</v-icon>
+                  <v-toolbar-title
+                    class="text-body-4 font-weight-bold white--text"
+                  >
+                    ¿Estás seguro?
+                  </v-toolbar-title>
+                </v-toolbar>
+
+                <v-card-text class="pa-4 black--text"
+                  >Un contenedor no puede ser eliminado si contiene carpetas dentro
+                </v-card-text>
+
                 <v-card-actions>
                   <v-spacer></v-spacer>
-                  <v-btn color="blue darken-1" text @click="closeDelete"
+                  <v-btn
+                    color="grey"
+                    text
+                    class="body-2 font-weight-bold"
+                    @click="closeDelete"
                     >Cancel</v-btn
                   >
-                  <v-btn color="blue darken-1" text @click="deleteItemConfirm"
-                    >OK</v-btn
+                  <v-btn
+                    color="red"
+                    class="body-2 font-weight-bold"
+                    outlined
+                    @click="deleteItemConfirm"
+                    >Eliminar</v-btn
                   >
                   <v-spacer></v-spacer>
                 </v-card-actions>
@@ -80,10 +98,38 @@
           </v-toolbar>
         </template>
         <template v-slot:[`item.actions`]="{ item }">
-          <v-icon small class="mr-2" @click="editItem(item)">
-            mdi-pencil
-          </v-icon>
-          <v-icon small @click="deleteItem(item)"> mdi-delete </v-icon>
+          <v-menu top left rounded="tr-xl" :offset-x="true" :offset-y="true">
+            <template v-slot:activator="{ on: menu, attrs }">
+              <v-tooltip bottom>
+                <template v-slot:activator="{ on: tooltip }">
+                  <v-btn
+                    icon
+                    color="primary"
+                    dark
+                    v-bind="attrs"
+                    v-on="{ ...tooltip, ...menu }"
+                  >
+                    <v-icon>mdi-cog</v-icon>
+                  </v-btn>
+                </template>
+                <span>Acciones</span>
+              </v-tooltip>
+            </template>
+            <v-list>
+              <v-list-item link @click="editItem(item)">
+                <v-list-item-title> 
+                  <v-icon>mdi-pencil</v-icon> 
+                  Editar
+                </v-list-item-title>
+              </v-list-item>
+              <v-list-item link @click="deleteItem(item)">
+                <v-list-item-title>
+                  <v-icon>mdi-delete</v-icon>
+                  Eliminar
+                </v-list-item-title>
+              </v-list-item>
+            </v-list>
+          </v-menu>
         </template>
         <template v-slot:[`item.fechaCreacion`]="{ item }">
           {{ fechaFormateada(item.fechaCreacion) }}
@@ -99,12 +145,18 @@
 <script>
 import axios from "axios";
 import moment from "moment";
-import snackbar from '../snackbar.vue';
+import snackbar from "../snackbar.vue";
 export default {
   components: { snackbar },
   data: () => ({
     dialog: false,
     dialogDelete: false,
+
+    direction: "left",
+    fabx: false,
+    hover: false,
+    transition: "slide-y-reverse-transition",
+
     headers: [
       {
         text: "Nombre contenedor",
@@ -172,8 +224,43 @@ export default {
       this.dialogDelete = true;
     },
 
+    async deleteContenedor(item, index) {
+      await axios
+        .delete("/sociedad/remove/" + item._id)
+        .then((result) => {
+          this.$store.dispatch("eliminarContenedor", result.data);
+          this.desserts.splice(index, 1);
+        })
+        .catch((e) => {
+          console.log(e);
+          this.$refs.childComponent.SnackbarShow(
+            "error",
+            "No se ha podido elminar la carpeta"
+          );
+        });
+    },
+
+    async verificarExistencias(item,index) {
+      await axios
+        .get("sociedad/queryFolders?_id=" + item._id)
+        .then((res) => {
+          this.carpetas = res.data;
+          if(this.carpetas.length<1){
+            this.deleteContenedor(item, index);
+          }
+          else{
+            this.$refs.childComponent.SnackbarShow(
+              "error",
+              "No se puede borrar este contenedor porque contiene carpetas"
+            );
+          }
+        })
+        .catch((e) => {
+          console.log(e);
+        });
+    },
     deleteItemConfirm() {
-      this.desserts.splice(this.editedIndex, 1);
+      this.verificarExistencias(this.editedItem,this.editedIndex)
       this.closeDelete();
     },
 
@@ -192,26 +279,40 @@ export default {
         this.editedIndex = -1;
       });
     },
-
+    agregarContenedor(contenedor) {
+      this.$store.dispatch("agregarContenedor", contenedor);
+    },
     async postSociedad(nuevaSociedad) {
       await axios
         .post("sociedad/add", nuevaSociedad)
         .then((res) => {
           this.desserts.push(res.data);
+          this.agregarContenedor(res.data);
         })
         .catch((e) => {
           console.log(e);
         });
     },
-    crearSociedad(){
+    async updateContenedor(contenedor, index) {
+      console.log(contenedor._id);
+      await axios
+        .put("sociedad/update/", { _id: contenedor._id, sociedad: contenedor })
+        .then((res) => {
+          Object.assign(this.desserts[index], res.data);
+          this.$store.dispatch("modificarContenedor", this.desserts);
+        })
+        .catch((e) => {
+          console.log(e.response);
+        });
+    },
+    crearSociedad() {
       const resultado = this.desserts.find(
         (sociedad) => sociedad.nombre === this.editedItem.nombre
       );
-      if(!resultado){
+      if (!resultado || resultado._id === this.editedItem._id) {
         this.editedItem.fechaCreacion = moment();
         this.postSociedad(this.editedItem);
-      }
-      else{
+      } else {
         this.$refs.childComponent.SnackbarShow(
           "error",
           "El nombre del contenedor ingresado ya existe"
@@ -221,10 +322,21 @@ export default {
     save() {
       //Si se edita
       if (this.editedIndex > -1) {
-        Object.assign(this.desserts[this.editedIndex], this.editedItem);
+        const resultado = this.desserts.find(
+          (sociedad) => sociedad.nombre === this.editedItem.nombre
+        );
+        if (!resultado || resultado._id === this.editedItem._id) {
+          console.log(this.editedItem);
+          this.updateContenedor(this.editedItem, this.editedIndex);
+        } else {
+          this.$refs.childComponent.SnackbarShow(
+            "error",
+            "El nombre del contenedor modificado ya existe"
+          );
+        }
       } else {
         if (this.editedItem.nombre.length >= 3) {
-          this.crearSociedad()  
+          this.crearSociedad();
         } else {
           this.$refs.childComponent.SnackbarShow(
             "error",
@@ -232,10 +344,20 @@ export default {
           );
         }
         // this.desserts.push(this.editedItem);
-        
       }
       this.close();
     },
   },
 };
 </script>
+
+<style>
+/* This is for documentation purposes and will not be needed in your application */
+#create .v-speed-dial {
+  position: absolute;
+}
+
+#create .v-btn--floating {
+  position: relative;
+}
+</style>

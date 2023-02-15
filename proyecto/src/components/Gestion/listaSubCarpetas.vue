@@ -71,7 +71,7 @@
           :archivosRequeridos="archivosRequeridos"
           :archivosSubidos="item.archivosSubidos"
         ></progress-file>
-        <v-menu left top offset-y>
+        <v-menu left top :offset-x="true" :offset-y="true">
           <template v-slot:activator="{ on, attrs }">
             <v-btn icon v-bind="attrs" v-on="on">
               <v-icon> mdi-cog </v-icon>
@@ -109,13 +109,14 @@
     <v-dialog v-model="dialogDelete" max-width="400px">
       <v-card>
         <v-toolbar dark color="grey darken-3" dense flat>
+          <v-icon color="red" class="mr-2">mdi-alert</v-icon>
           <v-toolbar-title class="text-body-4 font-weight-bold white--text">
-            Borrar Carpeta
+            ¿Estás seguro?
           </v-toolbar-title>
         </v-toolbar>
 
         <v-card-text class="pa-4 black--text"
-          >Estás seguro que deseas borrar esta carpeta y todo su contenido?
+          >Si borras esta carpeta se perdera todo su contenido
         </v-card-text>
 
         <v-card-actions>
@@ -128,7 +129,7 @@
             >Cancelar</v-btn
           >
           <v-btn
-            color="primary"
+            color="red"
             class="body-2 font-weight-bold"
             outlined
             @click="deleteItemConfirm"
@@ -140,21 +141,27 @@
     </v-dialog>
     <v-dialog v-model="dialogFindDelete" max-width="400px">
       <v-card>
-        <v-card-title class="text-h5">
-          ¿Estás seguro que deseas guardar esta parametrización?
-        </v-card-title>
-        <v-divider inset></v-divider>
-        <v-card-text>
-          Si hay parametros eliminados se borraran los archivos asociados a
-          tales parametros.
+        <v-toolbar dark color="grey darken-3" dense flat>
+          <v-icon color="yellow" class="mr-2">mdi-alert</v-icon>
+          <v-toolbar-title class="text-body-4 font-weight-bold white--text">
+            ¿Estás seguro?
+          </v-toolbar-title>
+        </v-toolbar>
+
+        <v-card-text class="pa-4">
+          Si has eliminado parametros se borraran los archivos asociados a tales
+          parametros.
         </v-card-text>
 
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn color="blue darken-1" text @click="closefindDelete"
-            >Cancelar</v-btn
-          >
-          <v-btn color="blue darken-1" text @click="updateParams()"
+          <v-btn color="grey" text @click="closefindDelete">Cancelar</v-btn>
+          <v-btn
+            color="yellow"
+            class="body-2 font-weight-bold"
+            outlined
+            text
+            @click="updateParams()"
             >Actualizar</v-btn
           >
         </v-card-actions>

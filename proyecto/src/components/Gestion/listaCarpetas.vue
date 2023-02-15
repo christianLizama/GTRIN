@@ -49,7 +49,7 @@
           }}</v-list-item-subtitle>
         </v-list-item-content>
 
-        <v-menu left top offset-y>
+        <v-menu left top :offset-x="true" :offset-y="true">
           <template v-slot:activator="{ on, attrs }">
             <v-btn icon v-bind="attrs" v-on="on">
               <v-icon> mdi-cog </v-icon>
@@ -91,13 +91,14 @@
     >
       <v-card>
         <v-toolbar dark color="grey darken-3" dense flat>
+          <v-icon color="red" class="mr-2">mdi-alert</v-icon>
           <v-toolbar-title class="text-body-4 font-weight-bold white--text">
-            Borrar Carpeta
+            ¿Estás seguro?
           </v-toolbar-title>
         </v-toolbar>
 
         <v-card-text class="pa-4 black--text"
-          >Estás seguro que deseas borrar esta carpeta y todo su contenido?
+          >Si borras esta carpeta se perdera todo su contenido
         </v-card-text>
 
         <v-card-actions>
@@ -110,7 +111,7 @@
             >Cancelar</v-btn
           >
           <v-btn
-            color="primary"
+            color="red"
             class="body-2 font-weight-bold"
             outlined
             @click="deleteItemConfirm"
