@@ -331,7 +331,8 @@ export default {
   watch: {},
   created() {
     //this.iniciarSociedad();
-    this.componentDidMount();
+    //this.componentDidMount();
+    this.obtenerTodo();
     // this.iniciarCarpetas();
     // this.iniciarSubCarpetas();
   },
@@ -354,15 +355,15 @@ export default {
     },
     carpetasHijas(carpetas) {
       if (this.sociedadSeleccionada.nombre == "Todo") {
-        this.carpetaSelecionada = this.carpetasDefault[0]
-        this.estadoSeleccionado = this.estados[0]
+        this.carpetaSelecionada = this.carpetasDefault[0];
+        this.estadoSeleccionado = this.estados[0];
         this.carpetas.forEach((element) => {
           this.carpetasDefault.push(element);
         });
         return this.carpetasDefault;
       }
-      this.carpetaSelecionada = this.carpetasDefault[0]
-      this.estadoSeleccionado = this.estados[0]
+      this.carpetaSelecionada = this.carpetasDefault[0];
+      this.estadoSeleccionado = this.estados[0];
       let hijas = carpetas.filter((item) => {
         return item.padre === this.sociedadSeleccionada._id;
       });
@@ -370,11 +371,10 @@ export default {
       return hijas;
     },
     subCarpetasHijas(subCarpetas) {
-      if(this.subCarpetaSelecionada.nombre!="Todo"){
-        this.estadoSeleccionado = this.estados[0]
-      }
-      else{
-        this.estadoSeleccionado = this.estados[0]
+      if (this.subCarpetaSelecionada.nombre != "Todo") {
+        this.estadoSeleccionado = this.estados[0];
+      } else {
+        this.estadoSeleccionado = this.estados[0];
       }
       if (
         this.carpetaSelecionada.nombre == "Todo" &&
@@ -390,7 +390,7 @@ export default {
         this.sociedadSeleccionada.nombre != "Todo" &&
         this.carpetaSelecionada.nombre == "Todo"
       ) {
-        this.estadoSeleccionado = this.estados[0]
+        this.estadoSeleccionado = this.estados[0];
 
         this.subCarpetaSelecionada = this.subCarpetasDefault[0];
         let listaFiltrada = subCarpetas.filter(
@@ -405,12 +405,12 @@ export default {
         this.sociedadSeleccionada.nombre == "Todo" &&
         this.carpetaSelecionada.nombre != "Todo"
       ) {
-        this.estadoSeleccionado = this.estados[0]
+        this.estadoSeleccionado = this.estados[0];
 
         let carpetasFiltradas = this.carpetas.filter(
           (carpeta) => carpeta.nombre == this.carpetaSelecionada.nombre
         );
-        let nuevasSubCarpetas = []
+        let nuevasSubCarpetas = [];
         nuevasSubCarpetas = subCarpetas.filter((subCarpeta) => {
           return carpetasFiltradas.some((carpeta) => {
             return carpeta._id === subCarpeta.padre;
@@ -420,13 +420,12 @@ export default {
         this.subCarpetaSelecionada = this.subCarpetasDefault[0];
         return nuevasSubCarpetas;
       }
-      console.log("holixd")
       let hijas = subCarpetas.filter((item) => {
         return item.padre === this.carpetaSelecionada._id;
       });
       hijas.unshift({ nombre: "Todo", _id: "" });
       this.subCarpetaSelecionada = this.subCarpetasDefault[0];
-      this.estadoSeleccionado = this.estados[0]
+      this.estadoSeleccionado = this.estados[0];
 
       return hijas;
     },
@@ -437,19 +436,31 @@ export default {
       );
     },
     filtroCarpetas(archivos) {
-      if(this.sociedadSeleccionada.nombre!="Todo"  &&  this.carpetaSelecionada.nombre!="Todo"){
-        return archivos.filter((archivo) => !archivo.abuelo.indexOf(this.carpetaSelecionada._id))
+      if (
+        this.sociedadSeleccionada.nombre != "Todo" &&
+        this.carpetaSelecionada.nombre != "Todo"
+      ) {
+        return archivos.filter(
+          (archivo) => !archivo.abuelo.indexOf(this.carpetaSelecionada._id)
+        );
+      } else if (
+        this.sociedadSeleccionada.nombre == "Todo" &&
+        this.carpetaSelecionada.nombre != "Todo"
+      ) {
+        return archivos.filter(
+          (archivo) =>
+            !archivo.nombreCarpeta.indexOf(this.carpetaSelecionada.nombre)
+        );
       }
-      else if(this.sociedadSeleccionada.nombre=="Todo" && this.carpetaSelecionada.nombre!="Todo"){
-        return archivos.filter((archivo)=> !archivo.nombreCarpeta.indexOf(this.carpetaSelecionada.nombre))
-      }
-      return archivos  
+      return archivos;
     },
     filtroSubCarpetas(archivos) {
-      if(this.subCarpetaSelecionada.nombre!="Todo"){
-        return archivos.filter((archivo)=> !archivo.padre.indexOf(this.subCarpetaSelecionada._id))
+      if (this.subCarpetaSelecionada.nombre != "Todo") {
+        return archivos.filter(
+          (archivo) => !archivo.padre.indexOf(this.subCarpetaSelecionada._id)
+        );
       }
-      return archivos
+      return archivos;
     },
     filtroStatus(archivos) {
       if (this.estadoSeleccionado.codigo == 0) {
@@ -487,6 +498,41 @@ export default {
       return nombreParametro;
     },
 
+    iniciarKpi(archivos) {
+      let total = 0;
+      var porcentaje = 0;
+      var intPorcentaje = 0;
+      this.kpi.forEach((element) => {
+        element.porcentaje = 0;
+        if (element.id == 0) {
+          element.total = archivos.length;
+          total = archivos.length;
+          element.porcentaje = 100;
+        } else if (element.id == 3) {
+          element.total = this.contadorArchivos(archivos, 3);
+          porcentaje = (element.total / total) * 100;
+          intPorcentaje = Math.round(porcentaje);
+          element.porcentaje = intPorcentaje;
+        } else if (element.id == 2) {
+          element.total = this.contadorArchivos(archivos, 2);
+          porcentaje = (element.total / total) * 100;
+          intPorcentaje = Math.round(porcentaje);
+          element.porcentaje = intPorcentaje;
+        } else {
+          element.total = this.contadorArchivos(archivos, 1);
+          porcentaje = (element.total / total) * 100;
+          intPorcentaje = Math.round(porcentaje);
+          element.porcentaje = intPorcentaje;
+        }
+      });
+    },
+    async obtenerTodo() {
+      await axios.get("archivo/archivosStatus").then((result) => {
+        this.archivos = result.data;
+        this.isLoading = false;
+        this.iniciarKpi(result.data)
+      });
+    },
     async componentDidMount() {
       try {
         const [padres, carpetas, subCarpetas] = await Promise.all([

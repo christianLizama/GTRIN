@@ -140,7 +140,7 @@
             placeholder="Ingrese nombre de la carpeta"
           ></v-text-field>
           <v-text-field
-            outlined          
+            outlined
             v-model="editedItem.descripcion"
             label="Descripción"
             placeholder="Ingrese descripción"
@@ -161,6 +161,14 @@
         </v-card-text> -->
         <v-card-actions>
           <v-spacer></v-spacer>
+          <v-btn
+            color="grey"
+            text
+            class="body-2 font-weight-bold"
+            @click="close"
+          >
+            Cancel
+          </v-btn>
 
           <v-btn
             color="primary"

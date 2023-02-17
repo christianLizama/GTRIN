@@ -53,10 +53,22 @@
 
                 <v-card-actions>
                   <v-spacer></v-spacer>
-                  <v-btn color="blue darken-1" text @click="close">
+                  <v-btn
+                    color="grey"
+                    text
+                    class="body-2 font-weight-bold"
+                    @click="close"
+                  >
                     Cancel
                   </v-btn>
-                  <v-btn color="blue darken-1" text @click="save"> Save </v-btn>
+                  <v-btn
+                    color="primary"
+                    class="body-2 font-weight-bold"
+                    outlined
+                    @click="save"
+                  >
+                    Guardar
+                  </v-btn>
                 </v-card-actions>
               </v-card>
             </v-dialog>
@@ -72,7 +84,8 @@
                 </v-toolbar>
 
                 <v-card-text class="pa-4 black--text"
-                  >Un contenedor no puede ser eliminado si contiene carpetas dentro
+                  >Un contenedor no puede ser eliminado si contiene carpetas
+                  dentro
                 </v-card-text>
 
                 <v-card-actions>
@@ -117,8 +130,8 @@
             </template>
             <v-list>
               <v-list-item link @click="editItem(item)">
-                <v-list-item-title> 
-                  <v-icon>mdi-pencil</v-icon> 
+                <v-list-item-title>
+                  <v-icon>mdi-pencil</v-icon>
                   Editar
                 </v-list-item-title>
               </v-list-item>
@@ -240,15 +253,14 @@ export default {
         });
     },
 
-    async verificarExistencias(item,index) {
+    async verificarExistencias(item, index) {
       await axios
         .get("sociedad/queryFolders?_id=" + item._id)
         .then((res) => {
           this.carpetas = res.data;
-          if(this.carpetas.length<1){
+          if (this.carpetas.length < 1) {
             this.deleteContenedor(item, index);
-          }
-          else{
+          } else {
             this.$refs.childComponent.SnackbarShow(
               "error",
               "No se puede borrar este contenedor porque contiene carpetas"
@@ -260,7 +272,7 @@ export default {
         });
     },
     deleteItemConfirm() {
-      this.verificarExistencias(this.editedItem,this.editedIndex)
+      this.verificarExistencias(this.editedItem, this.editedIndex);
       this.closeDelete();
     },
 
