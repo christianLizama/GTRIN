@@ -444,7 +444,7 @@ export default {
         });
     },
     addFind: function () {
-      this.finds.push({ value: "", del: 0, option: false });
+      this.finds.push({ value: "", del: 0, option: true });
     },
     deleteFind(item) {
       let index = this.finds.indexOf(item);
@@ -637,8 +637,11 @@ export default {
         .then((result) => {
           this.padre = result.data;
           this.getSubFolders(result.data._id);
-          this.finds = result.data.parametros;
-          this.primerosParametros = this.$data.finds;
+          result.data.parametros.forEach(element => {
+            this.finds.push(element);
+          });
+
+          this.primerosParametros = result.data.parametros;
           if (result.data.parametros.length >= 1) {
             this.addPermission = false;
             this.encabezado = "Editar Parametros";

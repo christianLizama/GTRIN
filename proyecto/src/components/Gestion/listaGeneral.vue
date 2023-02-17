@@ -84,7 +84,6 @@
           :expanded.sync="expanded"
           item-key="_id"
           show-expand
-
           :headers="headers"
           :items="filtros"
           sort-by="nombre"
@@ -115,7 +114,9 @@
             </div>
           </template>
           <template v-slot:[`expanded-item`]="{ headers, item }">
-            <td :colspan="headers.length">Pertenece al parametro: <b>{{ item.nombreParametro }}</b></td>
+            <td :colspan="headers.length">
+              Pertenece al parametro: <b>{{ item.nombreParametro }}</b>
+            </td>
           </template>
           <template v-slot:top>
             <v-toolbar flat>
@@ -152,7 +153,7 @@
               </template>
             </v-toolbar>
           </template>
-          
+
           <template v-slot:no-data>
             <v-btn color="primary" @click="initialize"> Reset </v-btn>
           </template>
@@ -184,7 +185,7 @@ export default {
     sociedades: [],
     expanded: [],
     singleExpand: true,
-    parametros:[],
+    parametros: [],
     sociedadSeleccionada: {
       nombre: "Todo",
       _id: "",
@@ -353,9 +354,15 @@ export default {
     },
     carpetasHijas(carpetas) {
       if (this.sociedadSeleccionada.nombre == "Todo") {
-        this.carpetaSelecionada = this.carpetasDefault[0];
+        this.carpetaSelecionada = this.carpetasDefault[0]
+        this.estadoSeleccionado = this.estados[0]
+        this.carpetas.forEach((element) => {
+          this.carpetasDefault.push(element);
+        });
         return this.carpetasDefault;
       }
+      this.carpetaSelecionada = this.carpetasDefault[0]
+      this.estadoSeleccionado = this.estados[0]
       let hijas = carpetas.filter((item) => {
         return item.padre === this.sociedadSeleccionada._id;
       });
@@ -363,17 +370,64 @@ export default {
       return hijas;
     },
     subCarpetasHijas(subCarpetas) {
+      if(this.subCarpetaSelecionada.nombre!="Todo"){
+        this.estadoSeleccionado = this.estados[0]
+      }
+      else{
+        this.estadoSeleccionado = this.estados[0]
+      }
       if (
         this.carpetaSelecionada.nombre == "Todo" &&
         this.sociedadSeleccionada.nombre == "Todo"
       ) {
-        this.subCarpetaSelecionada = this.subCarpetasDefault[0];
+        this.subCarpetas.forEach((element) => {
+          this.subCarpetasDefault.push(element);
+        });
         return this.subCarpetasDefault;
       }
+      //Si seleciono una sociedad
+      else if (
+        this.sociedadSeleccionada.nombre != "Todo" &&
+        this.carpetaSelecionada.nombre == "Todo"
+      ) {
+        this.estadoSeleccionado = this.estados[0]
+
+        this.subCarpetaSelecionada = this.subCarpetasDefault[0];
+        let listaFiltrada = subCarpetas.filter(
+          (carpeta) =>
+            !carpeta.padreSuperior.indexOf(this.sociedadSeleccionada._id)
+        );
+        listaFiltrada.unshift({ nombre: "Todo", _id: "" });
+        return listaFiltrada;
+      }
+      //Si solo selecciono una carpeta
+      else if (
+        this.sociedadSeleccionada.nombre == "Todo" &&
+        this.carpetaSelecionada.nombre != "Todo"
+      ) {
+        this.estadoSeleccionado = this.estados[0]
+
+        let carpetasFiltradas = this.carpetas.filter(
+          (carpeta) => carpeta.nombre == this.carpetaSelecionada.nombre
+        );
+        let nuevasSubCarpetas = []
+        nuevasSubCarpetas = subCarpetas.filter((subCarpeta) => {
+          return carpetasFiltradas.some((carpeta) => {
+            return carpeta._id === subCarpeta.padre;
+          });
+        });
+        nuevasSubCarpetas.unshift({ nombre: "Todo", _id: "" });
+        this.subCarpetaSelecionada = this.subCarpetasDefault[0];
+        return nuevasSubCarpetas;
+      }
+      console.log("holixd")
       let hijas = subCarpetas.filter((item) => {
         return item.padre === this.carpetaSelecionada._id;
       });
       hijas.unshift({ nombre: "Todo", _id: "" });
+      this.subCarpetaSelecionada = this.subCarpetasDefault[0];
+      this.estadoSeleccionado = this.estados[0]
+
       return hijas;
     },
     filtroSociedad(archivos) {
@@ -383,15 +437,19 @@ export default {
       );
     },
     filtroCarpetas(archivos) {
-      let listaFiltrada = archivos.filter(
-        (archivo) => !archivo.abuelo.indexOf(this.carpetaSelecionada._id)
-      );
-      return listaFiltrada;
+      if(this.sociedadSeleccionada.nombre!="Todo"  &&  this.carpetaSelecionada.nombre!="Todo"){
+        return archivos.filter((archivo) => !archivo.abuelo.indexOf(this.carpetaSelecionada._id))
+      }
+      else if(this.sociedadSeleccionada.nombre=="Todo" && this.carpetaSelecionada.nombre!="Todo"){
+        return archivos.filter((archivo)=> !archivo.nombreCarpeta.indexOf(this.carpetaSelecionada.nombre))
+      }
+      return archivos  
     },
     filtroSubCarpetas(archivos) {
-      return archivos.filter(
-        (archivo) => !archivo.padre.indexOf(this.subCarpetaSelecionada._id)
-      );
+      if(this.subCarpetaSelecionada.nombre!="Todo"){
+        return archivos.filter((archivo)=> !archivo.padre.indexOf(this.subCarpetaSelecionada._id))
+      }
+      return archivos
     },
     filtroStatus(archivos) {
       if (this.estadoSeleccionado.codigo == 0) {
@@ -440,9 +498,9 @@ export default {
         this.sociedades.unshift({ nombre: "Todo", _id: "" });
         this.carpetas = carpetas.data;
         this.todoCarpetas = carpetas.data;
-        carpetas.data.forEach(folder => {
-          folder.parametros.forEach(param => {
-              this.parametros.push(param)
+        carpetas.data.forEach((folder) => {
+          folder.parametros.forEach((param) => {
+            this.parametros.push(param);
           });
         });
         this.subCarpetas = subCarpetas.data;
@@ -621,8 +679,10 @@ export default {
         subCarpetas
       );
 
-      element.nombreParametro = this.obtenerNombreParametro(element.parametro,this.parametros);
-
+      element.nombreParametro = this.obtenerNombreParametro(
+        element.parametro,
+        this.parametros
+      );
 
       let fechaCrea = element.fechaCreacion.split("T");
       let fechaEmi = element.fechaEmision.split("T");
@@ -635,24 +695,25 @@ export default {
 
       var today = new Date();
       var now = today.toISOString();
-      var fechaActual = now.split("T");
+      var cortado = now.split("T");
       var fechaEmis = moment(element.fechaEmision);
       var fechaCaducidad1 = moment(element.fechaCaducidad);
       var fechaCaducidad = moment(element.fechaCaducidad);
 
       var diasVigencia = fechaCaducidad1.diff(fechaEmis, "days");
-      var diasRestantes = fechaCaducidad.diff(fechaActual[0], "days");
+      var diasRestantes = fechaCaducidad.diff(cortado[0], "days");
 
       element.diasVigencia = diasVigencia;
       element.diasRestantes = diasRestantes;
       // console.log(element.nombre);
+      // console.log(element.archivo)
       // console.log("Fecha emision: " + element.fechaEmision);
       // console.log("Fecha vencimiento: " + element.fechaCaducidad);
       // console.log("Dias alerta: " + element.diasAviso);
       // console.log("Fecha que cambia de estado: " + moment(element.fechaEmision).add(element.diasAviso,"days").format("DD/MM/YYYY"))
       // console.log("Dias de vigencia: " + element.diasVigencia);
       // console.log("Dias restantes: " + element.diasRestantes);
-
+      // console.log("-----------------------------------------------")
       let dateArray = element.fechaEmision.split("-");
       var diaCambio2 = new Date(dateArray[0], dateArray[1] - 1, dateArray[2]);
       diaCambio2.setDate(diaCambio2.getDate() + element.diasAviso);

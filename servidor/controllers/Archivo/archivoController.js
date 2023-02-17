@@ -139,7 +139,9 @@ const removeAll = async (req, res, next) => {
       const directoryPath = __basedir + "/uploads/";
       if (archivos.length > 0) {
         archivos.forEach((element) => {
-          fs.unlink(directoryPath + element.archivo);
+          fs.unlink(directoryPath + element.archivo,(err)=>{
+            if (err) console.log(err);
+          });
         });
         res.status(200).send({
           message: "Todos los archivos han sido borrados",

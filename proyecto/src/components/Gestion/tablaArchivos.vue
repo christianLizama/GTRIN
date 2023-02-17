@@ -1,13 +1,6 @@
 <template>
   <div>
     <snackbar ref="childComponent"></snackbar>
-    <!-- <v-btn icon dark @click="show = false">
-          <v-icon>mdi-close</v-icon>
-      </v-btn>
-      <v-toolbar-title class="white--text">
-        {{ nombreParametro }}
-      </v-toolbar-title> -->
-
     <loading texto="Cargando Datos" v-if="isLoading"></loading>
     <v-data-table
       :headers="headers"
@@ -49,7 +42,7 @@
               <v-btn icon v-bind="attrs" v-on="on">
                 <v-icon color="blue">mdi-file-document-plus-outline</v-icon>
               </v-btn>
-              
+
               <v-text-field
                 @focus="searchClosed = false"
                 @blur="searchClosed = true"
@@ -104,8 +97,11 @@
                       <v-row align="center" justify="center">
                         <v-col cols="12" sm="6" md="4">
                           <v-text-field
+                            ref="form"
                             v-model="editedItem.nombre"
                             label="Nombre del archivo"
+                            :rules="rules.nombre"
+                            required
                           ></v-text-field>
                         </v-col>
                         <v-col v-if="editedIndex == -1" cols="12" sm="6" md="4">
@@ -123,7 +119,9 @@
                   </v-card>
 
                   <v-btn color="primary" text @click="close"> Cancelar </v-btn>
-                  <v-btn color="primary" @click="comprobar()"> Siguiente </v-btn>
+                  <v-btn color="primary" @click="comprobar()">
+                    Siguiente
+                  </v-btn>
                 </v-stepper-content>
 
                 <v-stepper-content step="2">
@@ -199,7 +197,8 @@
                 <v-stepper-content step="3">
                   <v-card class="mb-12 mx-auto" outlined color="lighten-1">
                     <v-card-title>
-                      Establecer el día en que el archivo cambia al estado por vencer
+                      Establecer el día en que el archivo cambia al estado por
+                      vencer
                     </v-card-title>
                     <v-card-text class="pa-4">
                       <v-slider
@@ -210,7 +209,7 @@
                         :max="fechaEm - 1"
                       ></v-slider>
                       <p class="red--text">
-                        Notificación 
+                        Notificación
                         <b>{{
                           calcularDias(
                             editedItem.diasAviso,
@@ -245,15 +244,31 @@
           </v-dialog>
           <v-dialog v-model="dialogDelete" max-width="500px">
             <v-card>
-              <v-card-title class="text-h5"
-                >Estas seguro que deseas eliminar este archivo?</v-card-title
-              >
+              <v-toolbar dark color="grey darken-3" dense flat>
+                <v-icon color="red" class="mr-2">mdi-alert</v-icon>
+                <v-toolbar-title
+                  class="text-body-4 font-weight-bold white--text"
+                >
+                  ¿Estás seguro?
+                </v-toolbar-title>
+              </v-toolbar>
+              <v-card-text class="pa-4 black--text"
+                >Esta acción es irreversible
+              </v-card-text>
               <v-card-actions>
                 <v-spacer></v-spacer>
-                <v-btn color="blue darken-1" text @click="closeDelete"
+                <v-btn
+                  color="grey"
+                  text
+                  class="body-2 font-weight-bold"
+                  @click="closeDelete"
                   >Cancelar</v-btn
                 >
-                <v-btn color="blue darken-1" text @click="deleteItemConfirm"
+                <v-btn
+                  color="red"
+                  class="body-2 font-weight-bold"
+                  outlined
+                  @click="deleteItemConfirm"
                   >Aceptar</v-btn
                 >
                 <v-spacer></v-spacer>
@@ -305,7 +320,7 @@ import loading from "../loading.vue";
 import Snackbar from "../snackbar.vue";
 import Snackbar2 from "../snackbar.vue";
 export default {
-  components: {loading, Snackbar, Snackbar2 },
+  components: { loading, Snackbar, Snackbar2 },
   props: {
     Parametro: String,
     nombreParametro: String,
@@ -330,6 +345,11 @@ export default {
     padre: {},
     menu: false,
     menu2: false,
+    rules: {
+      file: [(val) => val == undefined || "Sube un archivo"],
+      nombre: [(val) => (val || "").length >= 4 || "Largo minimo 4 caracteres"],
+    },
+
     items: [
       { title: "Editar", icon: "mdi-pencil" },
       { title: "Eliminar", icon: "mdi-delete" },
@@ -493,14 +513,42 @@ export default {
     this.initialize();
   },
   methods: {
-    comprobar(){
-      if(this.editedItem.nombre.length>0 && this.currentFile!=undefined){
-        this.e1 = 2
-      }
-      else{
+    resetValidation() {
+      this.$refs.form.resetValidation();
+    },
+    comprobar() {
+      //Si falta el archivo y el nombre es mayor a 4 y se está subiendo un archivo
+      if (
+        this.editedItem.nombre.length >= 4 &&
+        this.currentFile == undefined &&
+        this.editedIndex != 0
+      ) {
         this.$refs.childComponent2.SnackbarShow(
           "error",
-          "Por favor rellene todos los campos"
+          "Por favor sube un archivo"
+        );
+      }
+      //Si esta editando y el nombre es mayor 4 pasamos al siguiente paso
+      else if (this.editedItem.nombre.length >= 4 && this.editedIndex == 0) {
+        this.e1 = 2;
+      }
+      //Si esta editando y el nombre es inferior a los 4 caracteres
+      else if (this.editedItem.nombre.length < 4 && this.editedIndex == 0) {
+        this.$refs.childComponent2.SnackbarShow(
+          "error",
+          "El nuevo nombre debe tener al menos 4 caracteres"
+        );
+      }
+      //Si no estamos editando revisamos que esté subiendo un archivo y dando un nombre correcto
+      else if (
+        this.editedItem.nombre.length >= 4 &&
+        this.currentFile != undefined
+      ) {
+        this.e1 = 2;
+      } else {
+        this.$refs.childComponent2.SnackbarShow(
+          "error",
+          "Por favor rellena todos los campos"
         );
       }
     },
@@ -718,7 +766,7 @@ export default {
         (archivo) => archivo.nombre === this.editedItem.nombre
       );
       // console.log("Soy el resultado: " + this.editedItem.nombre);
-      if (this.editedItem.nombre.length < 3) {
+      if (this.editedItem.nombre.length < 4) {
         this.$refs.childComponent2.SnackbarShow(
           "error",
           "Por favor ingrese un nombre con al menos 4 caracteres"
@@ -773,13 +821,13 @@ export default {
           this.editedItem.abuelo = this.padre.padre;
           this.editedItem.padreSuperior = this.padre.padreSuperior;
           this.editedItem.parametro = this.Parametro;
-          this.editedItem.fechaCambioEstado = moment(this.editedItem.fechaEmision).add(
-            this.editedItem.diasAviso,
-            "days"
-          );
+          let fechaCambio =  moment(this.editedItem.fechaEmision).add(this.editedItem.diasAviso, "days");
+          fechaCambio.set({hour:0,minute:0,second:0,millisecond:0})
+          this.editedItem.fechaCambioEstado = fechaCambio;
+          
           // console.log("Fecha em: " + this.fechaEm);
-          // console.log("Dias aviso: " + this.editedItem.diasAviso);
-
+          console.log("Dias aviso: " + this.editedItem.diasAviso);
+          console.log(this.editedItem)
           this.postArchivo(this.editedItem);
         })
         .catch(() => {
@@ -860,10 +908,10 @@ export default {
       this.dialogDelete = true;
     },
     deleteItemConfirm() {
-      this.borrarArchivo(this.archivos[this.editedIndex],this.editedIndex);
+      this.borrarArchivo(this.archivos[this.editedIndex], this.editedIndex);
       this.closeDelete();
     },
-    async borrarArchivo(archivo,index) {
+    async borrarArchivo(archivo, index) {
       var data = {
         id: archivo._id,
         fileName: archivo.archivo,
@@ -874,6 +922,7 @@ export default {
       });
     },
     close() {
+      this.resetValidation();
       this.dialog = false;
       this.e1 = 1;
       this.currentFile = undefined;
@@ -902,6 +951,8 @@ export default {
         //Si no la encuentra hace el update
         if (!resultado || resultado._id === this.editedItem._id) {
           if (this.editedItem.nombre.length > 3) {
+            //Actualizamos la nueva
+            this.editedItem.fechaCambioEstado = moment(this.editedItem.fechaEmision).add(this.editedItem.diasAviso,"days")
             this.actualizarArchivo(this.editedItem, this.editedIndex);
             this.snackTipe = true;
             this.$refs.childComponent.SnackbarShow(

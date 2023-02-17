@@ -60,7 +60,7 @@
               <span>Refrescar</span>
             </v-tooltip>
 
-            <v-dialog v-model="dialog" max-width="80%">
+            <v-dialog v-model="dialog" max-width="80%"  persistent>
               <v-card>
                 <v-toolbar dark color="black lighten-3" dense flat>
                   <v-btn icon dark @click="dialog = !dialog">
