@@ -8,20 +8,14 @@
         {{ padre.nombre }}
       </v-toolbar-title>
       <v-spacer></v-spacer>
-
-      <v-text-field
-        @focus="searchClosed = false"
-        @blur="searchClosed = true"
-        v-model="busqueda"
-        clearable
-        dense
-        filled
-        rounded
-        placeholder="Buscar"
-        prepend-inner-icon="mdi-magnify"
-        class="pt-6 expanding-search"
-        :class="{ closed: searchClosed && !busqueda }"
-      ></v-text-field>
+      <v-tooltip bottom>
+        <template v-slot:activator="{ on, attrs }">
+          <v-btn v-on="on" v-bind="attrs" icon @click="hidden = !hidden">
+            <v-icon>{{ hidden ? "mdi-magnify" : "mdi-close" }}</v-icon>
+          </v-btn>
+        </template>
+        <span>Buscar</span>
+      </v-tooltip>
 
       <v-tooltip bottom>
         <template v-slot:activator="{ on, attrs }">
@@ -53,6 +47,23 @@
     </v-toolbar>
     <loading texto="Cargando Datos" v-if="isLoading"></loading>
     <v-list v-if="!isLoading" two-line subheader>
+      <div class="container">
+        <v-expand-transition>
+          <v-text-field
+            v-show="!hidden"
+            v-model="busqueda"
+            clearable
+            hide-details
+            filled
+            dense
+            rounded
+            full-width
+            color="black darken"
+            placeholder="Buscar Carpeta"
+            prepend-inner-icon="mdi-folder-search-outline"
+          ></v-text-field>
+        </v-expand-transition>
+      </div>
       <v-subheader inset> Sub-Carpetas </v-subheader>
       <v-list-item
         v-for="item in resultadoBusqueda"
@@ -309,6 +320,7 @@ import ProgressFile from "../ProgressFile.vue";
 export default {
   components: { loading, Snackbar, ProgressFile },
   data: () => ({
+    hidden: true,
     searchClosed: true,
     timeout: 7500,
     encabezado: "",
@@ -450,7 +462,7 @@ export default {
       let index = this.finds.indexOf(item);
       if (item.del != 0) {
         let borrado = this.finds.splice(index, 1);
-        this.eliminados.push(borrado[0]);
+        this.eliminados.push(borrado[0]._id);
       } else {
         this.finds.splice(index, 1);
       }
@@ -637,7 +649,7 @@ export default {
         .then((result) => {
           this.padre = result.data;
           this.getSubFolders(result.data._id);
-          result.data.parametros.forEach(element => {
+          result.data.parametros.forEach((element) => {
             this.finds.push(element);
           });
 
@@ -783,6 +795,15 @@ export default {
   },
 };
 </script>
+
+<style>
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  max-width: 100%;
+}
+</style>
 
 <style lang="sass">
 .v-input.expanding-search

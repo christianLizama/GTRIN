@@ -9,20 +9,32 @@
       </v-toolbar-title>
       <v-spacer></v-spacer>
 
-      <v-text-field
-        @focus="searchClosed = false"
-        @blur="searchClosed = true"
-        v-model="busqueda"
-        clearable
-        dense
-        filled
-        rounded
-        placeholder="Buscar parametro"
-        prepend-inner-icon="mdi-magnify"
-        class="pt-6 expanding-search"
-        :class="{ closed: searchClosed && !busqueda }"
-      ></v-text-field>
+      <v-tooltip bottom>
+        <template v-slot:activator="{ on, attrs }">
+          <v-btn v-on="on" v-bind="attrs" icon @click="hidden = !hidden">
+            <v-icon>{{ hidden ? "mdi-magnify" : "mdi-close" }}</v-icon>
+          </v-btn>
+        </template>
+        <span>Buscar</span>
+      </v-tooltip>
     </v-toolbar>
+    <div class="container">
+      <v-expand-transition>
+        <v-text-field
+          v-show="!hidden"
+          v-model="busqueda"
+          clearable
+          hide-details
+          filled
+          dense
+          rounded
+          full-width
+          color="black darken"
+          placeholder="Buscar Parametro"
+          prepend-inner-icon="mdi-folder-search-outline"
+        ></v-text-field>
+      </v-expand-transition>
+    </div>
     <kpi-parametros
       :parametros="parametros"
       :archivos-requeridos="archivosRequeridos"
@@ -53,14 +65,14 @@
             <v-spacer></v-spacer>
             <v-tooltip bottom>
               <template v-slot:activator="{ on, attrs }">
-                <v-btn icon v-bind="attrs" v-on="on" @click="reloadPage" >
+                <v-btn icon v-bind="attrs" v-on="on" @click="reloadPage">
                   <v-icon>mdi-reload</v-icon>
                 </v-btn>
               </template>
               <span>Refrescar</span>
             </v-tooltip>
 
-            <v-dialog v-model="dialog" max-width="80%"  persistent>
+            <v-dialog v-model="dialog" max-width="80%" persistent>
               <v-card>
                 <v-toolbar dark color="black lighten-3" dense flat>
                   <v-btn icon dark @click="dialog = !dialog">
@@ -101,6 +113,7 @@ import KpiParametros from "../KpiParametros.vue";
 export default {
   components: { tablaArchivos, KpiParametros },
   data: () => ({
+    hidden: true,
     searchClosed: true,
     dialog: false,
     busqueda: "",
@@ -222,6 +235,15 @@ export default {
   },
 };
 </script>
+
+<style>
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  max-width: 100%;
+}
+</style>
 
 <style lang="sass">
 .v-input.expanding-search

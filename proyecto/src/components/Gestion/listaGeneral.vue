@@ -26,18 +26,18 @@
         </v-card-title>
         <v-card-text>
           <v-row align="center">
-            <v-col cols="11" sm="5" md="6">
+            <v-col cols="11" sm="5" :md="mdSize">
               <v-select
                 :items="sociedades"
                 return-object
                 v-model="sociedadSeleccionada"
                 item-text="nombre"
-                label="Sociedades"
+                label="Contenedores"
                 dense
                 outlined
               ></v-select>
             </v-col>
-            <v-col cols="11" sm="5" md="6">
+            <v-col cols="11" sm="5" :md="mdSize">
               <v-select
                 label="Carpetas"
                 dense
@@ -49,7 +49,7 @@
               ></v-select>
             </v-col>
 
-            <v-col cols="11" sm="5" md="6">
+            <v-col cols="11" sm="5" :md="mdSize">
               <v-select
                 v-model="subCarpetaSelecionada"
                 :items="computedSubCarpeta"
@@ -61,13 +61,49 @@
               ></v-select>
             </v-col>
 
-            <v-col cols="11" sm="5" md="6">
+            <v-col cols="11" sm="5" :md="mdSize">
               <v-select
                 :items="estados"
                 v-model="estadoSeleccionado"
                 item-text="nombre"
                 return-object
                 label="Status"
+                dense
+                outlined
+              ></v-select>
+            </v-col>
+            <v-col cols="11" sm="5" :md="mdSize">
+              <v-select
+                item-text="Año"
+                return-object
+                label="Año"
+                dense
+                outlined
+              ></v-select>
+            </v-col>
+            <v-col cols="11" sm="5" :md="mdSize">
+              <v-select
+                item-text="Año"
+                return-object
+                label="Mes"
+                dense
+                outlined
+              ></v-select>
+            </v-col>
+            <v-col cols="11" sm="5" :md="mdSize">
+              <v-select
+                item-text="Año"
+                return-object
+                label="Día"
+                dense
+                outlined
+              ></v-select>
+            </v-col>
+            <v-col cols="11" sm="5" :md="mdSize">
+              <v-select
+                item-text="Año"
+                return-object
+                label="Ordernar por"
                 dense
                 outlined
               ></v-select>
@@ -120,19 +156,25 @@
           </template>
           <template v-slot:top>
             <v-toolbar flat>
-              <v-toolbar-title>Archivos</v-toolbar-title>
-              <v-divider class="mx-4" inset vertical></v-divider>
-              <v-spacer></v-spacer>
+              <v-toolbar-title v-if="searchClosed">Archivos</v-toolbar-title>
+              <v-divider v-if="searchClosed" class="mx-4" inset vertical></v-divider>
+              <v-spacer v-if="searchClosed"></v-spacer>
               <v-text-field
+                @focus="searchClosed = false"
+                @blur="searchClosed = true"
                 v-model="search"
-                label="Ingrese nombre de archivo"
-                hide-details
-                single-line
+                clearable
+                dense
+                filled
+                rounded
+                placeholder="Buscar archivo"
                 prepend-inner-icon="mdi-magnify"
+                class="pt-6 expanding-search"
+                :class="{ closed: searchClosed && !busqueda }"
               ></v-text-field>
               <template>
                 <vue-json-to-csv
-                  :json-data="archivos"
+                  :json-data="filtros"
                   :labels="{
                     nombreSociedad: { title: 'Nombre Contenedor' },
                     nombreCarpeta: { title: 'Carpeta' },
@@ -174,7 +216,9 @@ import Trigger from "../trigger.vue";
 export default {
   components: { VueJsonToCsv, loading, Trigger, Kpi },
   data: () => ({
+    searchClosed: true,
     showScheduleForm: false,
+    mdSize: 3,
     link: process.env.VUE_APP_SERVER_URL,
     cVigente: 0,
     cPorVencer: 0,
@@ -258,7 +302,7 @@ export default {
     ],
     headers: [
       {
-        text: "Sociedad",
+        text: "Contenedor",
         align: "start",
         sortable: true,
         value: "nombreSociedad",
@@ -528,9 +572,19 @@ export default {
     },
     async obtenerTodo() {
       await axios.get("archivo/archivosStatus").then((result) => {
-        this.archivos = result.data;
+        let { archivos, sociedades, carpetas, subCarpetas, parametros } =
+          result.data;
+        this.archivos = archivos;
+        this.sociedades = sociedades;
+        this.sociedades.unshift({ nombre: "Todo", _id: "" });
+        this.carpetas = carpetas;
+        this.todoCarpetas = carpetas;
+        this.parametros = parametros;
+        this.subCarpetas = subCarpetas;
+        this.todoSubCarpetas = subCarpetas;
+
         this.isLoading = false;
-        this.iniciarKpi(result.data)
+        this.iniciarKpi(archivos);
       });
     },
     async componentDidMount() {
@@ -827,4 +881,17 @@ export default {
   align-items: center;
   justify-content: center;
 }
+</style>
+
+<style lang="sass">
+.v-input.expanding-search
+  transition: max-width 0.3s
+  .v-input__slot
+    cursor: pointer !important
+    &before, &:after
+      border-color: transparent !important
+  &.closed
+    max-width: 50px
+    .v-input__slot
+      background-color: transparent !important
 </style>

@@ -1,6 +1,7 @@
 import {Carpeta} from "../../models/Carpeta";
 import subCarpeta from "../../models/SubCarpeta";
-
+import Archivo from "../../models/Archivo";
+const fs = require("fs");
 //Metodo para crear una Carpeta
 const add = async (req, res, next) => {
   try {
@@ -49,8 +50,20 @@ const agregarParametros = async (req, res, next) => {
 const actualizarParametros = async (req, res, next) => {
   try {
     let {id,parametros,eliminados} = req.body
+    const archivosDelete = await Archivo.find( { parametro : { $in : eliminados }})
+    console.log(archivosDelete)
+    if(archivosDelete.length > 0){
+      const directoryPath = __basedir + "/uploads/";
+      archivosDelete.forEach((element) => {
+        fs.unlink(directoryPath + element.archivo,(err)=>{
+          if (err) console.log(err);
+        });
+      });
+      const borrados = await Archivo.deleteMany({ parametro : { $in : eliminados }})  
+      console.log(borrados)
+    }
+    
     const CarpetaActualizada = await Carpeta.findById(id).then((folder) => {
-      
       parametros.forEach(param => {
         const params = folder.parametros.id(param._id)
         if(params){
@@ -60,11 +73,10 @@ const actualizarParametros = async (req, res, next) => {
           folder.parametros.addToSet(param);
         }
       });
-      //Para eliminar
+      //Para eliminar los parametros
       eliminados.forEach(eliminado => {
-        const a = folder.parametros.id(eliminado._id).remove();
+        folder.parametros.id(eliminado).remove();
       });
-      // 
       return folder.save();
     })
     if(CarpetaActualizada){

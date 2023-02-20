@@ -1,9 +1,10 @@
 import { json } from "express";
 import moment from "moment";
 import archivo from "../../models/Archivo";
-import {Carpeta} from "../../models/Carpeta";
+import { Carpeta } from "../../models/Carpeta";
 import subCarpeta from "../../models/SubCarpeta";
 import sociedad from "../../models/Sociedad";
+import { now } from "mongoose";
 const fs = require("fs");
 
 //Metodo para crear un archivo
@@ -64,8 +65,15 @@ const countFiles = async (req, res, next) => {
   try {
     const id = req.query._id;
     const idPadre = req.query.padre;
-
-    const reg = await archivo.find({ parametro: id, padre: idPadre }).count();
+    let date = new Date();
+    console.log(date);
+    const reg = await archivo
+      .find({
+        parametro: id,
+        padre: idPadre,
+        fechaCaducidad: { $gt: new Date() },
+      })
+      .count();
     res.status(200).json(reg);
   } catch (e) {
     res.status(500).send({
@@ -96,15 +104,9 @@ function obtenerNombreParametro(parametroID, parametros) {
   return nombreParametro;
 }
 //Iniciamos un archivo con cada uno de sus parametros
-function iniciarFile(element, padres, carpetas, subCarpetas,parametros) {
-  element.nombreSociedad = obtenerNombreSociedad(
-    element.padreSuperior,
-    padres
-  );
-  element.nombreCarpeta = obtenerNombreCarpeta(
-    element.abuelo,
-    carpetas
-  );
+function iniciarFile(element, padres, carpetas, subCarpetas, parametros) {
+  element.nombreSociedad = obtenerNombreSociedad(element.padreSuperior, padres);
+  element.nombreCarpeta = obtenerNombreCarpeta(element.abuelo, carpetas);
   element.nombreSubCarpeta = obtenerNombreSubCarpeta(
     element.padre,
     subCarpetas
@@ -194,39 +196,44 @@ const getArchivosStatus = async (req, res, next) => {
         message: "El registro no existe",
       });
     } else {
-      let result = JSON.parse(JSON.stringify(archivos))
-      let result2 = JSON.parse(JSON.stringify(sociedades))
-      let result3 = JSON.parse(JSON.stringify(carpetas))
-      let result4 = JSON.parse(JSON.stringify(subCarpetas))
+      let result = JSON.parse(JSON.stringify(archivos));
+      let result2 = JSON.parse(JSON.stringify(sociedades));
+      let result3 = JSON.parse(JSON.stringify(carpetas));
+      let result4 = JSON.parse(JSON.stringify(subCarpetas));
 
-      let parametrosTotal = []
+      let parametrosTotal = [];
       //Obtenemos todos los parametros de todas las carpetas
       result3.forEach((folder) => {
         folder.parametros.forEach((param) => {
           parametrosTotal.push(param);
         });
       });
-      result.forEach(archivo => {
-          iniciarFile(archivo,result2,result3,result4,parametrosTotal);
+      result.forEach((archivo) => {
+        iniciarFile(archivo, result2, result3, result4, parametrosTotal);
       });
-
-      res.status(200).json(result);
+      let array = {
+        archivos: result,
+        sociedades: result2,
+        carpetas: result3,
+        subCarpetas: result4,
+        parametros: parametrosTotal,
+      };
+      res.status(200).json(array);
     }
-
   } catch (e) {
     res.status(500).send({
       message: "Ocurrio un error",
     });
     next(e);
   }
-}
+};
 
 //Metodo para obtener los archivos de una sub carpeta
 const getArchivos = async (req, res, next) => {
   try {
     const id = req.query._id;
-    console.log(req.query._id)
-    const reg = await archivo.find({ padre: id })
+    console.log(req.query._id);
+    const reg = await archivo.find({ padre: id });
     if (!reg) {
       res.status(404).send({
         message: "El registro no existe",
@@ -265,7 +272,7 @@ const remove = async (req, res, next) => {
       const directoryPath = __basedir + "/uploads/";
       fs.unlink(directoryPath + fileName, (err) => {
         if (err) {
-          console.log("Este archivo no existe")
+          console.log("Este archivo no existe");
         }
         res.status(200).send({
           message: "El archivo " + fileName + " ha sido borrado",
@@ -290,17 +297,16 @@ const removeAll = async (req, res, next) => {
       const directoryPath = __basedir + "/uploads/";
       if (archivos.length > 0) {
         archivos.forEach((element) => {
-          fs.unlink(directoryPath + element.archivo,(err)=>{
+          fs.unlink(directoryPath + element.archivo, (err) => {
             if (err) console.log(err);
           });
         });
         res.status(200).send({
           message: "Todos los archivos han sido borrados",
         });
-      }
-      else{
+      } else {
         res.status(200).send({
-          message: "La carpeta no posee ningún archivo"
+          message: "La carpeta no posee ningún archivo",
         });
       }
     }
@@ -322,20 +328,50 @@ const removeFolderFiles = async (req, res, next) => {
       const directoryPath = __basedir + "/uploads/";
       if (archivos.length > 0) {
         archivos.forEach((element) => {
-          fs.unlink(directoryPath + element.archivo ,(err)=>{
+          fs.unlink(directoryPath + element.archivo, (err) => {
             if (err) console.log(err);
           });
         });
         res.status(200).send({
           message: "Todos los archivos han sido borrados",
         });
-      }
-      else{
+      } else {
         res.status(200).send({
-          message: "La carpeta no posee ningún archivo"
+          message: "La carpeta no posee ningún archivo",
         });
       }
     }
+  } catch (e) {
+    res.status(500).send({
+      message: "Ocurrio un error",
+    });
+    next(e);
+  }
+};
+
+//Metodo para hacer update de los status
+const updateStatus = async (req, res, next) => {
+  try {
+    const reg = await archivo.updateMany(
+      {},
+      [
+        {
+          $set: {
+            statusTest: {
+              $switch: {
+                branches: [
+                  { case: { $gte: [new Date(),"$fechaCaducidad"] }, then: "Vencido" },
+                  { case: { $gte: [new Date(),"$fechaCambioEstado"]}, then: "Por vencer" },
+                ],
+                default: "Vigente",
+              },
+            },
+          },
+        },
+      ],
+      { multi: true }
+    );
+    res.status(200).json(reg);
   } catch (e) {
     res.status(500).send({
       message: "Ocurrio un error",
@@ -354,5 +390,6 @@ module.exports = {
   countFiles,
   removeAll,
   removeFolderFiles,
-  getArchivosStatus
+  getArchivosStatus,
+  updateStatus
 };

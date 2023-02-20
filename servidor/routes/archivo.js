@@ -20,4 +20,5 @@ router.get('/countFiles', archivo.countFiles)
 router.delete('/removeAll/',archivo.removeAll)
 router.delete('/removeFolderFiles/',archivo.removeFolderFiles)
 router.get('/archivosStatus', archivo.getArchivosStatus)
+router.put('/updateStatus',archivo.updateStatus)
 module.exports = router;

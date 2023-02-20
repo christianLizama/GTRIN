@@ -9,7 +9,15 @@
       </v-toolbar-title>
 
       <v-spacer></v-spacer>
-      <v-text-field
+      <v-tooltip bottom>
+        <template v-slot:activator="{ on, attrs }">
+          <v-btn v-on="on" v-bind="attrs" icon @click="hidden = !hidden">
+            <v-icon>{{ hidden ? "mdi-magnify" : "mdi-close" }}</v-icon>
+          </v-btn>
+        </template>
+        <span>Buscar</span>
+      </v-tooltip>
+      <!-- <v-text-field
         @focus="searchClosed = false"
         @blur="searchClosed = true"
         v-model="busqueda"
@@ -21,7 +29,7 @@
         prepend-inner-icon="mdi-magnify"
         class="pt-6 expanding-search"
         :class="{ closed: searchClosed && !busqueda }"
-      ></v-text-field>
+      ></v-text-field> -->
 
       <v-tooltip bottom>
         <template v-slot:activator="{ on, attrs }">
@@ -37,9 +45,27 @@
         <span>Agregar carpeta</span>
       </v-tooltip>
     </v-toolbar>
+
     <loading texto="Cargando Datos" v-if="isLoading"></loading>
     <v-list v-if="!isLoading" two-line subheader>
-      <v-subheader inset> Carpetas </v-subheader>
+      <div class="container">
+        <v-expand-transition>
+          <v-text-field
+            v-show="!hidden"
+            v-model="busqueda"
+            clearable
+            hide-details
+            filled
+            dense
+            rounded
+            full-width
+            color="black darken"
+            placeholder="Buscar Carpeta"
+            prepend-inner-icon="mdi-folder-search-outline"
+          ></v-text-field>
+        </v-expand-transition>
+      </div>
+
       <v-list-item v-for="item in resultadoBusqueda" :key="item.nombre" link>
         <v-list-item-avatar> <v-icon>mdi-folder </v-icon> </v-list-item-avatar>
         <v-list-item-content @click="enviarRuta(item)">
@@ -192,6 +218,7 @@ export default {
   components: { loading, Snackbar },
   data: () => ({
     // finds: [],
+    hidden: true,
     searchClosed: true,
     busqueda: "",
     isLoading: true,
@@ -540,6 +567,16 @@ export default {
   },
 };
 </script>
+
+<style>
+.container{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  max-width: 100%;
+}
+
+</style>
 
 <style lang="sass">
 .v-input.expanding-search

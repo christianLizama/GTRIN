@@ -34,30 +34,33 @@
       </template>
       <template v-slot:top>
         <v-toolbar flat>
-          <v-toolbar-title>Archivos</v-toolbar-title>
-          <v-divider class="mx-4" inset vertical></v-divider>
-          <v-spacer></v-spacer>
+          <v-toolbar-title v-if="searchClosed">Archivos</v-toolbar-title>
+          <v-divider
+            v-if="searchClosed"
+            class="mx-4"
+            inset
+            vertical
+          ></v-divider>
+          <v-spacer v-if="searchClosed"></v-spacer>
+          <v-text-field
+            @focus="searchClosed = false"
+            @blur="searchClosed = true"
+            v-model="busqueda"
+            clearable
+            dense
+            filled
+            rounded
+            placeholder="Buscar archivo"
+            prepend-inner-icon="mdi-magnify"
+            class="pt-6 expanding-search"
+            :class="{ closed: searchClosed && !busqueda }"
+          ></v-text-field>
           <v-dialog v-model="dialog" max-width="80%">
             <template v-slot:activator="{ on, attrs }">
               <v-btn icon v-bind="attrs" v-on="on">
                 <v-icon color="blue">mdi-file-document-plus-outline</v-icon>
               </v-btn>
-
-              <v-text-field
-                @focus="searchClosed = false"
-                @blur="searchClosed = true"
-                v-model="busqueda"
-                clearable
-                dense
-                filled
-                rounded
-                placeholder="Buscar archivo"
-                prepend-inner-icon="mdi-magnify"
-                class="pt-6 expanding-search"
-                :class="{ closed: searchClosed && !busqueda }"
-              ></v-text-field>
             </template>
-
             <loading texto="Subiendo Archivo" v-if="isUpload"></loading>
             <v-stepper v-else v-model="e1">
               <snackbar2 ref="childComponent2"></snackbar2>
@@ -821,13 +824,16 @@ export default {
           this.editedItem.abuelo = this.padre.padre;
           this.editedItem.padreSuperior = this.padre.padreSuperior;
           this.editedItem.parametro = this.Parametro;
-          let fechaCambio =  moment(this.editedItem.fechaEmision).add(this.editedItem.diasAviso, "days");
-          fechaCambio.set({hour:0,minute:0,second:0,millisecond:0})
+          let fechaCambio = moment(this.editedItem.fechaEmision).add(
+            this.editedItem.diasAviso,
+            "days"
+          );
+          fechaCambio.set({ hour: 0, minute: 0, second: 0, millisecond: 0 });
           this.editedItem.fechaCambioEstado = fechaCambio;
-          
+
           // console.log("Fecha em: " + this.fechaEm);
           console.log("Dias aviso: " + this.editedItem.diasAviso);
-          console.log(this.editedItem)
+          console.log(this.editedItem);
           this.postArchivo(this.editedItem);
         })
         .catch(() => {
@@ -952,7 +958,9 @@ export default {
         if (!resultado || resultado._id === this.editedItem._id) {
           if (this.editedItem.nombre.length > 3) {
             //Actualizamos la nueva
-            this.editedItem.fechaCambioEstado = moment(this.editedItem.fechaEmision).add(this.editedItem.diasAviso,"days")
+            this.editedItem.fechaCambioEstado = moment(
+              this.editedItem.fechaEmision
+            ).add(this.editedItem.diasAviso, "days");
             this.actualizarArchivo(this.editedItem, this.editedIndex);
             this.snackTipe = true;
             this.$refs.childComponent.SnackbarShow(
