@@ -243,6 +243,10 @@ export default {
         .then((result) => {
           this.$store.dispatch("eliminarContenedor", result.data);
           this.desserts.splice(index, 1);
+          this.$refs.childComponent.SnackbarShow(
+            "success",
+            "Contenedor eliminado exitosamente"
+          );
         })
         .catch((e) => {
           console.log(e);
@@ -300,6 +304,10 @@ export default {
         .then((res) => {
           this.desserts.push(res.data);
           this.agregarContenedor(res.data);
+          this.$refs.childComponent.SnackbarShow(
+            "success",
+            "Contenedor agregado exitosamente"
+          );
         })
         .catch((e) => {
           console.log(e);
@@ -312,6 +320,10 @@ export default {
         .then((res) => {
           Object.assign(this.desserts[index], res.data);
           this.$store.dispatch("modificarContenedor", this.desserts);
+          this.$refs.childComponent.SnackbarShow(
+            "success",
+            "El contenedor ha sido modificado exitosamente"
+          );
         })
         .catch((e) => {
           console.log(e.response);

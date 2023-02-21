@@ -357,7 +357,7 @@ const updateStatus = async (req, res, next) => {
       [
         {
           $set: {
-            statusTest: {
+            status: {
               $switch: {
                 branches: [
                   { case: { $gte: [new Date(),"$fechaCaducidad"] }, then: "Vencido" },
