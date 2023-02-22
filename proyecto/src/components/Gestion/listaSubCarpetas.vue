@@ -30,6 +30,7 @@
         </template>
         <span>{{ encabezado }}</span>
       </v-tooltip>
+
       <v-tooltip bottom>
         <template v-slot:activator="{ on, attrs }">
           <v-btn
@@ -45,6 +46,7 @@
         <span>Agregar carpeta</span>
       </v-tooltip>
     </v-toolbar>
+
     <loading texto="Cargando Datos" v-if="isLoading"></loading>
     <v-list v-if="!isLoading" two-line subheader>
       <div class="container">
@@ -64,7 +66,9 @@
           ></v-text-field>
         </v-expand-transition>
       </div>
+
       <v-subheader inset> Sub-Carpetas </v-subheader>
+
       <v-list-item
         v-for="item in resultadoBusqueda"
         :key="item.nombre"
@@ -78,11 +82,13 @@
             obtenerFecha(item.fechaCreacion)
           }}</v-list-item-subtitle>
         </v-list-item-content>
+        
         <progress-file
           :archivosRequeridos="archivosRequeridos"
           :archivosSubidos="item.archivosSubidos"
         ></progress-file>
-        <v-menu left top :offset-x="true" :offset-y="true">
+
+        <v-menu top left rounded="tr-xl" :offset-x="true" :offset-y="true">
           <template v-slot:activator="{ on, attrs }">
             <v-btn icon v-bind="attrs" v-on="on">
               <v-icon> mdi-cog </v-icon>
@@ -697,10 +703,6 @@ export default {
           });
           this.carpetas = res.data;
           this.isLoading = false;
-          // if (this.carpetas.length >= 1) {
-          //   this.ultimosParametros = this.carpetas[0].parametros;
-          //   this.finds = this.ultimosParametros;
-          // }
         })
         .catch((e) => {
           console.log(e);

@@ -1,14 +1,15 @@
-import {Carpeta} from "../../models/Carpeta";
+import { Carpeta } from "../../models/Carpeta";
 import subCarpeta from "../../models/SubCarpeta";
 import Archivo from "../../models/Archivo";
 const fs = require("fs");
+import { json } from "express";
 //Metodo para crear una Carpeta
 const add = async (req, res, next) => {
   try {
     const reg = await Carpeta.create(req.body.carpeta);
     // const buscado = await Carpeta.findOne(reg._id);
     // req.body.parametros.forEach(element => {
-    //   buscado.parametros.push(element); 
+    //   buscado.parametros.push(element);
     // });
     // const actualizado = await Carpeta.findByIdAndUpdate(buscado._id, buscado, { new: true });
     res.status(200).json(reg);
@@ -22,21 +23,20 @@ const add = async (req, res, next) => {
 //metodo para agregar parametros
 const agregarParametros = async (req, res, next) => {
   try {
-    let {id,parametros} = req.body
-    console.log(id)
-    const folder = await Carpeta.findOne({_id:id});
-    console.log(folder)
-    if(folder){
-      parametros.forEach(parametro => {
-        folder.parametros.push(parametro)
+    let { id, parametros } = req.body;
+    console.log(id);
+    const folder = await Carpeta.findOne({ _id: id });
+    console.log(folder);
+    if (folder) {
+      parametros.forEach((parametro) => {
+        folder.parametros.push(parametro);
       });
-      const CarpetaActualizada = await Carpeta.findByIdAndUpdate(id,folder)
-      if(CarpetaActualizada){
-        res.status(200).json(CarpetaActualizada)
+      const CarpetaActualizada = await Carpeta.findByIdAndUpdate(id, folder);
+      if (CarpetaActualizada) {
+        res.status(200).json(CarpetaActualizada);
       }
-    }
-    else{
-      res.status(404).json("La Carpeta buscada no existe")
+    } else {
+      res.status(404).json("La Carpeta buscada no existe");
     }
   } catch (e) {
     res.status(500).send({
@@ -49,41 +49,43 @@ const agregarParametros = async (req, res, next) => {
 //metodo para actualizar parametros
 const actualizarParametros = async (req, res, next) => {
   try {
-    let {id,parametros,eliminados} = req.body
-    const archivosDelete = await Archivo.find( { parametro : { $in : eliminados }})
-    console.log(archivosDelete)
-    if(archivosDelete.length > 0){
+    let { id, parametros, eliminados } = req.body;
+    const archivosDelete = await Archivo.find({
+      parametro: { $in: eliminados },
+    });
+    console.log(archivosDelete);
+    if (archivosDelete.length > 0) {
       const directoryPath = __basedir + "/uploads/";
       archivosDelete.forEach((element) => {
-        fs.unlink(directoryPath + element.archivo,(err)=>{
+        fs.unlink(directoryPath + element.archivo, (err) => {
           if (err) console.log(err);
         });
       });
-      const borrados = await Archivo.deleteMany({ parametro : { $in : eliminados }})  
-      console.log(borrados)
+      const borrados = await Archivo.deleteMany({
+        parametro: { $in: eliminados },
+      });
+      console.log(borrados);
     }
-    
+
     const CarpetaActualizada = await Carpeta.findById(id).then((folder) => {
-      parametros.forEach(param => {
-        const params = folder.parametros.id(param._id)
-        if(params){
-          params.set(param)
-        }
-        else{
+      parametros.forEach((param) => {
+        const params = folder.parametros.id(param._id);
+        if (params) {
+          params.set(param);
+        } else {
           folder.parametros.addToSet(param);
         }
       });
       //Para eliminar los parametros
-      eliminados.forEach(eliminado => {
+      eliminados.forEach((eliminado) => {
         folder.parametros.id(eliminado).remove();
       });
       return folder.save();
-    })
-    if(CarpetaActualizada){
-      res.status(200).json(CarpetaActualizada)
-    }
-    else{
-      res.status(404).json("La Carpeta buscada no existe")
+    });
+    if (CarpetaActualizada) {
+      res.status(200).json(CarpetaActualizada);
+    } else {
+      res.status(404).json("La Carpeta buscada no existe");
     }
   } catch (e) {
     res.status(500).send({
@@ -92,7 +94,6 @@ const actualizarParametros = async (req, res, next) => {
     next(e);
   }
 };
-
 
 //Metodo para obtener una Carpeta mediante su id
 const query = async (req, res, next) => {
@@ -173,7 +174,7 @@ const update = async (req, res, next) => {
   try {
     const id = req.body._id;
     const body = req.body.carpeta;
-    console.log(body)
+    console.log(body);
     const reg = await Carpeta.findByIdAndUpdate(id, body, { new: true });
     res.status(200).json(reg);
   } catch (e) {
@@ -262,6 +263,50 @@ const getAllFolders = async (req, res, next) => {
     next(e);
   }
 };
+//Conteo de cumplimiento
+const contarCumplimiento = async (req, res, next) => {
+  try {
+    console.log(req.query)
+    let idPadre = req.query.padre;
+    let idFolder = req.query._id;
+    console.log(idPadre);
+    console.log(idFolder);
+    let carpetaFind = await Carpeta.find({ padre: idPadre, _id: idFolder });
+    if (carpetaFind) {
+      let carpeta = JSON.parse(JSON.stringify(carpetaFind))[0];
+      let archivosRequeridos = 0;
+      carpeta.parametros.forEach((element) => {
+        if (element.option) {
+          archivosRequeridos = archivosRequeridos + 1;
+        }
+      });
+      console.log("Archivos Requeridos: "+archivosRequeridos);
+      let subCarpetasFind = await subCarpeta.find({ padre: idFolder });
+      let subCarpetas = JSON.parse(JSON.stringify(subCarpetasFind));
+      for (let index = 0; index < subCarpetas.length; index++) {
+        let contador = 0
+        for (let index2 = 0; index2 < carpeta.parametros.length; index2++) {
+          const conteo = await Archivo.find({parametro: carpeta.parametros[index2],padre: subCarpetas[index]._id,fechaCaducidad: { $gt: new Date() },}).count();
+          contador = contador + conteo
+        }
+        subCarpetas[index].archivosSubidos = contador
+        subCarpetas[index].archivosRequeridos = archivosRequeridos
+        if(contador == archivosRequeridos){
+          subCarpetas[index].cumplimiento = "cumple"
+        }
+        else{
+          subCarpetas[index].cumplimiento = "No cumple"
+        }
+      }
+      res.status(200).json(subCarpetas);
+    }
+  } catch (e) {
+    res.status(500).send({
+      message: "Ocurrio un error",
+    });
+    next(e);
+  }
+};
 
 module.exports = {
   add,
@@ -276,5 +321,6 @@ module.exports = {
   removeSubFolders,
   getAllFolders,
   agregarParametros,
-  actualizarParametros
+  actualizarParametros,
+  contarCumplimiento,
 };

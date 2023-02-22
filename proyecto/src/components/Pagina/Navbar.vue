@@ -34,7 +34,6 @@
       app
       :mini-variant.sync="mini"
       :permanent="!$vuetify.breakpoint.xsOnly"
-      expand-on-hover
     >
       <v-list-item class="px-2">
         <v-list-item-avatar>
@@ -46,7 +45,7 @@
 
       <v-divider elevation="1"></v-divider>
 
-      <v-list >
+      <v-list>
         <v-list-item active-class="white--text" link to="/">
           <v-list-item-icon>
             <v-icon>mdi-monitor-dashboard</v-icon>
@@ -61,11 +60,10 @@
           :key="item.title"
           v-model="item.active"
           :prepend-icon="item.action"
-          no-action
         >
           <template v-slot:activator>
             <v-list-item-content>
-              <v-list-item-title v-text="item.title"></v-list-item-title>
+              <v-list-item-title>{{ item.title }}</v-list-item-title>
             </v-list-item-content>
           </template>
 
@@ -76,8 +74,25 @@
             v-for="child in item.items"
             :key="child.title"
           >
-            <v-list-item-content>
-              <v-list-item-title v-text="child.nombre"></v-list-item-title>
+            <v-list-item-content >
+                <v-row class="fill-height" align="center" justify="center">
+                  <v-col >
+                    <v-list-item-title class="ml-3"
+                      >{{ child.nombre }}
+                    </v-list-item-title>
+                  </v-col>
+                  <v-col>
+                    <v-progress-circular
+                      :rotate="-90"
+                      :size="30"
+                      :width="3"
+                      :value="30"
+                      color="red"
+                    >
+                      {{ 30 }}
+                    </v-progress-circular>
+                  </v-col>
+                </v-row>
             </v-list-item-content>
           </v-list-item>
         </v-list-group>
@@ -96,7 +111,7 @@
 </template>
 
 <script>
-import axios from 'axios';
+import axios from "axios";
 export default {
   data() {
     return {
@@ -109,25 +124,25 @@ export default {
     };
   },
   created() {
-    this.obtenerContenedores()
+    this.obtenerContenedores();
   },
   computed: {
-    obtenerLista(){
-      if(this.$store.getters.getContenedores){
-        this.initialize()
-        return this.menu
+    obtenerLista() {
+      if (this.$store.getters.getContenedores) {
+        this.initialize();
+        return this.menu;
       }
-      return this.menu
-    }  
+      return this.menu;
+    },
   },
   methods: {
     async obtenerContenedores() {
       try {
         await axios.get("/sociedad/getPadres").then((result) => {
-          this.menu[0].items= result.data
+          this.menu[0].items = result.data;
         });
       } catch (error) {
-        console.log(error)   
+        console.log(error);
       }
     },
     initialize() {

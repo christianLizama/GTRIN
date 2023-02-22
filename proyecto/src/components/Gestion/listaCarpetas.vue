@@ -1,7 +1,5 @@
 <template>
   <v-card>
-    <!-- <p>{{ carpetas }}</p>
-    <p>{{ finds }}</p> -->
     <snackbar ref="childComponent"></snackbar>
     <v-toolbar dense dark>
       <v-toolbar-title class="white--text">
@@ -17,19 +15,6 @@
         </template>
         <span>Buscar</span>
       </v-tooltip>
-      <!-- <v-text-field
-        @focus="searchClosed = false"
-        @blur="searchClosed = true"
-        v-model="busqueda"
-        clearable
-        dense
-        filled
-        rounded
-        placeholder="Buscar"
-        prepend-inner-icon="mdi-magnify"
-        class="pt-6 expanding-search"
-        :class="{ closed: searchClosed && !busqueda }"
-      ></v-text-field> -->
 
       <v-tooltip bottom>
         <template v-slot:activator="{ on, attrs }">
@@ -44,6 +29,7 @@
         </template>
         <span>Agregar carpeta</span>
       </v-tooltip>
+
     </v-toolbar>
 
     <loading texto="Cargando Datos" v-if="isLoading"></loading>
@@ -66,16 +52,28 @@
         </v-expand-transition>
       </div>
 
-      <v-list-item v-for="item in resultadoBusqueda" :key="item.nombre" link>
+      <v-subheader inset> Carpetas </v-subheader>
+
+      <v-list-item
+        v-for="item in resultadoBusqueda"
+        :key="item.nombre"
+        link
+        @click="enviarRuta(item)"
+      >
         <v-list-item-avatar> <v-icon>mdi-folder </v-icon> </v-list-item-avatar>
-        <v-list-item-content @click="enviarRuta(item)">
+        <v-list-item-content>
           <v-list-item-title>{{ item.nombre }}</v-list-item-title>
           <v-list-item-subtitle>{{
             obtenerFecha(item.fechaCreacion)
           }}</v-list-item-subtitle>
         </v-list-item-content>
 
-        <v-menu left top :offset-x="true" :offset-y="true">
+        <progress-folder
+          :cantidadCarpetas="item.subFolders.length"
+          :subCarpetas="item.subFolders"
+        ></progress-folder>
+
+        <v-menu top left rounded="tr-xl" :offset-x="true" :offset-y="true">
           <template v-slot:activator="{ on, attrs }">
             <v-btn icon v-bind="attrs" v-on="on">
               <v-icon> mdi-cog </v-icon>
@@ -214,8 +212,9 @@
 import axios from "axios";
 import loading from "../loading.vue";
 import Snackbar from "../snackbar.vue";
+import ProgressFolder from "../ProgressFolder.vue";
 export default {
-  components: { loading, Snackbar },
+  components: { loading, Snackbar, ProgressFolder },
   data: () => ({
     // finds: [],
     hidden: true,
@@ -253,20 +252,6 @@ export default {
     },
     showDialog(val) {
       val || this.close();
-    },
-    aceptado(new_val) {
-      if (new_val) {
-        setTimeout(() => {
-          this.aceptado = false;
-        }, 3000);
-      }
-    },
-    rechazado(new_val) {
-      if (new_val) {
-        setTimeout(() => {
-          this.rechazado = false;
-        }, 3000);
-      }
     },
   },
   computed: {
@@ -377,18 +362,12 @@ export default {
               "success",
               "Nombre modificado exitosamente"
             );
-            // this.alerta = "Nombre modificado exitosamente";
-            // this.aceptado = true;
           }
-          //this.aceptado = true;
-          //this.actualizarSociedad2()
         } else {
           this.$refs.childComponent.SnackbarShow(
             "error",
             "El nombre ingresado de carpeta ya existe"
           );
-          // this.alerta = "El nombre utilizado de carpeta ya existe";
-          // this.rechazado = true;
         }
       } else {
         this.createF();
@@ -414,10 +393,8 @@ export default {
       this.carpetas.forEach((element) => {
         newIds.push(element._id);
       });
-
       // console.log("Las carpetas son:")
       // console.log(this.carpetas)
-
       await axios
         .put("sociedad/updateCarpetas/", {
           _id: this.padre._id,
@@ -429,8 +406,6 @@ export default {
             "success",
             "Cambios realizados exitosamente"
           );
-          // this.alerta = "Cambios realizados exitosamente";
-          // this.aceptado = true;
         })
         .catch((e) => {
           console.log(e.response);
@@ -466,8 +441,6 @@ export default {
             "success",
             "Carpeta creada exitosamente"
           );
-          // this.alerta = "Carpeta creada exitosamente";
-          // this.aceptado = true;
         })
         .catch((e) => {
           console.log(e.response);
@@ -483,10 +456,31 @@ export default {
           console.log(e.response);
         });
     },
+
+    async getSubFolders(padre) {
+      const request = {
+        params: {
+          _id: padre._id,
+          padre: padre.padre,
+        },
+      };
+
+      await axios
+        .get("carpeta/contarCumplimiento", request)
+        .then(async (res) => {
+          padre.subFolders = res.data;
+        })
+        .catch((e) => {
+          console.log(e);
+        });
+    },
     async getFolders(id) {
       await axios
         .get("sociedad/queryFolders?_id=" + id)
-        .then((res) => {
+        .then(async (res) => {
+          for (let index = 0; index < res.data.length; index++) {
+            await this.getSubFolders(res.data[index]);
+          }
           this.carpetas = res.data;
           this.isLoading = false;
         })
@@ -498,6 +492,7 @@ export default {
       await axios
         .post("carpeta/add", { carpeta: nuevaCarpeta })
         .then((res) => {
+          res.data.subFolders = []
           this.carpetas.push(res.data);
           this.actualizarHijos();
         })
@@ -536,7 +531,6 @@ export default {
           "El nombre ingresado de carpeta ya existe"
         );
         // this.alerta = "El nombre de carpeta ingresado ya existe";
-        // this.rechazado = true;
       }
     },
     //Crear carpeta en el servidor
@@ -548,7 +542,6 @@ export default {
         .then((res) => {
           //Si no es una carpeta repetida y se logro agregar la agregamos visualmente y en la db
           if (res.data == true) {
-            this.aceptado = true;
             this.postFolder(nueva);
           } else {
             this.rechazado = true;
@@ -569,13 +562,12 @@ export default {
 </script>
 
 <style>
-.container{
+.container {
   display: flex;
   justify-content: center;
   align-items: center;
   max-width: 100%;
 }
-
 </style>
 
 <style lang="sass">

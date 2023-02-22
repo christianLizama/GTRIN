@@ -745,21 +745,6 @@ export default {
           console.log(e);
         });
     },
-    async getFolders(id) {
-      await axios
-        .get("subCarpeta/getArchivos?_id=" + id)
-        .then((res) => {
-          let carpetas = res.data;
-          carpetas.forEach((element) => {
-            this.iniciarFile(element);
-          });
-          this.archivos = res.data;
-          this.isLoading = false;
-        })
-        .catch((e) => {
-          console.log(e);
-        });
-    },
     eliminarDiacriticos(texto) {
       return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
     },
@@ -830,7 +815,25 @@ export default {
           );
           fechaCambio.set({ hour: 0, minute: 0, second: 0, millisecond: 0 });
           this.editedItem.fechaCambioEstado = fechaCambio;
-
+          
+          // console.log("----------------------")
+          // console.log("Emision: "+this.editedItem.fechaEmision)
+          // console.log("Caducidad: "+this.editedItem.fechaCaducidad)
+          // console.log("Cambio estado: "+fechaCambio._d)
+          // console.log(new Date())
+          // console.log("----------------------")
+          if(new Date() >= moment(this.editedItem.fechaCaducidad)){
+            console.log("Estoy vencido")
+            this.editedItem.status = "Vencido"
+          }
+          else if(new Date() >= fechaCambio._d){
+            console.log("Estoy por vencer")
+            this.editedItem.status = "Por vencer"
+          }
+          else{
+            console.log("Estoy vigente")
+            this.editedItem.status = "Vigente"
+          }
           // console.log("Fecha em: " + this.fechaEm);
           console.log("Dias aviso: " + this.editedItem.diasAviso);
           console.log(this.editedItem);
@@ -848,7 +851,8 @@ export default {
         });
     },
     async postArchivo(archivo) {
-      // console.log(archivo);
+      
+      console.log(archivo);
       await axios
         .post("archivo/add", archivo)
         .then((res) => {

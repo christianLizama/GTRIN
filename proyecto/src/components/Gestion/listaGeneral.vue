@@ -5,9 +5,11 @@
       <v-spacer></v-spacer>
     </v-toolbar>
     <loading v-if="isLoading" texto="Obteniendo información"></loading>
-    <v-container v-if="!isLoading" :fluid="true">
-      <Kpi :items="kpi"></Kpi>
-    </v-container>
+    <v-card elevation="5" outlined class="mx-auto mt-2" max-width="98.6%">
+      <v-card-title>KPI</v-card-title>
+      <Kpi v-if="!isLoading" :items="kpi"></Kpi>
+    </v-card>
+
     <div class="contenedor" v-if="!isLoading">
       <v-card elevation="5" outlined class="mx-auto" max-width="98.6%">
         <v-card-title>
@@ -138,8 +140,21 @@
 
           <template v-slot:[`item.status`]="{ item }">
             <v-chip :color="getColor(item.status, item)" dark>
-              {{ getNombre(item.status) }}
+              {{ item.status }}
             </v-chip>
+          </template>
+
+          <template v-slot:[`item.ir`]="{ item }">
+            <v-btn large icon @click="enviarRuta(item)">
+              <v-icon>mdi-file-document-arrow-right-outline </v-icon>
+            </v-btn>
+          </template>
+
+          <template v-slot:[`item.diasRestantes`]="{ item }">
+            <span v-if="item.diasRestantes >= 0">{{ item.diasRestantes }}</span>
+            <span class="red--text" v-if="item.diasRestantes < 0">{{
+              item.diasRestantes
+            }}</span>
           </template>
           <template v-slot:[`item.archivo`]="{ item }">
             <div class="text-truncate" style="max-width: 140px">
@@ -157,7 +172,12 @@
           <template v-slot:top>
             <v-toolbar flat>
               <v-toolbar-title v-if="searchClosed">Archivos</v-toolbar-title>
-              <v-divider v-if="searchClosed" class="mx-4" inset vertical></v-divider>
+              <v-divider
+                v-if="searchClosed"
+                class="mx-4"
+                inset
+                vertical
+              ></v-divider>
               <v-spacer v-if="searchClosed"></v-spacer>
               <v-text-field
                 @focus="searchClosed = false"
@@ -180,7 +200,7 @@
                     nombreCarpeta: { title: 'Carpeta' },
                     nombreSubCarpeta: { title: 'SubCarpeta' },
                     archivo: { title: 'Archivo' },
-                    estado: { title: 'Status del documento' },
+                    status: { title: 'Status del documento' },
                     fechaEmision: { title: 'Fecha emision' },
                     fechaCambioEstado: { title: 'Fecha de alerta' },
                     fechaCaducidad: { title: 'Fecha Caducidad ' },
@@ -209,6 +229,8 @@
 <script>
 import axios from "axios";
 import moment from "moment";
+import location from "moment/dist/locale/es";
+moment.updateLocale("cl", location);
 import VueJsonToCsv from "vue-json-to-csv";
 import Kpi from "../Kpi.vue";
 import loading from "../loading.vue";
@@ -220,9 +242,6 @@ export default {
     showScheduleForm: false,
     mdSize: 3,
     link: process.env.VUE_APP_SERVER_URL,
-    cVigente: 0,
-    cPorVencer: 0,
-    cCaducado: 0,
     busqueda: "",
     search: "",
     isLoading: true,
@@ -338,12 +357,11 @@ export default {
         value: "diasVigencia",
       },
       {
-        text: "Dias restantes caducidad",
+        text: "Días vencimiento",
         align: "center",
         sortable: true,
         value: "diasRestantes",
       },
-      { text: "Archivo", sortable: false, value: "archivo" },
       { text: "Tamaño", value: "peso" },
       { text: "Fecha Emisión", value: "fechaEmision" },
       {
@@ -352,9 +370,10 @@ export default {
         value: "fechaCambioEstado",
       },
       { text: "Fecha Caducidad", value: "fechaCaducidad" },
-      { text: "", value: "data-table-expand" },
+      { text: "Archivo", sortable: false, value: "archivo" },
+      { text: "Gestionar", value: "ir", align: "center" },
+      { text: "Parametro", value: "data-table-expand", align: "center" },
     ],
-    message: "",
     archivos: [],
   }),
   computed: {
@@ -381,7 +400,18 @@ export default {
     // this.iniciarSubCarpetas();
   },
   methods: {
+    enviarRuta(item) {
+      this.$router.push({
+        name: "files",
+        params: {
+          sociedad: item.padreSuperior,
+          Folder: item.abuelo,
+          subFolder: item.padre,
+        },
+      });
+    },
     fechaFormateada(fecha) {
+      // let fechaCortada = fecha.split("T")
       let fechaFormat = moment(fecha).format("DD/MM/YYYY");
       return fechaFormat;
     },
@@ -553,17 +583,17 @@ export default {
           total = archivos.length;
           element.porcentaje = 100;
         } else if (element.id == 3) {
-          element.total = this.contadorArchivos(archivos, 3);
+          element.total = this.contadorArchivos(archivos, "Vigente");
           porcentaje = (element.total / total) * 100;
           intPorcentaje = Math.round(porcentaje);
           element.porcentaje = intPorcentaje;
         } else if (element.id == 2) {
-          element.total = this.contadorArchivos(archivos, 2);
+          element.total = this.contadorArchivos(archivos, "Por vencer");
           porcentaje = (element.total / total) * 100;
           intPorcentaje = Math.round(porcentaje);
           element.porcentaje = intPorcentaje;
         } else {
-          element.total = this.contadorArchivos(archivos, 1);
+          element.total = this.contadorArchivos(archivos, "Vencido");
           porcentaje = (element.total / total) * 100;
           intPorcentaje = Math.round(porcentaje);
           element.porcentaje = intPorcentaje;
@@ -717,16 +747,17 @@ export default {
       var fecha2 = moment(fechaVencimiento);
       return fecha2.diff(fecha1, "days");
     },
-    getNombre(status) {
-      if (status == 3) return "Vigente";
-      else if (status == 2) return "Por vencer";
-      else return "Vencido";
-    },
     getColor(status) {
-      if (status == 3) return "green";
-      else if (status == 2) {
-        return "orange";
-      } else return "red";
+      switch (status) {
+        case "Vigente":
+          return "green";
+        case "Por vencer":
+          return "orange";
+        case "Vencido":
+          return "red";
+        default:
+          break;
+      }
     },
     async initialize() {
       await this.iniciarSociedad();

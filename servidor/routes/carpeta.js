@@ -21,5 +21,6 @@ router.delete('/deleteSubFolders/:id', folder.removeSubFolders)
 router.get('/getAllFolders',folder.getAllFolders)
 router.put('/addParams',folder.agregarParametros)
 router.put('/updateParams',folder.actualizarParametros)
+router.get('/contarCumplimiento',folder.contarCumplimiento)
 
 module.exports = router;
