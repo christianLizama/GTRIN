@@ -298,6 +298,7 @@ const contarCumplimiento = async (req, res, next) => {
           subCarpetas[index].cumplimiento = "No cumple"
         }
       }
+      console.log(subCarpetas)
       res.status(200).json(subCarpetas);
     }
   } catch (e) {

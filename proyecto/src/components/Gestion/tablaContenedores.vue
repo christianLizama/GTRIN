@@ -12,6 +12,10 @@
             <v-toolbar-title>Contenedores</v-toolbar-title>
             <v-divider class="mx-4" inset vertical></v-divider>
             <v-spacer></v-spacer>
+            <v-btn @click="actualizarStatus" color="primary" dark class="mb-2 mr-2">
+              update status
+            </v-btn>
+
             <v-dialog v-model="dialog" max-width="500px">
               <template v-slot:activator="{ on, attrs }">
                 <v-btn
@@ -215,6 +219,11 @@ export default {
   },
 
   methods: {
+    async actualizarStatus(){
+      await axios.put("archivo/updateStatus").then((result) => {
+        console.log(result.data);
+      });
+    },
     fechaFormateada(fecha) {
       let fechaFormat = moment(fecha).format("DD/MM/YYYY");
       return fechaFormat;

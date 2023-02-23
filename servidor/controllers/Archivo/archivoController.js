@@ -285,8 +285,20 @@ const getArchivos = async (req, res, next) => {
 const update = async (req, res, next) => {
   try {
     const id = req.body._id;
-    const body = req.body.archivo;
-    const reg = await archivo.findByIdAndUpdate(id, body, { new: true });
+    const file = req.body.archivo;
+    let cortado = file.fechaCambioEstado.split("T")
+    let fechaCambioEstado = moment(cortado[0])
+    if (new Date() >= moment(file.fechaCaducidad)) {
+      // console.log("Estoy vencido");
+      file.status = "Vencido";
+    } else if (new Date() >= fechaCambioEstado._d) {
+      // console.log("Estoy por vencer");
+      file.status = "Por vencer";
+    } else {
+      // console.log("Estoy vigente");
+      file.status = "Vigente";
+    }
+    const reg = await archivo.findByIdAndUpdate(id, file, { new: true });
     res.status(200).json(reg);
   } catch (e) {
     res.status(500).send({

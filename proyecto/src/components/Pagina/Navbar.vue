@@ -34,6 +34,7 @@
       app
       :mini-variant.sync="mini"
       :permanent="!$vuetify.breakpoint.xsOnly"
+      expand-on-hover
     >
       <v-list-item class="px-2">
         <v-list-item-avatar>
