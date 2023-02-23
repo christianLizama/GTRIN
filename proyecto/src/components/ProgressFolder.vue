@@ -48,7 +48,7 @@ export default {
         return (this.valor = this.porcentaje)
       }
       this.valor += 1
-    }, 10)
+    }, 8)
   },
   methods: {
     contarCumplidas(){

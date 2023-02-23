@@ -63,6 +63,24 @@
             <v-toolbar-title>Mis Parametros</v-toolbar-title>
             <v-divider class="mx-4" inset vertical></v-divider>
             <v-spacer></v-spacer>
+            <vue-json-to-csv
+              :json-data="archivos"
+              :labels="{
+                nombre: {title: 'Nombre'},
+                archivo: { title: 'Archivo' },
+                status: { title: 'Status del documento' },
+                fechaEmision: { title: 'Fecha emisión' },
+                fechaCambioEstado: { title: 'Fecha de alerta' },
+                fechaCaducidad: { title: 'Fecha Caducidad ' },
+                descripcion: {title:'Descripción'}
+              }"
+              :csv-title="'resumen-'+folder.nombre"
+              :separator="';'"
+            >
+              <v-btn icon>
+                <v-icon color="green">mdi-microsoft-excel</v-icon></v-btn
+              >
+            </vue-json-to-csv>
             <v-tooltip bottom>
               <template v-slot:activator="{ on, attrs }">
                 <v-btn icon v-bind="attrs" v-on="on" @click="reloadPage">
@@ -71,6 +89,7 @@
               </template>
               <span>Refrescar</span>
             </v-tooltip>
+            
 
             <v-dialog v-model="dialog" max-width="80%" persistent>
               <v-card>
@@ -109,9 +128,10 @@
 <script>
 import axios from "axios";
 import tablaArchivos from "../Gestion/tablaArchivos.vue";
+import VueJsonToCsv from "vue-json-to-csv";
 import KpiParametros from "../KpiParametros.vue";
 export default {
-  components: { tablaArchivos, KpiParametros },
+  components: { VueJsonToCsv, tablaArchivos, KpiParametros },
   data: () => ({
     hidden: true,
     searchClosed: true,
@@ -123,6 +143,7 @@ export default {
     archivosRequeridos: 0,
     archivosSubidos: 0,
     padre: {},
+    archivos: [],
     headers: [
       {
         text: "Archivo subido?",
@@ -216,7 +237,20 @@ export default {
           this.folder = result.data;
           let idPadre = result.data.padre;
           this.obtenerPadreSuperior(idPadre);
+          this.obtenerArchivos(result.data._id);
         });
+    },
+    async obtenerArchivos(padreId) {
+      console.log(padreId);
+      const request = {
+        params: {
+          _id: padreId,
+        },
+      };
+
+      await axios.get("archivo/getArchivos", request).then((result) => {
+        this.archivos = result.data;
+      });
     },
     editItem(item) {
       this.dialog = true;

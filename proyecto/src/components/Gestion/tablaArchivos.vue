@@ -26,7 +26,7 @@
 
       <template v-slot:[`item.archivo`]="{ item }">
         <div class="text-truncate" style="max-width: 140px">
-          <v-icon class="mr-2"> mdi-file-pdf-box</v-icon>
+          <Icon width="25" height="25" :icon="obtenerExtension(item.archivo)" class="mr-2"></Icon>
           <a class="texto">
             {{ item.archivo }}
           </a>
@@ -76,7 +76,7 @@
 
               <v-stepper-header>
                 <v-stepper-step :complete="e1 > 1" step="1">
-                  Nombre archivo
+                  Subir archivo
                 </v-stepper-step>
 
                 <v-divider></v-divider>
@@ -87,7 +87,7 @@
 
                 <v-divider></v-divider>
 
-                <v-stepper-step step="3"> Seleccionar Día </v-stepper-step>
+                <v-stepper-step step="3"> Configurar Día </v-stepper-step>
               </v-stepper-header>
 
               <v-stepper-items>
@@ -107,12 +107,20 @@
                             required
                           ></v-text-field>
                         </v-col>
+                        <v-col cols="12" sm="6" md="4">
+                          <v-text-field
+                            ref="form"
+                            v-model="editedItem.descripcion"
+                            label="Descripción"
+                          ></v-text-field>
+                        </v-col>
                         <v-col v-if="editedIndex == -1" cols="12" sm="6" md="4">
                           <v-file-input
                             v-model="currentFile"
-                            prepend-icon="mdi-tray-arrow-up"
+                            prepend-inner-icon="mdi-tray-arrow-up"
+                            prepend-icon=""
                             show-size
-                            label="Seleccione un archivo"
+                            label="Subir archivo"
                             @change="selectFile"
                           >
                           </v-file-input>
@@ -322,13 +330,16 @@ import UploadService from "../../services/UploadFilesService";
 import loading from "../loading.vue";
 import Snackbar from "../snackbar.vue";
 import Snackbar2 from "../snackbar.vue";
+import { Icon } from "@iconify/vue2";
+
 export default {
-  components: { loading, Snackbar, Snackbar2 },
+  components: { Icon, loading, Snackbar, Snackbar2 },
   props: {
     Parametro: String,
     nombreParametro: String,
   },
   data: () => ({
+    extensiones:[{type:"png",icon:"vscode-icons:file-type-image"},{type:"pdf",icon:"vscode-icons:file-type-pdf2",color:"red"},{type:"xlsx",icon:"vscode-icons:file-type-excel"},{type:"jpg",icon:"vscode-icons:file-type-image"},{type:"csv",icon:"vscode-icons:file-type-excel"}],
     searchClosed: true,
     alerta: "",
     e1: 1,
@@ -403,6 +414,7 @@ export default {
     editedIndex: -1,
     editedItem: {
       nombre: "",
+      descripcion:"",
       status: "",
       diasVigencia: "",
       diasRestantes: 0,
@@ -424,6 +436,7 @@ export default {
     defaultItem: {
       nombre: "",
       archivo: "",
+      descripcion:"",
       status: "",
       diasVigencia: "",
       diasAviso: 1,
@@ -516,6 +529,17 @@ export default {
     this.initialize();
   },
   methods: {
+    obtenerExtension(archivo){
+      let cortes = archivo.split(".")
+      console.log(cortes[1])
+      let icono=""
+      this.extensiones.forEach(extension => {
+        if(extension.type==cortes[1]){
+          icono = extension.icon
+        }
+      });
+      return icono
+    },
     resetValidation() {
       this.$refs.form.resetValidation();
     },
@@ -621,9 +645,16 @@ export default {
       }
     },
     obtenerDiferencia(fechaEmision, fechaVencimiento) {
-      this.editedItem.diasAviso = 1;
       var fecha1 = moment(fechaEmision);
       var fecha2 = moment(fechaVencimiento);
+
+      if (
+        fecha2.diff(fecha1, "days") <= 1 ||
+        this.editedItem.diasAviso > fecha2.diff(fecha1, "days")
+      ) {
+        this.editedItem.diasAviso = 1;
+      }
+
       return fecha2.diff(fecha1, "days");
     },
     getNombre(status) {
@@ -815,24 +846,22 @@ export default {
           );
           fechaCambio.set({ hour: 0, minute: 0, second: 0, millisecond: 0 });
           this.editedItem.fechaCambioEstado = fechaCambio;
-          
+
           // console.log("----------------------")
           // console.log("Emision: "+this.editedItem.fechaEmision)
           // console.log("Caducidad: "+this.editedItem.fechaCaducidad)
           // console.log("Cambio estado: "+fechaCambio._d)
           // console.log(new Date())
           // console.log("----------------------")
-          if(new Date() >= moment(this.editedItem.fechaCaducidad)){
-            console.log("Estoy vencido")
-            this.editedItem.status = "Vencido"
-          }
-          else if(new Date() >= fechaCambio._d){
-            console.log("Estoy por vencer")
-            this.editedItem.status = "Por vencer"
-          }
-          else{
-            console.log("Estoy vigente")
-            this.editedItem.status = "Vigente"
+          if (new Date() >= moment(this.editedItem.fechaCaducidad)) {
+            console.log("Estoy vencido");
+            this.editedItem.status = "Vencido";
+          } else if (new Date() >= fechaCambio._d) {
+            console.log("Estoy por vencer");
+            this.editedItem.status = "Por vencer";
+          } else {
+            console.log("Estoy vigente");
+            this.editedItem.status = "Vigente";
           }
           // console.log("Fecha em: " + this.fechaEm);
           console.log("Dias aviso: " + this.editedItem.diasAviso);
@@ -851,7 +880,6 @@ export default {
         });
     },
     async postArchivo(archivo) {
-      
       console.log(archivo);
       await axios
         .post("archivo/add", archivo)

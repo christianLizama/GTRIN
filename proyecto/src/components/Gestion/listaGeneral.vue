@@ -74,32 +74,47 @@
                 outlined
               ></v-select>
             </v-col>
-            <v-col cols="11" sm="5" :md="mdSize">
-              <v-select
-                item-text="Año"
-                return-object
-                label="Año"
-                dense
-                outlined
-              ></v-select>
+
+            <v-col>
+              <v-menu
+                right
+                rounded="xl"
+                :offset-x="true"
+                :offset-y="true"
+                v-model="menu"
+                :close-on-content-click="false"
+                min-width="300px"
+              >
+                <template v-slot:activator="{ on, attrs }">
+                  <v-btn color="indigo" dark v-bind="attrs" v-on="on">
+                    Escoger fechas
+                  </v-btn>
+                </template>
+
+                <v-card>
+                  <v-container>
+                    <v-row>
+                      <v-col>
+                        <v-date-picker
+                          selectedItemsText="{0} seleccionados"
+                          locale="cl"
+                          v-model="dates"
+                          range
+                        ></v-date-picker>
+                      </v-col>
+                    </v-row>
+                  </v-container>
+                </v-card>
+              </v-menu>
             </v-col>
             <v-col cols="11" sm="5" :md="mdSize">
-              <v-select
-                item-text="Año"
-                return-object
-                label="Mes"
-                dense
-                outlined
-              ></v-select>
-            </v-col>
-            <v-col cols="11" sm="5" :md="mdSize">
-              <v-select
-                item-text="Año"
-                return-object
-                label="Día"
-                dense
-                outlined
-              ></v-select>
+              <v-text-field
+                v-model="dateRangeText"
+                label="Rango fechas"
+                prepend-icon="mdi-calendar"
+                readonly
+              
+              ></v-text-field>
             </v-col>
             <v-col cols="11" sm="5" :md="mdSize">
               <v-select
@@ -146,7 +161,11 @@
 
           <template v-slot:[`item.ir`]="{ item }">
             <v-btn large icon @click="enviarRuta(item)">
-              <v-icon>mdi-file-document-arrow-right-outline </v-icon>
+              <Icon
+                width="28"
+                height="28"
+                icon="vscode-icons:file-type-light-todo"
+              ></Icon>
             </v-btn>
           </template>
 
@@ -158,7 +177,12 @@
           </template>
           <template v-slot:[`item.archivo`]="{ item }">
             <div class="text-truncate" style="max-width: 140px">
-              <v-icon class="mr-2"> mdi-file-pdf-box</v-icon>
+              <Icon
+                width="25"
+                height="25"
+                :icon="obtenerExtension(item.archivo)"
+                class="mr-2"
+              ></Icon>
               <a class="texto" :href="link + 'uploadFile/files/' + item.archivo"
                 >{{ item.archivo }}
               </a>
@@ -189,7 +213,7 @@
                 rounded
                 placeholder="Buscar archivo"
                 prepend-inner-icon="mdi-magnify"
-                class="pt-6 expanding-search"
+                class="mr-3 pt-6 expanding-search"
                 :class="{ closed: searchClosed && !busqueda }"
               ></v-text-field>
               <template>
@@ -199,13 +223,19 @@
                     nombreSociedad: { title: 'Nombre Contenedor' },
                     nombreCarpeta: { title: 'Carpeta' },
                     nombreSubCarpeta: { title: 'SubCarpeta' },
+                    nombreParametro: { title: 'Nombre parametro' },
+                    nombre: { title: 'Nombre archivo' },
                     archivo: { title: 'Archivo' },
-                    status: { title: 'Status del documento' },
-                    fechaEmision: { title: 'Fecha emision' },
-                    fechaCambioEstado: { title: 'Fecha de alerta' },
-                    fechaCaducidad: { title: 'Fecha Caducidad ' },
+                    status: { title: 'Status del archivo' },
+                    fechaEmision: { title: 'Fecha emisión archivo' },
+                    fechaCambioEstado: {
+                      title: 'Fecha alerta archivo (status: por vencer)',
+                    },
+                    fechaCaducidad: { title: 'Fecha Caducidad archivo' },
+                    diasVigencia: { title: 'Días vigencia archivo' },
+                    diasRestantes: { title: 'Días restantes vencimiento' },
                   }"
-                  csv-title="resumenGeneral"
+                  :csv-title="'resumenGeneralArchivos-' + fechaHoy"
                   :separator="';'"
                 >
                   <v-btn icon>
@@ -235,9 +265,20 @@ import VueJsonToCsv from "vue-json-to-csv";
 import Kpi from "../Kpi.vue";
 import loading from "../loading.vue";
 import Trigger from "../trigger.vue";
+import { Icon } from "@iconify/vue2";
 export default {
-  components: { VueJsonToCsv, loading, Trigger, Kpi },
+  components: { VueJsonToCsv, loading, Trigger, Kpi, Icon },
   data: () => ({
+    dates: ["", ""],
+    menu: false,
+    extensiones: [
+      { type: "png", icon: "vscode-icons:file-type-image" },
+      { type: "pdf", icon: "vscode-icons:file-type-pdf2", color: "red" },
+      { type: "xlsx", icon: "vscode-icons:file-type-excel" },
+      { type: "jpg", icon: "vscode-icons:file-type-image" },
+      { type: "csv", icon: "vscode-icons:file-type-excel" },
+    ],
+    fechaHoy: new Date().toLocaleString(),
     searchClosed: true,
     showScheduleForm: false,
     mdSize: 3,
@@ -371,12 +412,15 @@ export default {
       },
       { text: "Fecha Caducidad", value: "fechaCaducidad" },
       { text: "Archivo", sortable: false, value: "archivo" },
-      { text: "Gestionar", value: "ir", align: "center" },
+      { text: "Gestionar", value: "ir", align: "center", sortable: false },
       { text: "Parametro", value: "data-table-expand", align: "center" },
     ],
     archivos: [],
   }),
   computed: {
+    dateRangeText() {
+      return this.dates.join(" ~ ");
+    },
     filtros() {
       return this.filtroSociedad(
         this.filtroCarpetas(
@@ -400,6 +444,27 @@ export default {
     // this.iniciarSubCarpetas();
   },
   methods: {
+    obtenerExtension(archivo) {
+      let cortes = archivo.split(".");
+      let icono = "";
+      this.extensiones.forEach((extension) => {
+        if (extension.type == cortes[1]) {
+          icono = extension.icon;
+        }
+      });
+      return icono;
+    },
+    obtenerColorExtension(archivo) {
+      let cortes = archivo.split(".");
+      console.log(cortes[1]);
+      let color = "";
+      this.extensiones.forEach((extension) => {
+        if (extension.type == cortes[1]) {
+          color = extension.color;
+        }
+      });
+      return color;
+    },
     enviarRuta(item) {
       this.$router.push({
         name: "files",
