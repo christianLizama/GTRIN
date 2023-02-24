@@ -6,7 +6,6 @@
     </v-toolbar>
     <loading v-if="isLoading" texto="Obteniendo información"></loading>
     <v-card elevation="5" outlined class="mx-auto mt-2" max-width="98.6%">
-      <v-card-title>KPI</v-card-title>
       <Kpi v-if="!isLoading" :items="kpi"></Kpi>
     </v-card>
 
@@ -17,18 +16,10 @@
           <v-btn text color="blue accent-4" @click="limpiarFiltros()">
             Limpiar Filtros
           </v-btn>
-          <v-btn
-            text
-            color="blue accent-4"
-            large
-            @click.stop="showScheduleForm = true"
-          >
-            Enviar Trigger
-          </v-btn>
         </v-card-title>
-        <v-card-text>
-          <v-row align="center">
-            <v-col cols="11" sm="5" :md="mdSize">
+        <v-container fluid>
+          <v-row>
+            <v-col cols="12" :md="mdSize">
               <v-select
                 :items="sociedades"
                 return-object
@@ -39,7 +30,7 @@
                 outlined
               ></v-select>
             </v-col>
-            <v-col cols="11" sm="5" :md="mdSize">
+            <v-col cols="12" :md="mdSize">
               <v-select
                 label="Carpetas"
                 dense
@@ -51,7 +42,7 @@
               ></v-select>
             </v-col>
 
-            <v-col cols="11" sm="5" :md="mdSize">
+            <v-col cols="12" :md="mdSize">
               <v-select
                 v-model="subCarpetaSelecionada"
                 :items="computedSubCarpeta"
@@ -63,7 +54,7 @@
               ></v-select>
             </v-col>
 
-            <v-col cols="11" sm="5" :md="mdSize">
+            <v-col cols="12" :md="mdSize">
               <v-select
                 :items="estados"
                 v-model="estadoSeleccionado"
@@ -74,10 +65,10 @@
                 outlined
               ></v-select>
             </v-col>
-
-            <v-col>
+            <v-col cols="12" :md="4">
+              
               <v-menu
-                right
+                left
                 rounded="xl"
                 :offset-x="true"
                 :offset-y="true"
@@ -86,47 +77,33 @@
                 min-width="300px"
               >
                 <template v-slot:activator="{ on, attrs }">
-                  <v-btn color="indigo" dark v-bind="attrs" v-on="on">
+                  <v-text-field
+                    v-model="dateRangeText"
+                    label="Filtrar por fecha"
+                    append-icon="mdi-calendar"
+                    outlined
+                    readonly
+                    dense
+                    v-bind="attrs"
+                    v-on="on"
+                  >
                     Escoger fechas
-                  </v-btn>
+                  </v-text-field>
                 </template>
 
-                <v-card>
-                  <v-container>
-                    <v-row>
-                      <v-col>
-                        <v-date-picker
-                          selectedItemsText="{0} seleccionados"
-                          locale="cl"
-                          v-model="dates"
-                          range
-                        ></v-date-picker>
-                      </v-col>
-                    </v-row>
-                  </v-container>
-                </v-card>
+                <v-date-picker
+                  width="400px"
+                  :selectedItemsText="comprobador()"
+                  locale="cl"
+                  v-model="dates"
+                  range
+                  :min="fechaMinimaCaducidad"
+                >
+                </v-date-picker>
               </v-menu>
             </v-col>
-            <v-col cols="11" sm="5" :md="mdSize">
-              <v-text-field
-                v-model="dateRangeText"
-                label="Rango fechas"
-                prepend-icon="mdi-calendar"
-                readonly
-              
-              ></v-text-field>
-            </v-col>
-            <v-col cols="11" sm="5" :md="mdSize">
-              <v-select
-                item-text="Año"
-                return-object
-                label="Ordernar por"
-                dense
-                outlined
-              ></v-select>
-            </v-col>
           </v-row>
-        </v-card-text>
+        </v-container>
       </v-card>
     </div>
 
@@ -281,7 +258,8 @@ export default {
     fechaHoy: new Date().toLocaleString(),
     searchClosed: true,
     showScheduleForm: false,
-    mdSize: 3,
+    mdSize: 2,
+    xlSize: 2,
     link: process.env.VUE_APP_SERVER_URL,
     busqueda: "",
     search: "",
@@ -418,13 +396,22 @@ export default {
     archivos: [],
   }),
   computed: {
+    fechaMinimaCaducidad() {
+      if (this.dates.length == 1) {
+        return moment(this.dates[0]).add(1, "days").toISOString().substr(0, 10);
+      }
+
+      return "";
+    },
     dateRangeText() {
-      return this.dates.join(" ~ ");
+      return this.valoresFecha();
     },
     filtros() {
       return this.filtroSociedad(
         this.filtroCarpetas(
-          this.filtroSubCarpetas(this.filtroStatus(this.archivos))
+          this.filtroSubCarpetas(
+            this.filtroFechas(this.filtroStatus(this.archivos))
+          )
         )
       );
     },
@@ -444,6 +431,36 @@ export default {
     // this.iniciarSubCarpetas();
   },
   methods: {
+    valoresFecha() {
+      if (this.dates.length == 2) {
+        if (this.dates[0].length < 1 && this.dates[1].length < 1) {
+          return "No hay fecha seleccionada";
+        }
+        return (
+          "Fecha emisión: " +
+          moment(this.dates[0]).format("DD/MM/YYYY") +
+          "   -   " +
+          "Fecha caducidad: " +
+          moment(this.dates[1]).format("DD/MM/YYYY")
+        );
+      }
+      if (this.dates.length == 1) {
+        return "Fecha emisión: " + moment(this.dates[0]).format("DD/MM/YYYY");
+      }
+    },
+    comprobador() {
+      if (this.dates[0].length < 1 && this.dates[1].length < 1) {
+        return "Nada seleccionado";
+      } else if (this.dates.length > 1) {
+        let fecha1 = moment(this.dates[0]);
+        let fecha2 = moment(this.dates[1]);
+        let diferencia = fecha2.diff(fecha1, "days");
+        let retorno = "Días seleccionados: " + diferencia;
+        return retorno;
+      } else {
+        return this.dates.join("-");
+      }
+    },
     obtenerExtension(archivo) {
       let cortes = archivo.split(".");
       let icono = "";
@@ -606,15 +623,42 @@ export default {
         return archivos;
       }
       let archivosFiltrados = archivos.filter(
-        (archivo) => archivo.status === this.estadoSeleccionado.codigo
+        (archivo) => archivo.status === this.estadoSeleccionado.nombre
       );
       return archivosFiltrados;
+    },
+    filtroFechas(archivos) {
+      //Si solo hay una
+      if (this.dates.length == 1) {
+        let archivosFiltrados = archivos.filter((archivo) =>
+          moment(archivo.fechaEmision).isSame(moment(this.dates[0]))
+        );
+        return archivosFiltrados;
+      }
+
+      //Si hay dos fechas
+      if (this.dates.length > 1) {
+        if (this.dates[0].length > 1 && this.dates[1].length > 1) {
+          let archivosFiltrados = archivos.filter(
+            (archivo) =>
+              moment(archivo.fechaEmision).isSameOrAfter(
+                moment(this.dates[0])
+              ) &&
+              moment(archivo.fechaCaducidad).isSameOrBefore(
+                moment(this.dates[1])
+              )
+          );
+          return archivosFiltrados;
+        }
+      }
+      return archivos;
     },
     limpiarFiltros() {
       this.sociedadSeleccionada = Object.assign({}, this.defaultFilter);
       this.carpetaSelecionada = Object.assign({}, this.defaultFilter);
       this.subCarpetaSelecionada = Object.assign({}, this.defaultFilter);
       this.estadoSeleccionado = Object.assign({}, this.defaultStatusFilter);
+      this.dates = ["", ""];
     },
     obtenerNombreSociedad(itemId, sociedades) {
       let found = sociedades.find((e) => e._id === itemId);

@@ -114,15 +114,13 @@
             </v-dialog>
           </v-toolbar>
         </template>
-        <template v-slot:[`item.actions`]="{ item }">
+        <template v-slot:[`item.acciones`]="{ item }">
           <v-menu top left rounded="tr-xl" :offset-x="true" :offset-y="true">
             <template v-slot:activator="{ on: menu, attrs }">
               <v-tooltip bottom>
                 <template v-slot:activator="{ on: tooltip }">
                   <v-btn
                     icon
-                    color="primary"
-                    dark
                     v-bind="attrs"
                     v-on="{ ...tooltip, ...menu }"
                   >
@@ -183,7 +181,7 @@ export default {
       },
       { text: "Fecha Creación", value: "fechaCreacion" },
       { text: "Descripción", value: "descripcion" },
-      { text: "Actions", value: "actions", sortable: false },
+      { text: "Actions", value: "acciones", sortable: false },
     ],
     desserts: [],
     editedIndex: -1,

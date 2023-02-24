@@ -1,10 +1,7 @@
 <template>
   <div>
     <v-app-bar color="" app height="56%" elevation="1">
-      <v-app-bar-nav-icon
-        class="hidden-md-and-up"
-        @click="drawer = true"
-      ></v-app-bar-nav-icon>
+      <v-app-bar-nav-icon @click="cambiar()"></v-app-bar-nav-icon>
 
       <v-spacer></v-spacer>
       <v-img
@@ -28,13 +25,13 @@
       </v-tooltip>
     </v-app-bar>
     <v-navigation-drawer
+      :expand-on-hover="observarMini"
+      :permanent="!$vuetify.breakpoint.xsOnly"
+      :mini-variant="observarMini"
       v-model="drawer"
       dark
       color="#212529"
       app
-      :mini-variant.sync="mini"
-      :permanent="!$vuetify.breakpoint.xsOnly"
-      expand-on-hover
     >
       <v-list-item class="px-2">
         <v-list-item-avatar>
@@ -75,26 +72,19 @@
             v-for="child in item.items"
             :key="child.title"
           >
-            <v-list-item-content >
-                <v-row class="fill-height" align="center" justify="center">
-                  <v-col >
-                    <v-list-item-title class="ml-3"
-                      >{{ child.nombre }}
-                    </v-list-item-title>
-                  </v-col>
-                  <v-col>
-                    <v-progress-circular
-                      :rotate="-90"
-                      :size="30"
-                      :width="3"
-                      :value="30"
-                      color="red"
-                    >
-                      {{ 30 }}
-                    </v-progress-circular>
-                  </v-col>
-                </v-row>
-            </v-list-item-content>
+            <v-list-item-icon>
+              <Icon width="40" height="40" icon="material-symbols:boy"></Icon>
+            </v-list-item-icon>
+            <v-list-item-title>{{ child.nombre }} </v-list-item-title>
+            <v-progress-circular
+              :rotate="-90"
+              :size="40"
+              :width="3"
+              :value="30"
+              color="blue"
+            >
+              {{ 30 }}
+            </v-progress-circular>
           </v-list-item>
         </v-list-group>
         <v-divider></v-divider>
@@ -113,21 +103,29 @@
 
 <script>
 import axios from "axios";
+import { Icon } from '@iconify/vue2';
 export default {
+  components: {
+		Icon,
+	},
   data() {
     return {
       drawer: false,
+      mini: true,
+      expand: true,
       nombre: "Christian Lizama",
       menu: [
         { action: "mdi-human-male-boy", items: [], title: "Contenedores" },
       ],
-      mini: true,
     };
   },
   created() {
     this.obtenerContenedores();
   },
   computed: {
+    observarMini() {
+      return this.comprobarMini();
+    },
     obtenerLista() {
       if (this.$store.getters.getContenedores) {
         this.initialize();
@@ -137,6 +135,20 @@ export default {
     },
   },
   methods: {
+    cambiar() {
+      if (this.$vuetify.breakpoint.xsOnly) {
+        this.drawer = !this.drawer;
+      } else {
+        this.mini = !this.mini;
+      }
+    },
+    comprobarMini() {
+      if (this.mini && !this.$vuetify.breakpoint.xsOnly) {
+        return true;
+      } else {
+        return false;
+      }
+    },
     async obtenerContenedores() {
       try {
         await axios.get("/sociedad/getPadres").then((result) => {
