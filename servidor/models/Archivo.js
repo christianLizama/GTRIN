@@ -12,7 +12,7 @@ const archivoSchema = new Schema({
     fechaCaducidad:{type: Date, required: [true, 'Fecha caducidad obligatoria']},
     padre: { type: Schema.ObjectId, ref: 'SubCarpeta' ,required: [true, 'padre obligatorio']},
     abuelo: { type: Schema.ObjectId, ref: 'Carpeta' ,required: [true, 'carpeta padre obligatoria']},
-    padreSuperior: { type: Schema.ObjectId, ref: 'Sociedad' ,required: [true, 'padre obligatorio']},
+    padreSuperior: { type: Schema.ObjectId, ref: 'Sociedad' ,required: [true, 'padre superior obligatorio']},
     parametro: { type: Schema.ObjectId, ref: 'parametro' ,required: [true, 'parametro obligatorio']},
     descripcion:{type: String},
     status:{type: String, required:[true,'Estado obligatorio']}

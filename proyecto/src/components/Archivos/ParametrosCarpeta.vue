@@ -45,7 +45,8 @@
       <v-data-table
         :headers="headers"
         :items="resultadoBusqueda"
-        sort-by="calories"
+        sort-by="option"
+        :sort-desc="true"
         class="elevation-1"
       >
         <template v-slot:[`item.cantidad`]="{ item }">

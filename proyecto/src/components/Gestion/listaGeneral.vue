@@ -66,15 +66,14 @@
               ></v-select>
             </v-col>
             <v-col cols="12" :md="4">
-              
               <v-menu
-                left
+                max-width="400px"
+                bottom
                 rounded="xl"
                 :offset-x="true"
                 :offset-y="true"
                 v-model="menu"
                 :close-on-content-click="false"
-                min-width="300px"
               >
                 <template v-slot:activator="{ on, attrs }">
                   <v-text-field
@@ -86,19 +85,34 @@
                     dense
                     v-bind="attrs"
                     v-on="on"
+                    style="font-size: 0.78em"
                   >
                     Escoger fechas
                   </v-text-field>
                 </template>
-
                 <v-date-picker
-                  width="400px"
+                  full-width
                   :selectedItemsText="comprobador()"
                   locale="cl"
                   v-model="dates"
                   range
                   :min="fechaMinimaCaducidad"
                 >
+                  <v-spacer></v-spacer>
+                  <v-btn
+                    color="grey"
+                    text
+                    class="body-2 font-weight-bold"
+                    @click="limpiarCalendario()"
+                  >
+                    Limpiar
+                  </v-btn>
+                  <v-btn
+                    color="primary"
+                    @click="menu = false"
+                  >
+                    Listo
+                  </v-btn>
                 </v-date-picker>
               </v-menu>
             </v-col>
@@ -153,17 +167,29 @@
             }}</span>
           </template>
           <template v-slot:[`item.archivo`]="{ item }">
-            <div class="text-truncate" style="max-width: 140px">
-              <Icon
-                width="25"
-                height="25"
-                :icon="obtenerExtension(item.archivo)"
-                class="mr-2"
-              ></Icon>
-              <a class="texto" :href="link + 'uploadFile/files/' + item.archivo"
-                >{{ item.archivo }}
-              </a>
-            </div>
+            <v-tooltip top>
+              <template v-slot:activator="{ on, attrs }">
+                <div
+                  v-on="on"
+                  v-bind="attrs"
+                  class="text-truncate"
+                  style="max-width: 140px"
+                >
+                  <Icon
+                    width="25"
+                    height="25"
+                    :icon="obtenerExtension(item.archivo)"
+                    class="mr-2"
+                  ></Icon>
+                  <a
+                    class="texto"
+                    :href="link + 'uploadFile/files/' + item.archivo"
+                    >{{ item.archivo }}
+                  </a>
+                </div>
+              </template>
+              <span>{{ item.archivo }}</span>
+            </v-tooltip>
           </template>
           <template v-slot:[`expanded-item`]="{ headers, item }">
             <td :colspan="headers.length">
@@ -224,7 +250,7 @@
           </template>
 
           <template v-slot:no-data>
-            <v-btn color="primary" @click="initialize"> Reset </v-btn>
+            <v-btn color="primary" @click="obtenerTodo"> Reset </v-btn>
           </template>
         </v-data-table>
       </v-card>
@@ -381,7 +407,6 @@ export default {
         sortable: true,
         value: "diasRestantes",
       },
-      { text: "Tamaño", value: "peso" },
       { text: "Fecha Emisión", value: "fechaEmision" },
       {
         text: "Fecha por vencer",
@@ -390,6 +415,7 @@ export default {
       },
       { text: "Fecha Caducidad", value: "fechaCaducidad" },
       { text: "Archivo", sortable: false, value: "archivo" },
+      { text: "Tamaño", value: "peso" },
       { text: "Gestionar", value: "ir", align: "center", sortable: false },
       { text: "Parametro", value: "data-table-expand", align: "center" },
     ],
@@ -424,11 +450,8 @@ export default {
   },
   watch: {},
   created() {
-    //this.iniciarSociedad();
     //this.componentDidMount();
     this.obtenerTodo();
-    // this.iniciarCarpetas();
-    // this.iniciarSubCarpetas();
   },
   methods: {
     valoresFecha() {
@@ -455,6 +478,7 @@ export default {
         let fecha1 = moment(this.dates[0]);
         let fecha2 = moment(this.dates[1]);
         let diferencia = fecha2.diff(fecha1, "days");
+        diferencia = diferencia + 1;
         let retorno = "Días seleccionados: " + diferencia;
         return retorno;
       } else {
@@ -653,6 +677,9 @@ export default {
       }
       return archivos;
     },
+    limpiarCalendario(){
+      this.dates = ["", ""];
+    },
     limpiarFiltros() {
       this.sociedadSeleccionada = Object.assign({}, this.defaultFilter);
       this.carpetaSelecionada = Object.assign({}, this.defaultFilter);
@@ -680,7 +707,6 @@ export default {
       let nombreParametro = found.value;
       return nombreParametro;
     },
-
     iniciarKpi(archivos) {
       let total = 0;
       var porcentaje = 0;
@@ -726,131 +752,6 @@ export default {
         this.iniciarKpi(archivos);
       });
     },
-    async componentDidMount() {
-      try {
-        const [padres, carpetas, subCarpetas] = await Promise.all([
-          axios.get("/sociedad/getPadres"),
-          axios.get("/carpeta/getAllFolders"),
-          axios.get("/subCarpeta/getAllSubFolders"),
-        ]);
-        this.sociedades = padres.data;
-        this.sociedades.unshift({ nombre: "Todo", _id: "" });
-        this.carpetas = carpetas.data;
-        this.todoCarpetas = carpetas.data;
-        carpetas.data.forEach((folder) => {
-          folder.parametros.forEach((param) => {
-            this.parametros.push(param);
-          });
-        });
-        this.subCarpetas = subCarpetas.data;
-        this.todoSubCarpetas = subCarpetas.data;
-        await axios.get("archivo/allFiles").then((result) => {
-          result.data.forEach((element) => {
-            this.iniciarFile(
-              element,
-              padres.data,
-              carpetas.data,
-              subCarpetas.data
-            );
-          });
-          this.archivos = result.data;
-          this.isLoading = false;
-          let total = 0;
-          var porcentaje = 0;
-          var intPorcentaje = 0;
-          this.kpi.forEach((element) => {
-            element.porcentaje = 0;
-            if (element.id == 0) {
-              element.total = this.archivos.length;
-              total = this.archivos.length;
-              element.porcentaje = 100;
-            } else if (element.id == 3) {
-              element.total = this.contadorArchivos(this.archivos, 3);
-              porcentaje = (element.total / total) * 100;
-              intPorcentaje = Math.round(porcentaje);
-              element.porcentaje = intPorcentaje;
-            } else if (element.id == 2) {
-              element.total = this.contadorArchivos(this.archivos, 2);
-              porcentaje = (element.total / total) * 100;
-              intPorcentaje = Math.round(porcentaje);
-              element.porcentaje = intPorcentaje;
-            } else {
-              element.total = this.contadorArchivos(this.archivos, 1);
-              porcentaje = (element.total / total) * 100;
-              intPorcentaje = Math.round(porcentaje);
-              element.porcentaje = intPorcentaje;
-            }
-          });
-        });
-      } catch (err) {
-        console.log(err);
-      }
-    },
-
-    async iniciarSociedad() {
-      await axios
-        .get("/sociedad/getPadres")
-        .then((result) => {
-          this.sociedades = result.data;
-          this.sociedades.unshift({ nombre: "Todo", _id: "" });
-          return axios.get("/carpeta/getAllFolders");
-        })
-        .then((result) => {
-          this.carpetas = result.data;
-          this.todoCarpetas = result.data;
-          return axios.get("/subCarpeta/getAllSubFolders");
-        })
-        .then((result) => {
-          this.subCarpetas = result.data;
-          this.todoSubCarpetas = result.data;
-          return axios.get("archivo/allFiles");
-        })
-        .then((result) => {
-          result.data.forEach((element) => {
-            this.iniciarFile(element);
-          });
-          this.archivos = result.data;
-          this.isLoading = false;
-          let total = 0;
-          var porcentaje = 0;
-          var intPorcentaje = 0;
-          this.kpi.forEach((element) => {
-            element.porcentaje = 0;
-            if (element.id == 0) {
-              element.total = this.archivos.length;
-              total = this.archivos.length;
-              element.porcentaje = 100;
-            } else if (element.id == 3) {
-              element.total = this.contadorArchivos(this.archivos, 3);
-              porcentaje = (element.total / total) * 100;
-              intPorcentaje = Math.round(porcentaje);
-              element.porcentaje = intPorcentaje;
-            } else if (element.id == 2) {
-              element.total = this.contadorArchivos(this.archivos, 2);
-              porcentaje = (element.total / total) * 100;
-              intPorcentaje = Math.round(porcentaje);
-              element.porcentaje = intPorcentaje;
-            } else {
-              element.total = this.contadorArchivos(this.archivos, 1);
-              porcentaje = (element.total / total) * 100;
-              intPorcentaje = Math.round(porcentaje);
-              element.porcentaje = intPorcentaje;
-            }
-          });
-        });
-    },
-    async iniciarCarpetas() {
-      await axios.get("/carpeta/getAllFolders").then((result) => {
-        this.carpetas = result.data;
-        this.todoCarpetas = result.data;
-      });
-    },
-    async iniciarSubCarpetas() {
-      await axios.get("/subCarpeta/getAllSubFolders").then((result) => {
-        this.subCarpetas = result.data;
-        this.todoSubCarpetas = result.data;
-      });
-    },
     obtenerDiferencia(fechaEmision, fechaVencimiento) {
       var fecha1 = moment(fechaEmision);
       var fecha2 = moment(fechaVencimiento);
@@ -868,43 +769,7 @@ export default {
           break;
       }
     },
-    async initialize() {
-      await this.iniciarSociedad();
 
-      await axios.get("archivo/allFiles").then((result) => {
-        result.data.forEach((element) => {
-          this.iniciarFile(element);
-        });
-        this.archivos = result.data;
-        this.isLoading = false;
-        let total = 0;
-        var porcentaje = 0;
-        var intPorcentaje = 0;
-        this.kpi.forEach((element) => {
-          element.porcentaje = 0;
-          if (element.id == 0) {
-            element.total = this.archivos.length;
-            total = this.archivos.length;
-            element.porcentaje = 100;
-          } else if (element.id == 3) {
-            element.total = this.contadorArchivos(this.archivos, 3);
-            porcentaje = (element.total / total) * 100;
-            intPorcentaje = Math.round(porcentaje);
-            element.porcentaje = intPorcentaje;
-          } else if (element.id == 2) {
-            element.total = this.contadorArchivos(this.archivos, 2);
-            porcentaje = (element.total / total) * 100;
-            intPorcentaje = Math.round(porcentaje);
-            element.porcentaje = intPorcentaje;
-          } else {
-            element.total = this.contadorArchivos(this.archivos, 1);
-            porcentaje = (element.total / total) * 100;
-            intPorcentaje = Math.round(porcentaje);
-            element.porcentaje = intPorcentaje;
-          }
-        });
-      });
-    },
     iniciarFile(element, padres, carpetas, subCarpetas) {
       element.nombreSociedad = this.obtenerNombreSociedad(
         element.padreSuperior,

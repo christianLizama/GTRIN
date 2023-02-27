@@ -82,6 +82,7 @@
               :width="3"
               :value="30"
               color="blue"
+              
             >
               {{ 30 }}
             </v-progress-circular>

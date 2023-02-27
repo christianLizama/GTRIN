@@ -287,11 +287,13 @@ const contarCumplimiento = async (req, res, next) => {
         let contador = 0
         for (let index2 = 0; index2 < carpeta.parametros.length; index2++) {
           const conteo = await Archivo.find({parametro: carpeta.parametros[index2],padre: subCarpetas[index]._id,fechaCaducidad: { $gt: new Date() },}).count();
-          contador = contador + conteo
+          if(conteo>0){
+            contador = contador + 1
+          }
         }
         subCarpetas[index].archivosSubidos = contador
         subCarpetas[index].archivosRequeridos = archivosRequeridos
-        if(contador == archivosRequeridos){
+        if(contador >= archivosRequeridos){
           subCarpetas[index].cumplimiento = "cumple"
         }
         else{
