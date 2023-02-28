@@ -8,7 +8,10 @@ const routes = [
   {
     path: '/',
     name: 'home',
-    component: HomeView
+    component: HomeView,
+    meta: {
+      title: "Dashboard"
+    }
   },
   {
     path: '/about',
@@ -17,8 +20,9 @@ const routes = [
     // this generates a separate chunk (about.[hash].js) for this route
     // which is lazy-loaded when the route is visited.
     component: () => import(/* webpackChunkName: "about" */ '../views/AboutView.vue'),
-   
-    
+    meta: {
+      title: "about"
+    }
   },
   {
     path: '/archivos',
@@ -32,16 +36,25 @@ const routes = [
         path: ':id',
         name:'folder',
         component: () => import(/* webpackChunkName: "about" */ '../views/Folder.vue'),
+        meta: {
+          title: "Carpetas"
+        },
       },
       {
         path: ':sociedad/:Folder',
         name:'subFolders',
         component: () => import(/* webpackChunkName: "about" */ '../views/SubFolders.vue'),
+        meta: {
+          title: "SubCarpetas"
+        },
       }, 
       {
         path: ':sociedad/:Folder/:subFolder',
         name:'files',
         component: () => import(/* webpackChunkName: "about" */ '../views/Files.vue'),
+        meta: {
+          title: "Archivos"
+        },
       }
     ]
   },
@@ -52,14 +65,21 @@ const routes = [
     // this generates a separate chunk (about.[hash].js) for this route
     // which is lazy-loaded when the route is visited.
     component: () => import(/* webpackChunkName: "about" */ '../views/Configuracion.vue'),
-   
-    
+    meta: {
+      title: "Configuración"
+    },
   },
-
 ]
+
 
 const router = new VueRouter({
   routes
+})
+
+
+router.beforeEach((to,from,next)=>{
+  document.title = `${to.meta.title}`;
+  next();
 })
 
 export default router

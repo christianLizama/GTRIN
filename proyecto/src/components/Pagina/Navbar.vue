@@ -43,7 +43,7 @@
 
       <v-divider elevation="1"></v-divider>
 
-      <v-list>
+      <v-list  >
         <v-list-item active-class="white--text" link to="/">
           <v-list-item-icon>
             <v-icon>mdi-monitor-dashboard</v-icon>
@@ -73,18 +73,28 @@
             :key="child.title"
           >
             <v-list-item-icon>
-              <Icon width="40" height="40" icon="material-symbols:boy"></Icon>
+              <Icon width="25" heigh="25" icon="material-symbols:boy"></Icon>
             </v-list-item-icon>
-            <v-list-item-title>{{ child.nombre }} </v-list-item-title>
+            <v-list-item-content>
+              <v-tooltip top>
+                <template v-slot:activator="{ on, attrs }">
+                  <v-list-item-title v-on="on" v-bind="attrs">{{
+                    child.nombre
+                  }}</v-list-item-title>
+                </template>
+                <span>{{ child.descripcion }}</span>
+              </v-tooltip>
+            </v-list-item-content>
+
             <v-progress-circular
               :rotate="-90"
-              :size="40"
+              :size="28"
               :width="3"
               :value="30"
               color="blue"
-              
+              style="font-size: 0.75em"
             >
-              {{ 30 }}
+              100
             </v-progress-circular>
           </v-list-item>
         </v-list-group>
@@ -104,11 +114,11 @@
 
 <script>
 import axios from "axios";
-import { Icon } from '@iconify/vue2';
+import { Icon } from "@iconify/vue2";
 export default {
   components: {
-		Icon,
-	},
+    Icon,
+  },
   data() {
     return {
       drawer: false,
@@ -121,7 +131,7 @@ export default {
     };
   },
   created() {
-    this.obtenerContenedores();
+    //this.obtenerContenedores();
   },
   computed: {
     observarMini() {
