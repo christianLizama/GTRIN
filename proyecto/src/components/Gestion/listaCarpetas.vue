@@ -294,7 +294,7 @@ export default {
     closeDelete() {
       this.dialogDelete = false;
       this.$nextTick(() => {
-        this.editedItem = Object.assign({}, {});
+        this.editedItem = Object.assign({}, this.defaulteditedItem);
         this.editedIndex = -1;
       });
     },
@@ -378,7 +378,7 @@ export default {
       this.showDialog = false;
       this.$nextTick(() => {
         this.editedIndex = -1;
-        this.editedItem = Object.assign({}, {});
+        this.editedItem = Object.assign({}, this.defaulteditedItem);
         this.finds = Object.assign([], []);
       });
     },
@@ -501,6 +501,7 @@ export default {
         });
     },
     crearCarpeta() {
+      console.log("hola")
       if (this.editedItem.nombre.length > 3) {
         var nueva = {
           nombre: this.editedItem.nombre,
@@ -512,13 +513,14 @@ export default {
       } else {
         this.$refs.childComponent.SnackbarShow(
           "error",
-          "El nombre de la carpeta debe contener un largo minimo de 3 caracteres"
+          "El nombre de la carpeta debe contener un largo minimo de 4 caracteres"
         );
       }
       this.editedItem.nombre = "";
       this.descripcion = "";
     },
     createF() {
+      console.log(this.editedItem)
       const resultado = this.carpetas.find(
         (carpeta) => carpeta.nombre === this.editedItem.nombre
       );

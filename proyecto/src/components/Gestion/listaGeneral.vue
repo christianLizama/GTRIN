@@ -217,7 +217,7 @@
                 placeholder="Buscar archivo"
                 prepend-inner-icon="mdi-magnify"
                 class="mr-3 pt-6 expanding-search"
-                :class="{ closed: searchClosed && !busqueda }"
+                :class="{ closed: searchClosed && !search }"
               ></v-text-field>
               <template>
                 <vue-json-to-csv
@@ -471,6 +471,7 @@ export default {
         return "Fecha emisión: " + moment(this.dates[0]).format("DD/MM/YYYY");
       }
     },
+    //TODO: para los apartados del calendario
     comprobador() {
       if (this.dates[0].length < 1 && this.dates[1].length < 1) {
         return "Nada seleccionado";
@@ -495,17 +496,6 @@ export default {
       });
       return icono;
     },
-    obtenerColorExtension(archivo) {
-      let cortes = archivo.split(".");
-      console.log(cortes[1]);
-      let color = "";
-      this.extensiones.forEach((extension) => {
-        if (extension.type == cortes[1]) {
-          color = extension.color;
-        }
-      });
-      return color;
-    },
     enviarRuta(item) {
       this.$router.push({
         name: "files",
@@ -517,7 +507,6 @@ export default {
       });
     },
     fechaFormateada(fecha) {
-      // let fechaCortada = fecha.split("T")
       let fechaFormat = moment(fecha).format("DD/MM/YYYY");
       return fechaFormat;
     },
@@ -609,12 +598,14 @@ export default {
 
       return hijas;
     },
+    //TODO: filtros
     filtroSociedad(archivos) {
       return archivos.filter(
         (archivo) =>
           !archivo.padreSuperior.indexOf(this.sociedadSeleccionada._id)
       );
     },
+    
     filtroCarpetas(archivos) {
       if (
         this.sociedadSeleccionada.nombre != "Todo" &&
@@ -768,107 +759,6 @@ export default {
         default:
           break;
       }
-    },
-
-    iniciarFile(element, padres, carpetas, subCarpetas) {
-      element.nombreSociedad = this.obtenerNombreSociedad(
-        element.padreSuperior,
-        padres
-      );
-      element.nombreCarpeta = this.obtenerNombreCarpeta(
-        element.abuelo,
-        carpetas
-      );
-      element.nombreSubCarpeta = this.obtenerNombreSubCarpeta(
-        element.padre,
-        subCarpetas
-      );
-
-      element.nombreParametro = this.obtenerNombreParametro(
-        element.parametro,
-        this.parametros
-      );
-
-      let fechaCrea = element.fechaCreacion.split("T");
-      let fechaEmi = element.fechaEmision.split("T");
-      let fechaCadu = element.fechaCaducidad.split("T");
-      let fechaAviso = element.fechaCambioEstado.split("T");
-      element.fechaCreacion = fechaCrea[0];
-      element.fechaEmision = fechaEmi[0];
-      element.fechaCaducidad = fechaCadu[0];
-      element.fechaCambioEstado = fechaAviso[0];
-
-      var today = new Date();
-      var now = today.toISOString();
-      var cortado = now.split("T");
-      var fechaEmis = moment(element.fechaEmision);
-      var fechaCaducidad1 = moment(element.fechaCaducidad);
-      var fechaCaducidad = moment(element.fechaCaducidad);
-
-      var diasVigencia = fechaCaducidad1.diff(fechaEmis, "days");
-      var diasRestantes = fechaCaducidad.diff(cortado[0], "days");
-
-      element.diasVigencia = diasVigencia;
-      element.diasRestantes = diasRestantes;
-      // console.log(element.nombre);
-      // console.log(element.archivo)
-      // console.log("Fecha emision: " + element.fechaEmision);
-      // console.log("Fecha vencimiento: " + element.fechaCaducidad);
-      // console.log("Dias alerta: " + element.diasAviso);
-      // console.log("Fecha que cambia de estado: " + moment(element.fechaEmision).add(element.diasAviso,"days").format("DD/MM/YYYY"))
-      // console.log("Dias de vigencia: " + element.diasVigencia);
-      // console.log("Dias restantes: " + element.diasRestantes);
-      // console.log("-----------------------------------------------")
-      let dateArray = element.fechaEmision.split("-");
-      var diaCambio2 = new Date(dateArray[0], dateArray[1] - 1, dateArray[2]);
-      diaCambio2.setDate(diaCambio2.getDate() + element.diasAviso);
-      diaCambio2.setHours(0, 0, 0, 0);
-
-      let date2Array = element.fechaCaducidad.split("-");
-      var fechaCaducidadAux = new Date(
-        date2Array[0],
-        date2Array[1] - 1,
-        date2Array[2]
-      );
-      fechaCaducidadAux.setHours(0, 0, 0, 0);
-
-      // console.log("--------------------");
-      var hoy = new Date();
-      hoy.setHours(0, 0, 0, 0);
-
-      if (diasRestantes < 1) {
-        element.diasRestantes = 0;
-      }
-      //Si el día de cambio de estado es igual al día de hoy pasa a estado por vencer
-      if (diaCambio2.getTime() <= hoy.getTime() && diasRestantes >= 1) {
-        element.status = 2;
-        element.estado = "Por Vencer";
-      }
-      //Si el día de cambio de estado es despues del día de hoy esta vigente
-      else if (diaCambio2.getTime() > hoy.getTime()) {
-        element.status = 3;
-        element.estado = "Vigente";
-      }
-      //Quiere decir que el día de cambio no es ni igual a hoy, ni mayor que hoy por lo que puede estar vencido
-      else if (diaCambio2.getTime() <= fechaCaducidadAux.getTime()) {
-        element.status = 1;
-        element.estado = "Vencido";
-      }
-    },
-
-    eliminarDiacriticos(texto) {
-      return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-    },
-    formatBytes(bytes, decimals = 2) {
-      if (!+bytes) return "0 Bytes";
-
-      const k = 1024;
-      const dm = decimals < 0 ? 0 : decimals;
-      const sizes = ["Bytes", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
-
-      const i = Math.floor(Math.log(bytes) / Math.log(k));
-
-      return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
     },
   },
 };
