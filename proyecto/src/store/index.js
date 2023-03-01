@@ -36,6 +36,9 @@ export default new Vuex.Store({
         console.log(error)   
       }
     },
+    cambiarContenedor({commit},nuevos){
+      commit("SET_CONTENEDORES",nuevos)
+    },
     modificarContenedor({commit},editados){
       commit("EDIT_CONTENEDOR",editados);
     },

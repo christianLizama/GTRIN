@@ -212,7 +212,7 @@ export default {
     },
   },
 
-  created() {
+  mounted() {
     this.initialize();
   },
 
@@ -227,9 +227,7 @@ export default {
       return fechaFormat;
     },
     async initialize() {
-      await axios.get("/sociedad/getPadres").then((result) => {
-        this.desserts = result.data;
-      });
+        this.desserts = this.$store.getters.getContenedores;
     },
 
     editItem(item) {
@@ -309,6 +307,8 @@ export default {
       await axios
         .post("sociedad/add", nuevaSociedad)
         .then((res) => {
+          res.data.cumplimiento=[]
+          res.data.folders=[]
           this.desserts.push(res.data);
           this.agregarContenedor(res.data);
           this.$refs.childComponent.SnackbarShow(

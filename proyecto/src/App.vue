@@ -18,7 +18,7 @@ export default {
     //
   }),
   created(){
-    this.$store.dispatch("obtenerContenedores");
+    //this.$store.dispatch("obtenerContenedores");
   },
 };
 </script>

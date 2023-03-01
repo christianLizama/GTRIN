@@ -130,9 +130,10 @@
           show-expand
           :headers="headers"
           :items="filtros"
-          sort-by="nombre"
+          sort-by="status"
           class="elevation-1"
           :search="search"
+          :items-per-page="-1"
         >
           <template v-slot:[`item.fechaCambioEstado`]="{ item }">
             {{ fechaFormateada(item.fechaCambioEstado) }}
