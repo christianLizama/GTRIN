@@ -151,6 +151,22 @@
             </v-chip>
           </template>
 
+          <template v-slot:[`item.diasVigencia`]="{ item }">
+            <v-tooltip top color="blue">
+              <template v-slot:activator="{ on, attrs }">
+                <div
+                  v-on="on"
+                  v-bind="attrs"
+                  class="text-truncate"
+                  style="max-width: 140px"
+                >
+                {{item.diasVigencia}}     
+                </div>
+              </template>
+              <span>{{ transformarDiasVigencia(item.diasVigencia,item.fechaEmision) }}</span>
+            </v-tooltip>
+          </template>
+
           <template v-slot:[`item.ir`]="{ item }">
             <v-btn large icon @click="enviarRuta(item)">
               <Icon
@@ -168,7 +184,7 @@
             }}</span>
           </template>
           <template v-slot:[`item.archivo`]="{ item }">
-            <v-tooltip top>
+            <v-tooltip top color="blue">
               <template v-slot:activator="{ on, attrs }">
                 <div
                   v-on="on"
@@ -403,7 +419,7 @@ export default {
         value: "diasVigencia",
       },
       {
-        text: "Días vencimiento",
+        text: "Temporizador vencimiento",
         align: "center",
         sortable: true,
         value: "diasRestantes",
@@ -455,6 +471,16 @@ export default {
     this.obtenerTodo();
   },
   methods: {
+    transformarDiasVigencia(dias,fechaEmision){
+      var date1 = moment(fechaEmision, 'DD-MM-YYYY');
+      var date2 = moment(fechaEmision, 'DD-MM-YYYY').add(dias,"days");
+      var years = date2.diff(date1,'years')
+      date1.add(years,'years')
+      var months = date2.diff(date1, 'months');
+      date1.add(months, 'months');
+      var days = date2.diff(date1, 'days');
+      return years + ' ' + 'Años, '+  months + ' ' + 'Meses, '+ ' ' + days + " Días"
+    },
     valoresFecha() {
       if (this.dates.length == 2) {
         if (this.dates[0].length < 1 && this.dates[1].length < 1) {

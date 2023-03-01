@@ -208,9 +208,7 @@ export default {
         });
     },
     initialize() {
-      console.log(this.$store.getters.getContenedores)
       this.menu[0].items = this.$store.getters.getContenedores;
-
     },
     changeThemeColor() {
       if (this.$vuetify.theme.dark === true) {

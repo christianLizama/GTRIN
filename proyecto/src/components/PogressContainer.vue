@@ -1,6 +1,6 @@
 <template>
   <div>
-    <v-tooltip top>
+    <v-tooltip top :color="obtenerColor()">
       <template v-slot:activator="{ on, attrs }">
         <v-progress-circular
           v-bind="attrs"
@@ -15,7 +15,7 @@
           {{ porcentaje }}
         </v-progress-circular>
       </template>
-      <span> % de avance </span>
+      <span>{{porcentaje}}% de avance </span>
     </v-tooltip>
   </div>
 </template>
@@ -78,7 +78,6 @@ export default {
 
       let porcentaje = (calculo / this.cantidadCarpetas) * 100;
       let intPorcentaje = Math.round(porcentaje);
-      console.log(porcentaje)
       this.porcentaje = intPorcentaje;
     },
   },
