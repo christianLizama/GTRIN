@@ -129,9 +129,11 @@ function iniciarFile(element, padres, carpetas, subCarpetas, parametros) {
 
   let fechaEmi = element.fechaEmision.split("T");
   let fechaCadu = element.fechaCaducidad.split("T");
+  let fechaCam = element.fechaCambioEstado.split("T")
   element.fechaEmision = fechaEmi[0];
   element.fechaCaducidad = fechaCadu[0];
-
+  element.fechaCambioEstado = fechaCam[0]
+  
   let fechaEmision = moment(fechaEmi[0]);
   let fechaCaducidad = moment(fechaCadu[0]);
   let diasAviso = element.diasAviso;

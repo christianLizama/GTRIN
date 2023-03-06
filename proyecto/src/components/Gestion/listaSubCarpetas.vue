@@ -54,12 +54,12 @@
           <v-text-field
             v-show="!hidden"
             v-model="busqueda"
-            clearable
             hide-details
             filled
             dense
             rounded
             full-width
+            autofocus
             color="black darken"
             placeholder="Buscar Carpeta"
             prepend-inner-icon="mdi-folder-search-outline"
@@ -82,7 +82,7 @@
             obtenerFecha(item.fechaCreacion)
           }}</v-list-item-subtitle>
         </v-list-item-content>
-        
+
         <progress-file
           :archivosRequeridos="archivosRequeridos"
           :archivosSubidos="item.archivosSubidos"
@@ -279,6 +279,7 @@
                     :label="'Apartado ' + (index + 1)"
                     v-model="find.value"
                     :key="index"
+                    autofocus
                   >
                     <v-icon
                       @click="deleteFind(find)"
@@ -339,7 +340,7 @@ export default {
     isUpload: false,
     padre: {},
     busqueda: "",
-    carpetas: {},
+    carpetas: [],
     editedIndex: -1,
     dialogDelete: false,
     dialogFindDelete: false,
@@ -355,11 +356,11 @@ export default {
       descripcion: "",
       parametros: [],
     },
-    defaultItem:{
+    defaultItem: {
       nombre: "",
       descripcion: "",
       parametros: [],
-    }
+    },
   }),
   created() {
     this.initialize();
@@ -371,16 +372,22 @@ export default {
         : "Editar nombre de la carpeta";
     },
     resultadoBusqueda() {
-      if (this.busqueda) {
-        return this.carpetas.filter((item) => {
+      return this.carpetas
+        .filter((item) => {
           return this.busqueda
             .toLowerCase()
             .split(" ")
             .every((v) => item.nombre.toLowerCase().includes(v));
+        })
+        .sort(function (a, b) {
+          if (a.nombre < b.nombre) {
+            return -1;
+          }
+          if (a.nombre > b.nombre) {
+            return 1;
+          }
+          return 0;
         });
-      } else {
-        return this.carpetas;
-      }
     },
   },
   watch: {
@@ -404,38 +411,53 @@ export default {
     },
     async updateParams() {
       this.isUpload = true;
-      await axios
-        .put("/carpeta/updateParams/", {
-          id: this.padre._id,
-          parametros: this.finds,
-          eliminados: this.eliminados,
-        })
-        .then((result) => {
-          this.finds = result.data.parametros;
-          this.primerosParametros = Object.assign([], result.data.parametros);
-          // this.$root.Snackbar.SnackbarShow("success", "Parametros modificados exitosamente");
-          this.$refs.childComponent.SnackbarShow(
-            "success",
-            "Parametros modificados exitosamente"
-          );
-          this.eliminados = [];
-          this.isUpload = false;
-          this.dialogParam = false;
-          if (result.data.parametros.length < 1) {
-            this.addPermission = true;
-          } else {
-            this.addPermission = false;
-          }
-          this.dialogFindDelete = false;
-        })
-        .catch((e) => {
-          console.log(e);
-          this.$refs.childComponent.SnackbarShow(
-            "error",
-            "Error agregando los parametros"
-          );
-          this.isUpload = false;
-        });
+      let contador = 0;
+      this.finds.forEach((element) => {
+        if (element.value == "") {
+          contador = contador + 1;
+        }
+      });
+      if (contador == 0) {
+        await axios
+          .put("/carpeta/updateParams/", {
+            id: this.padre._id,
+            parametros: this.finds,
+            eliminados: this.eliminados,
+          })
+          .then((result) => {
+            this.finds = result.data.parametros;
+            this.primerosParametros = Object.assign([], result.data.parametros);
+            // this.$root.Snackbar.SnackbarShow("success", "Parametros modificados exitosamente");
+            this.$refs.childComponent.SnackbarShow(
+              "success",
+              "Parametros modificados exitosamente"
+            );
+            this.eliminados = [];
+            this.isUpload = false;
+            this.dialogParam = false;
+            if (result.data.parametros.length < 1) {
+              this.addPermission = true;
+            } else {
+              this.addPermission = false;
+            }
+            this.dialogFindDelete = false;
+          })
+          .catch((e) => {
+            console.log(e);
+            this.$refs.childComponent.SnackbarShow(
+              "error",
+              "Error agregando los parametros"
+            );
+            this.isUpload = false;
+          });
+      } else {
+        this.$refs.childComponent.SnackbarShow(
+          "error",
+          "No se pueden agregar parametros vacios"
+        );
+        this.isUpload = false;
+        this.dialogFindDelete = false;
+      }
     },
     async addParams() {
       this.isUpload = true;
@@ -467,7 +489,15 @@ export default {
         });
     },
     addFind: function () {
-      this.finds.push({ value: "", del: 0, option: true });
+      let contador = 0;
+      this.finds.forEach((element) => {
+        if (element.value == "") {
+          contador = contador + 1;
+        }
+      });
+      if (contador == 0) {
+        this.finds.push({ value: "", del: 0, option: true });
+      }
     },
     deleteFind(item) {
       let index = this.finds.indexOf(item);
@@ -707,6 +737,7 @@ export default {
             this.contar(element, this.primerosParametros);
           });
           this.carpetas = res.data;
+
           this.isLoading = false;
         })
         .catch((e) => {
