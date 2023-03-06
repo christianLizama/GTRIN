@@ -51,8 +51,8 @@ const getListFiles = (req, res) => {
 const download = (req, res) => {
   const fileName = req.params.name;
   const directoryPath = __basedir + "/uploads/";
-  console.log(fileName)
-  console.log(directoryPath+fileName)
+  console.log(fileName);
+  console.log(directoryPath + fileName);
   res.download(directoryPath + fileName, fileName, (err) => {
     if (err) {
       res.status(500).send({
@@ -96,10 +96,24 @@ const removeSync = (req, res) => {
   }
 };
 
+const showPdf = (req, res) => {
+  const fileName = req.params.name;
+  const directoryPath = __basedir + "/uploads/";
+  const path = directoryPath+fileName
+  if (fs.existsSync(path)) {
+    res.contentType("application/pdf");
+    fs.createReadStream(path).pipe(res);
+  } else {
+    res.status(500);
+    res.send("Archivo no encontrado");
+  }
+};
+
 module.exports = {
   upload,
   getListFiles,
   download,
   remove,
   removeSync,
+  showPdf,
 };

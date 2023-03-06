@@ -200,7 +200,7 @@
                   ></Icon>
                   <a
                     class="texto"
-                    :href="link + 'uploadFile/files/' + item.archivo"
+                    :href="link + 'uploadFile/file/' + item.archivo"
                     >{{ item.archivo }}
                   </a>
                 </div>

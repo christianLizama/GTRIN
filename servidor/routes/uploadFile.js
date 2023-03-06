@@ -13,6 +13,7 @@ router.post("/upload", file.upload);
 router.get("/files", file.getListFiles);
 router.get("/files/:name", file.download);
 router.delete("/files/:name", file.remove);
+router.get("/file/:name",file.showPdf)
 
 
 module.exports = router;
