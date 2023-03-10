@@ -45,6 +45,27 @@
         </template>
         <span>Agregar carpeta</span>
       </v-tooltip>
+      <vue-json-to-csv
+        :json-data="carpetas"
+        :labels="{
+          nombre: { title: 'Nombre Carpeta' },
+          descripcion: { title: 'Descripcion' },
+          archivosSubidos: { title: 'Archivos Subidos' },
+          archivosRequeridos: { title: 'Archivos Requeridos' },
+          cumplimiento: {title: 'Porcentaje cumplimiento'}
+        }"
+        :csv-title="'resumen ' + padre.nombre + '-' + fechaHoy"
+        :separator="';'"
+      >
+        <v-tooltip bottom>
+          <template v-slot:activator="{ on, attrs }">
+            <v-btn v-bind="attrs" v-on="on">
+              <v-icon color="green">mdi-microsoft-excel</v-icon>
+            </v-btn>
+          </template>
+          <span>Exportar a csv</span>
+        </v-tooltip>
+      </vue-json-to-csv>
     </v-toolbar>
 
     <loading texto="Cargando Datos" v-if="isLoading"></loading>
@@ -84,7 +105,7 @@
         </v-list-item-content>
 
         <progress-file
-          :archivosRequeridos="archivosRequeridos"
+          :archivosRequeridos="item.archivosRequeridos"
           :archivosSubidos="item.archivosSubidos"
         ></progress-file>
 
@@ -324,9 +345,11 @@ import axios from "axios";
 import loading from "../loading.vue";
 import Snackbar from "../snackbar.vue";
 import ProgressFile from "../ProgressFile.vue";
+import VueJsonToCsv from "vue-json-to-csv";
 export default {
-  components: { loading, Snackbar, ProgressFile },
+  components: { VueJsonToCsv, loading, Snackbar, ProgressFile },
   data: () => ({
+    fechaHoy: new Date().toLocaleString(),
     hidden: true,
     searchClosed: true,
     timeout: 7500,
@@ -681,6 +704,14 @@ export default {
           }
         });
         subCarpeta.archivosSubidos = contador;
+        subCarpeta.archivosRequeridos = this.archivosRequeridos;
+        let porcentaje=0;
+        if (this.archivosSubidos == 0) {
+          porcentaje = 0;
+        }
+        porcentaje = (contador / this.archivosRequeridos) * 100;
+        let intPorcentaje = Math.round(porcentaje);
+        subCarpeta.cumplimiento = intPorcentaje;
       });
     },
 

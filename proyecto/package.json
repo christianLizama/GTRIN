@@ -9,6 +9,7 @@
     "create-env": "printenv > .env"
   },
   "dependencies": {
+    "@vue-js-cron/core": "^2.1.2",
     "axios": "^1.2.2",
     "core-js": "^3.8.3",
     "dotenv": "^16.0.3",

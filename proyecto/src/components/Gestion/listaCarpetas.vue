@@ -43,6 +43,7 @@
             hide-details
             filled
             dense
+            autofocus
             rounded
             full-width
             color="black darken"

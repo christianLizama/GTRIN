@@ -1,6 +1,6 @@
 const util = require("util");
 const multer = require("multer");
-const maxSize = 2 * 1024 * 1024;
+const maxSize = 5 * 1024 * 1024;
 const fs = require("fs");
 const directoryPath = __basedir + "/uploads/";
 const path = require("path");

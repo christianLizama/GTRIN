@@ -130,7 +130,7 @@
           show-expand
           :headers="headers"
           :items="filtros"
-          sort-by="status"
+          sort-by="statusId"
           class="elevation-1"
           :search="search"
           :items-per-page="-1"
@@ -163,7 +163,7 @@
                 {{item.diasVigencia}}     
                 </div>
               </template>
-              <span>{{ transformarDiasVigencia(item.diasVigencia,item.fechaEmision) }}</span>
+              <span>{{ transformarDiasVigencia(item.fechaEmision,item.fechaCaducidad) }}</span>
             </v-tooltip>
           </template>
 
@@ -199,6 +199,7 @@
                     class="mr-2"
                   ></Icon>
                   <a
+                    target="_blank"
                     class="texto"
                     :href="link + 'uploadFile/file/' + item.archivo"
                     >{{ item.archivo }}
@@ -471,9 +472,9 @@ export default {
     this.obtenerTodo();
   },
   methods: {
-    transformarDiasVigencia(dias,fechaEmision){
-      var date1 = moment(fechaEmision, 'DD-MM-YYYY');
-      var date2 = moment(fechaEmision, 'DD-MM-YYYY').add(dias,"days");
+    transformarDiasVigencia(fechaEmision,fechaCaducidad){
+      var date1 = moment(fechaEmision);
+      var date2 = moment(fechaCaducidad);
       var years = date2.diff(date1,'years')
       date1.add(years,'years')
       var months = date2.diff(date1, 'months');

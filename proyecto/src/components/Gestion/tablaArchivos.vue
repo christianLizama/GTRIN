@@ -27,7 +27,12 @@
       <template v-slot:[`item.archivo`]="{ item }">
         <v-tooltip top>
           <template v-slot:activator="{ on, attrs }">
-            <div v-on="on" v-bind="attrs" class="text-truncate" style="max-width: 140px">
+            <div
+              v-on="on"
+              v-bind="attrs"
+              class="text-truncate"
+              style="max-width: 140px"
+            >
               <Icon
                 width="25"
                 height="25"
@@ -39,7 +44,7 @@
               </a>
             </div>
           </template>
-          <span >{{ item.archivo }}</span>
+          <span>{{ item.archivo }}</span>
         </v-tooltip>
       </template>
       <template v-slot:top>
@@ -81,9 +86,6 @@
               </v-toolbar>
               <loading texto="Subiendo Archivo" v-if="isUpload"></loading>
               <v-stepper v-if="!isUpload" v-model="e1">
-                <!-- <v-alert v-model="rechazado" dense outlined type="error">
-                {{ message }}
-              </v-alert> -->
 
                 <v-stepper-header>
                   <v-stepper-step :complete="e1 > 1" step="1">
@@ -172,11 +174,11 @@
                               >
                                 <template v-slot:activator="{ on, attrs }">
                                   <v-text-field
-                                    v-model="editedItem.fechaEmision"
+                                    v-model="editedItem.fechaEmisionFormateada"
                                     label="Fecha de emisión"
                                     prepend-icon="mdi-calendar"
-                                    readonly
                                     v-bind="attrs"
+                                    @blur="editedItem.fechaEmision = parseDate(editedItem.fechaEmisionFormateada)"
                                     v-on="on"
                                   ></v-text-field>
                                 </template>
@@ -199,12 +201,12 @@
                               >
                                 <template v-slot:activator="{ on, attrs }">
                                   <v-text-field
-                                    v-model="editedItem.fechaCaducidad"
+                                    v-model="editedItem.fechaCaducidadFormateada"
                                     label="Fecha de caducidad"
                                     prepend-icon="mdi-calendar"
-                                    readonly
                                     v-bind="attrs"
                                     v-on="on"
+                                    @blur="editedItem.fechaCaducidad = parseDate(editedItem.fechaCaducidadFormateada)"
                                   ></v-text-field>
                                 </template>
                                 <v-date-picker
@@ -372,9 +374,6 @@ export default {
     e1: 1,
     link: process.env.VUE_APP_SERVER_URL,
     seleccion: 1,
-    rechazado: false,
-    aceptado2: false,
-    rechazado2: false,
     busqueda: "",
     isLoading: true,
     snackTipe: false,
@@ -520,27 +519,13 @@ export default {
     },
   },
   watch: {
-    aceptado2(new_val) {
-      if (new_val) {
-        setTimeout(() => {
-          this.aceptado2 = false;
-        }, 2000);
-      }
+    "editedItem.fechaEmision": function(){
+      this.editedItem.fechaEmisionFormateada = this.formatDate(this.editedItem.fechaEmision)
     },
-    rechazado(new_val) {
-      if (new_val) {
-        setTimeout(() => {
-          this.rechazado = false;
-        }, 1000);
-      }
+    "editedItem.fechaCaducidad": function(){
+      this.editedItem.fechaCaducidadFormateada = this.formatDate(this.editedItem.fechaCaducidad)
     },
-    rechazado2(new_val) {
-      if (new_val) {
-        setTimeout(() => {
-          this.rechazado2 = false;
-        }, 1000);
-      }
-    },
+
     dialog(val) {
       val || this.close();
     },
@@ -552,6 +537,16 @@ export default {
     this.initialize();
   },
   methods: {
+    formatDate (date) {
+      if (!date) return null
+      const [year, month, day] = date.split('-')
+      return `${day}/${month}/${year}`
+    },
+    parseDate (date) {
+      if (!date) return null
+      const [day, month, year] = date.split('/')
+      return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`
+    },
     obtenerExtension(archivo) {
       let cortes = archivo.split(".");
       let icono = "";
@@ -625,7 +620,11 @@ export default {
         this.obtenerDiferencia(
           this.editedItem.fechaEmision,
           this.editedItem.fechaCaducidad
-        ) < 0
+        ) < 0 ||
+        this.obtenerDiferencia(
+          this.editedItem.fechaEmision,
+          this.editedItem.fechaCaducidad
+        ) < 3
       ) {
         this.editedItem.fechaCaducidad = moment(this.editedItem.fechaEmision)
           .add(3, "days")
@@ -644,7 +643,6 @@ export default {
       await axios
         .put("archivo/update/", { _id: Archivo._id, archivo: Archivo })
         .then((res) => {
-          console.log(res.data);
           this.iniciarFile(res.data);
           Object.assign(this.archivos[index], res.data);
           this.close();
@@ -720,13 +718,14 @@ export default {
         });
     },
     iniciarFile(element) {
-      let fechaCrea = element.fechaCreacion.split("T");
+      let fechaCambio = element.fechaCambioEstado.split("T");
       let fechaEmi = element.fechaEmision.split("T");
       let fechaCadu = element.fechaCaducidad.split("T");
-      element.fechaCreacion = fechaCrea[0];
+      element.fechaCambioEstado = fechaCambio[0];
       element.fechaEmision = fechaEmi[0];
       element.fechaCaducidad = fechaCadu[0];
-
+      element.fechaEmisionFormateada = moment(fechaEmi[0]).format("DD/MM/YYYY")
+      element.fechaCaducidadFormateada = moment(fechaCadu[0]).format("DD/MM/YYYY")
       var today = new Date();
       var now = today.toISOString();
       var cortado = now.split("T");
@@ -778,7 +777,6 @@ export default {
         );
         // this.message = "Por favor ingrese un nombre con al menos 4 caracteres";
         this.isUpload = false;
-        // this.rechazado = true;
         this.e1 = 1;
         return;
       }
@@ -787,9 +785,7 @@ export default {
           "error",
           "Por favor ingrese otro nombre de archivo"
         );
-        // this.message = "Por favor ingrese otro nombre de archivo";
         this.isUpload = false;
-        // this.rechazado = true;
         this.e1 = 1;
         return;
       }
@@ -798,9 +794,7 @@ export default {
           "error",
           "Por favor seleccione un archivo"
         );
-        // this.message = "Por favor seleccione un archivo";
         this.isUpload = false;
-        // this.rechazado = true;
         this.e1 = 1;
         return;
       }
@@ -857,11 +851,9 @@ export default {
         .catch(() => {
           this.$refs.childComponent2.SnackbarShow(
             "error",
-            "No se puede subir archivo Excede máximo de 2 mb"
+            "No se puede subir archivo Excede máximo de 5 mb"
           );
-          // this.message = "No se puede subir archivo Excede máximo de 2 mb";
           this.isUpload = false;
-          // this.rechazado = true;
           this.currentFile = undefined;
           this.e1 = 1;
         });
@@ -908,8 +900,6 @@ export default {
             "success",
             "Cambios realizados exitosamente"
           );
-          // this.alerta = "Cambios realizados exitosamente";
-          // this.aceptado2 = true;
           this.close();
         })
         .catch((e) => {
@@ -985,8 +975,7 @@ export default {
               "success",
               "Archivo modificado exitosamente"
             );
-            // this.alerta = "Archivo modificado exitosamente";
-            // this.aceptado2 = true;
+            
           } else {
             this.snackTipe = false;
             this.e1 = 1;
@@ -994,17 +983,14 @@ export default {
               "error",
               "El nombre del archivo debe tener un largo mayor a 3 caracteres"
             );
-            // this.message =
-            //   "El nombre del archivo debe tener un largo mayor a 3 caracteres";
-            // this.rechazado = true;
+            
           }
         } else {
           this.$refs.childComponent.SnackbarShow(
             "error",
             "Ya existe un archivo con ese nombre"
           );
-          // this.message = "Ya existe un archivo con ese nombre";
-          // this.rechazado = true;
+          
           return;
         }
       } else {

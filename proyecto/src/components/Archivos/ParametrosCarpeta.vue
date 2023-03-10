@@ -26,6 +26,7 @@
           clearable
           hide-details
           filled
+          autofocus
           dense
           rounded
           full-width
@@ -48,6 +49,7 @@
         sort-by="option"
         :sort-desc="true"
         class="elevation-1"
+        :items-per-page="-1"
       >
         <template v-slot:[`item.cantidad`]="{ item }">
           <v-icon xl :color="obtenerCumplimiento(item).color">{{

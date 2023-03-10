@@ -127,6 +127,16 @@ function iniciarFile(element, padres, carpetas, subCarpetas, parametros) {
     parametros
   );
 
+  if(element.status == "Vigente"){
+    element.statusId=3
+  }
+  else if(element.status == "Por vencer"){
+    element.statusId=2
+  }
+  else{
+    element.statusId=1
+  }
+
   let fechaEmi = element.fechaEmision.split("T");
   let fechaCadu = element.fechaCaducidad.split("T");
   let fechaCam = element.fechaCambioEstado.split("T")
