@@ -1,17 +1,11 @@
 <template>
   <v-card width="98%" class="mx-auto">
-    <CronCore
-      v-model="value"
-      :custom-locale="locale"
-      :periods="periods"
-    >
+    <CronCore v-model="value" :custom-locale="locale" :periods="periods">
       <template #default="{ fields, period, error }">
         <div>
           <v-row align="baseline" dense>
             <!-- period selection -->
-            <v-col v-if="period.prefix" class="flex-grow-0">{{
-              period.prefix
-            }}</v-col>
+            <v-col v-if="period.prefix" class="flex-grow-0">{{ period.prefix }}</v-col>
             <v-col cols="auto">
               <v-select
                 class="fit"
@@ -23,18 +17,13 @@
                 :menu-props="{ 'offset-y': true }"
               ></v-select>
             </v-col>
-            <v-col v-if="period.suffix" class="flex-grow-0">{{
-              period.suffix
-            }}</v-col>
+            <v-col v-if="period.suffix" class="flex-grow-0">{{ period.suffix }}</v-col>
 
             <!-- cron expression fields -->
-            <template v-for="f in fields" >
-              <v-col
-                v-if="f.prefix"
-                class="flex-grow-0"
-                :key="f.id + '-prefix'"
-                >{{ f.prefix }}</v-col
-              >
+            <template v-for="f in fields">
+              <v-col v-if="f.prefix" class="flex-grow-0" :key="f.id + '-prefix'">{{
+                f.prefix
+              }}</v-col>
               <!-- custom select -->
               <v-menu
                 offset-y
@@ -45,41 +34,29 @@
                 <!-- menu activator -->
                 <template v-slot:activator="{ on, attrs }">
                   <v-col v-on="on" v-bind="attrs">
-                    <v-text-field
-                      :value="f.selectedStr"
-                      dense
-                      readonly
-                    ></v-text-field>
+                    <v-text-field :value="f.selectedStr" dense readonly></v-text-field>
                   </v-col>
                 </template>
 
                 <!-- list of field items -->
                 <v-list dense>
-                  <v-list-item-group
-                    v-bind="f.attrs"
-                    @change="f.events.input"
-                    multiple
-                  >
+                  <v-list-item-group v-bind="f.attrs" @change="f.events.input" multiple>
                     <v-list-item
                       v-for="item in f.items"
                       :value="item.value"
                       :key="item.value"
                     >
                       <v-list-item-content>
-                        <v-list-item-title
-                        >{{item.text}}</v-list-item-title>
+                        <v-list-item-title>{{ item.text }}</v-list-item-title>
                       </v-list-item-content>
                     </v-list-item>
                   </v-list-item-group>
                 </v-list>
               </v-menu>
 
-              <v-col
-                v-if="f.suffix"
-                class="flex-grow-0"
-                :key="f.id + '-suffix'"
-                >{{ f.suffix }}</v-col
-              >
+              <v-col v-if="f.suffix" class="flex-grow-0" :key="f.id + '-suffix'">{{
+                f.suffix
+              }}</v-col>
             </template>
           </v-row>
 
@@ -106,8 +83,8 @@ export default {
     return {
       value: "* * * * *",
       fields: [
-        { id: "month", items: ["enero","febrero","marzo"] },
-        { id: "dayOfWeek", items: ["lunes","martes","miercoles"] },
+        { id: "month", items: ["enero", "febrero", "marzo"] },
+        { id: "dayOfWeek", items: ["lunes", "martes", "miercoles"] },
       ],
       periods: [
         { id: "minute", text: "minutos", value: [] },
@@ -184,12 +161,3 @@ export default {
   methods: {},
 };
 </script>
-
-<style>
-.contenedor{
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 100%;
-}
-</style>

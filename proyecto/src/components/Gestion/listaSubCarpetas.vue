@@ -19,12 +19,7 @@
 
       <v-tooltip bottom>
         <template v-slot:activator="{ on, attrs }">
-          <v-btn
-            dark
-            v-bind="attrs"
-            v-on="on"
-            @click="dialogParam = !dialogParam"
-          >
+          <v-btn dark v-bind="attrs" v-on="on" @click="dialogParam = !dialogParam">
             <v-icon>mdi-folder-cog</v-icon>
           </v-btn>
         </template>
@@ -52,7 +47,7 @@
           descripcion: { title: 'Descripcion' },
           archivosSubidos: { title: 'Archivos Subidos' },
           archivosRequeridos: { title: 'Archivos Requeridos' },
-          cumplimiento: {title: 'Porcentaje cumplimiento'}
+          cumplimiento: { title: 'Porcentaje cumplimiento' },
         }"
         :csv-title="'resumen ' + padre.nombre + '-' + fechaHoy"
         :separator="';'"
@@ -159,11 +154,7 @@
 
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn
-            color="grey"
-            text
-            class="body-2 font-weight-bold"
-            @click="closeDelete"
+          <v-btn color="grey" text class="body-2 font-weight-bold" @click="closeDelete"
             >Cancelar</v-btn
           >
           <v-btn
@@ -249,11 +240,7 @@
     <!-- Dialogo de parametrización -->
     <v-dialog v-model="dialogParam" max-width="500px">
       <v-card v-if="isUpload">
-        <loading
-          texto="Subiendo Datos"
-          :overlay="false"
-          v-if="isUpload"
-        ></loading>
+        <loading texto="Subiendo Datos" :overlay="false" v-if="isUpload"></loading>
       </v-card>
       <v-card v-if="!isUpload">
         <v-toolbar dark color="black darken-3" dense flat>
@@ -302,11 +289,7 @@
                     :key="index"
                     autofocus
                   >
-                    <v-icon
-                      @click="deleteFind(find)"
-                      slot="append-outer"
-                      color="red"
-                    >
+                    <v-icon @click="deleteFind(find)" slot="append-outer" color="red">
                       mdi-minus
                     </v-icon>
                   </v-text-field>
@@ -390,9 +373,7 @@ export default {
   },
   computed: {
     formTitle() {
-      return this.editedIndex === -1
-        ? "Nueva Carpeta"
-        : "Editar nombre de la carpeta";
+      return this.editedIndex === -1 ? "Nueva Carpeta" : "Editar nombre de la carpeta";
     },
     resultadoBusqueda() {
       return this.carpetas
@@ -561,19 +542,17 @@ export default {
       this.finds = Object.assign([], this.primerosParametros);
     },
     async deleteFiles(item) {
-      await axios
-        .delete("/carpeta/deleteSubFolders/" + item._id)
-        .then((result) => {
-          console.log(result);
-          this.$refs.childComponent.SnackbarShow(
-            "success",
-            "Carpeta eliminada correctamente"
-          );
-          // this.alerta = "Carpeta eliminada correctamente";
-          // this.snackbar = true;
-          // this.textSnackbar = "Carpeta eliminada correctamente";
-          this.actualizarHijos();
-        });
+      await axios.delete("/carpeta/deleteSubFolders/" + item._id).then((result) => {
+        console.log(result);
+        this.$refs.childComponent.SnackbarShow(
+          "success",
+          "Carpeta eliminada correctamente"
+        );
+        // this.alerta = "Carpeta eliminada correctamente";
+        // this.snackbar = true;
+        // this.textSnackbar = "Carpeta eliminada correctamente";
+        this.actualizarHijos();
+      });
     },
     async deleteAllFiles(idPadre) {
       var data = {
@@ -705,7 +684,7 @@ export default {
         });
         subCarpeta.archivosSubidos = contador;
         subCarpeta.archivosRequeridos = this.archivosRequeridos;
-        let porcentaje=0;
+        let porcentaje = 0;
         if (this.archivosSubidos == 0) {
           porcentaje = 0;
         }
@@ -716,23 +695,21 @@ export default {
     },
 
     async initialize() {
-      await axios
-        .get("carpeta/query?_id=" + this.$route.params.Folder)
-        .then((result) => {
-          this.padre = result.data;
-          this.getSubFolders(result.data._id);
-          result.data.parametros.forEach((element) => {
-            this.finds.push(element);
-          });
-
-          this.primerosParametros = result.data.parametros;
-          if (result.data.parametros.length >= 1) {
-            this.addPermission = false;
-            this.encabezado = "Editar Parametros";
-          } else {
-            this.encabezado = "Agregar Parametros";
-          }
+      await axios.get("carpeta/query?_id=" + this.$route.params.Folder).then((result) => {
+        this.padre = result.data;
+        this.getSubFolders(result.data._id);
+        result.data.parametros.forEach((element) => {
+          this.finds.push(element);
         });
+
+        this.primerosParametros = result.data.parametros;
+        if (result.data.parametros.length >= 1) {
+          this.addPermission = false;
+          this.encabezado = "Editar Parametros";
+        } else {
+          this.encabezado = "Agregar Parametros";
+        }
+      });
     },
     async actualizarSubCarpeta(carpeta, index) {
       carpeta.nombre = this.editedItem.nombre;

@@ -1,5 +1,5 @@
 <template>
-  <div class="contenedor">
+  <div class="">
     <v-card max-width="98.6%" elevation="5" outlined class="mx-auto mb-8">
       <v-data-table
         :headers="headers"

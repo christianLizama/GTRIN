@@ -135,6 +135,9 @@
           :search="search"
           :items-per-page="-1"
         >
+          <template v-slot:[`item.number`]="{index}">
+            {{ index+1}}
+          </template>
           <template v-slot:[`item.fechaCambioEstado`]="{ item }">
             {{ fechaFormateada(item.fechaCambioEstado) }}
           </template>
@@ -299,6 +302,7 @@ export default {
       { type: "jpg", icon: "vscode-icons:file-type-image" },
       { type: "csv", icon: "vscode-icons:file-type-excel" },
     ],
+    numero:0,
     fechaHoy: new Date().toLocaleString(),
     searchClosed: true,
     showScheduleForm: false,
@@ -383,6 +387,11 @@ export default {
       { nombre: "Vencido", codigo: 1 },
     ],
     headers: [
+      {
+        text: "",
+        align: "start",
+        value: "number",
+      },
       {
         text: "Contenedor",
         align: "start",
