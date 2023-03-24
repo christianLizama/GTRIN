@@ -482,6 +482,7 @@ export default {
           for (let index = 0; index < res.data.length; index++) {
             await this.getSubFolders(res.data[index]);
           }
+          console.log("holisss")
           this.carpetas = res.data;
           this.isLoading = false;
         })

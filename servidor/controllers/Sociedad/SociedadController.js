@@ -55,7 +55,7 @@ const queryNombre = async (req, res, next) => {
 //Metodo para obtener Carpetas de una sociedad segun el id de la sociedad
 const queryFolders = async (req, res, next) => {
   try {
-    console.log(req.query._id)
+    //console.log(req.query._id)
     const id = req.query._id;
     const reg = await Carpeta.find({padre:id});
     if (!reg) {
@@ -76,7 +76,7 @@ const queryFolders = async (req, res, next) => {
 //Metodo para agregar Carpetas a una sociedad
 const addFolder = async (req, res, next) => {
   try {
-    console.log(req.body);
+    //console.log(req.body);
     const reg = await sociedad.findByIdAndUpdate(
       { _id: req.body._id },
       { carpetas: req.body.carpetas }
@@ -139,7 +139,7 @@ const getArchivos = async (req, res, next) => {
 //Metodo para agregar un archivo a la sociedad
 const updateCarpetas = async (req, res, next) => {
   try {
-    console.log(req.body);
+    //console.log(req.body);
     const reg = await sociedad.findByIdAndUpdate(
       { _id: req.body._id },
       { carpetas: req.body.carpetas }

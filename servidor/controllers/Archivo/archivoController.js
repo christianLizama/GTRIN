@@ -77,7 +77,7 @@ const countFiles = async (req, res, next) => {
     const id = req.query._id;
     const idPadre = req.query.padre;
     let date = new Date();
-    console.log(date);
+    //console.log(date);
     const reg = await archivo
       .find({
         parametro: id,
@@ -276,7 +276,7 @@ const getArchivosStatus = async (req, res, next) => {
 const getArchivos = async (req, res, next) => {
   try {
     const id = req.query._id;
-    console.log(req.query._id);
+    //console.log(req.query._id);
     const reg = await archivo.find({ padre: id });
     if (!reg) {
       res.status(404).send({

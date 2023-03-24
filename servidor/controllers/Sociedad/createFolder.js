@@ -5,7 +5,7 @@ const addFolder = async (req, res, next) => {
   try {
     var reg = false;
     var ruta = req.body.ruta;
-    console.log("Nueva Carpeta: " + req.body.ruta);
+    //console.log("Nueva Carpeta: " + req.body.ruta);
     if (fs.existsSync("./uploads/" + ruta)) {
       reg = false;
     } else {

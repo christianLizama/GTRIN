@@ -22,7 +22,7 @@ const add = async (req, res, next) => {
 //Metodo para obtener una sub carpeta mediante su id
 const query = async (req, res, next) => {
   try {
-    console.log(req.query._id);
+    //console.log(req.query._id);
     const reg = await subCarpeta.findOne({ _id: req.query._id });
     if (!reg) {
       res.status(404).send({
@@ -104,7 +104,7 @@ const getArchivos = async (req, res, next) => {
 //Metodo para agregar archivos a una subCarpeta
 const addFile = async (req, res, next) => {
   try {
-    console.log(req.body);
+    //console.log(req.body);
     const reg = await subCarpeta.findByIdAndUpdate(
       { _id: req.body._id },
       { archivos: req.body.archivo }
@@ -136,7 +136,7 @@ const update = async (req, res, next) => {
 const remove = async (req, res, next) => {
   try {
     const id = req.params;
-    console.log(id);
+    //console.log(id);
     const reg = await subCarpeta.findByIdAndDelete({ _id: id.id });
     if (reg) {
       res.status(200).json(reg);
@@ -152,7 +152,7 @@ const remove = async (req, res, next) => {
 //Metodo para actualizar los archivos de una sub carpeta
 const updateHijos = async (req, res, next) => {
   try {
-    console.log(req.body);
+    //console.log(req.body);
     const reg = await subCarpeta.findByIdAndUpdate(
       { _id: req.body._id },
       { archivos: req.body.archivos }

@@ -24,9 +24,9 @@ const add = async (req, res, next) => {
 const agregarParametros = async (req, res, next) => {
   try {
     let { id, parametros } = req.body;
-    console.log(id);
+    //console.log(id);
     const folder = await Carpeta.findOne({ _id: id });
-    console.log(folder);
+    //console.log(folder);
     if (folder) {
       parametros.forEach((parametro) => {
         folder.parametros.push(parametro);
@@ -53,7 +53,7 @@ const actualizarParametros = async (req, res, next) => {
     const archivosDelete = await Archivo.find({
       parametro: { $in: eliminados },
     });
-    console.log(archivosDelete);
+    //console.log(archivosDelete);
     if (archivosDelete.length > 0) {
       const directoryPath = __basedir + "/uploads/";
       archivosDelete.forEach((element) => {
@@ -64,7 +64,7 @@ const actualizarParametros = async (req, res, next) => {
       const borrados = await Archivo.deleteMany({
         parametro: { $in: eliminados },
       });
-      console.log(borrados);
+      //console.log(borrados);
     }
 
     const CarpetaActualizada = await Carpeta.findById(id).then((folder) => {
@@ -98,7 +98,7 @@ const actualizarParametros = async (req, res, next) => {
 //Metodo para obtener una Carpeta mediante su id
 const query = async (req, res, next) => {
   try {
-    console.log(req.query._id);
+    //console.log(req.query._id);
     const reg = await Carpeta.findOne({ _id: req.query._id });
     if (!reg) {
       res.status(404).send({
@@ -133,16 +133,64 @@ const queryNombre = async (req, res, next) => {
     next(e);
   }
 };
+
+function contar(subCarpeta, parametros) {
+  let contador = 0;
+  subCarpeta.archivosSubidos = 0;
+  let archivosRequeridos = 0;
+
+  parametros.forEach((element) => {
+    if (element.option) {
+      archivosRequeridos = archivosRequeridos + 1;
+    }
+  });
+
+  parametros.forEach(async (parametro) => {
+    
+    const reg = await Archivo
+      .find({
+        parametro: parametro._id,
+        padre: subCarpeta._id,
+        fechaCaducidad: { $gt: new Date() },
+      })
+      .count();
+    parametro.cantidad = reg
+    if (parametro.option) {
+      if (parametro.cantidad > 0) {
+        contador = contador + 1;
+      }
+    }
+    subCarpeta.archivosSubidos = contador;
+    subCarpeta.archivosRequeridos = archivosRequeridos;
+    let porcentaje = 0;
+    if (contador == 0) {
+      porcentaje = 0;
+    }
+    porcentaje = (contador / archivosRequeridos) * 100;
+    let intPorcentaje = Math.round(porcentaje);
+    subCarpeta.cumplimiento = intPorcentaje;
+  });
+}
+
+
 //Metodo para obtener los hijos de una Carpeta
 const querysubFolders = async (req, res, next) => {
   try {
     const id = req.query._id;
+    const folder = await Carpeta.find({_id: id})
     const reg = await subCarpeta.find({ padre: id });
+    
     if (!reg) {
       res.status(404).send({
         message: "El registro no existe",
       });
     } else {
+      let folderResult = JSON.parse(JSON.stringify(folder))[0];
+      let subCarpetasResult = JSON.parse(JSON.stringify(reg));
+      contar(subCarpetasResult,folderResult.parametros)
+      // console.log("------------------------")
+      // console.log(subCarpetasResult)
+      // console.log("------------------------")
       res.status(200).json(reg);
     }
   } catch (e) {
@@ -174,7 +222,7 @@ const update = async (req, res, next) => {
   try {
     const id = req.body._id;
     const body = req.body.carpeta;
-    console.log(body);
+    //console.log(body);
     const reg = await Carpeta.findByIdAndUpdate(id, body, { new: true });
     res.status(200).json(reg);
   } catch (e) {
@@ -188,7 +236,7 @@ const update = async (req, res, next) => {
 const remove = async (req, res, next) => {
   try {
     const id = req.params;
-    console.log(id);
+    //console.log(id);
     const reg = await Carpeta.findByIdAndDelete({ _id: id.id });
     if (reg) {
       res.status(200).json(reg);
@@ -205,7 +253,7 @@ const removeSubFolders = async (req, res, next) => {
   try {
     const id = req.params;
     const reg = await subCarpeta.deleteMany({ padre: id.id });
-    console.log(req.params.id);
+    //console.log(req.params.id);
     if (reg) {
       res.status(200).json(true);
     }
@@ -238,7 +286,7 @@ const getArchivos = async (req, res, next) => {
 //Metodo para agregar un archivo a la sociedad
 const updateHijos = async (req, res, next) => {
   try {
-    console.log(req.body);
+    //console.log(req.body);
     const reg = await Carpeta.findByIdAndUpdate(
       { _id: req.body._id },
       { hijos: req.body.hijos }
@@ -266,11 +314,11 @@ const getAllFolders = async (req, res, next) => {
 //Conteo de cumplimiento
 const contarCumplimiento = async (req, res, next) => {
   try {
-    console.log(req.query)
+    //console.log(req.query)
     let idPadre = req.query.padre;
     let idFolder = req.query._id;
-    console.log(idPadre);
-    console.log(idFolder);
+    //console.log(idPadre);
+    //console.log(idFolder);
     let carpetaFind = await Carpeta.find({ padre: idPadre, _id: idFolder });
     if (carpetaFind) {
       let carpeta = JSON.parse(JSON.stringify(carpetaFind))[0];
@@ -280,7 +328,7 @@ const contarCumplimiento = async (req, res, next) => {
           archivosRequeridos = archivosRequeridos + 1;
         }
       });
-      console.log("Archivos Requeridos: "+archivosRequeridos);
+      //console.log("Archivos Requeridos: "+archivosRequeridos);
       let subCarpetasFind = await subCarpeta.find({ padre: idFolder });
       let subCarpetas = JSON.parse(JSON.stringify(subCarpetasFind));
       for (let index = 0; index < subCarpetas.length; index++) {
@@ -299,8 +347,15 @@ const contarCumplimiento = async (req, res, next) => {
         else{
           subCarpetas[index].cumplimiento = "No cumple"
         }
+        let intPorcentaje = 0
+        
+        if(contador>0){
+          let porcentaje = (contador / archivosRequeridos) * 100;
+          intPorcentaje = Math.round(porcentaje);
+        }
+        subCarpetas[index].porcentaje = intPorcentaje
       }
-      console.log(subCarpetas)
+      //console.log(subCarpetas)
       res.status(200).json(subCarpetas);
     }
   } catch (e) {

@@ -69,15 +69,15 @@
             <vue-json-to-csv
               :json-data="archivos"
               :labels="{
-                nombre: {title: 'Nombre'},
+                nombre: { title: 'Nombre' },
                 archivo: { title: 'Archivo' },
                 status: { title: 'Status del documento' },
                 fechaEmision: { title: 'Fecha emisión' },
                 fechaCambioEstado: { title: 'Fecha de alerta' },
                 fechaCaducidad: { title: 'Fecha Caducidad ' },
-                descripcion: {title:'Descripción'}
+                descripcion: { title: 'Descripción' },
               }"
-              :csv-title="'resumen-'+folder.nombre"
+              :csv-title="'resumen-' + folder.nombre"
               :separator="';'"
             >
               <v-btn icon>
@@ -92,7 +92,6 @@
               </template>
               <span>Refrescar</span>
             </v-tooltip>
-            
 
             <v-dialog v-model="dialog" max-width="80%" persistent>
               <v-card>
@@ -129,6 +128,7 @@
 </template>
 
 <script>
+import moment from "moment";
 import axios from "axios";
 import tablaArchivos from "../Gestion/tablaArchivos.vue";
 import VueJsonToCsv from "vue-json-to-csv";
@@ -166,6 +166,8 @@ export default {
         sortable: false,
         value: "option",
       },
+      { text: "Fecha por vencer", align: "center", sortable: false, value: "archivo.fechaCambioEstado" },
+      { text: "Fecha caducidad", align: "center", sortable: false, value: "archivo.fechaCaducidad" },
       { text: "Acciones", align: "center", value: "actions", sortable: false },
     ],
     parametros: [],
@@ -243,8 +245,18 @@ export default {
           this.obtenerArchivos(result.data._id);
         });
     },
+    formatearFechas(archivos){
+      archivos.forEach(element => {
+        let fechaEmi = element.fechaEmision.split("T");
+        let fechaCadu = element.fechaCaducidad.split("T");
+        let fechaCam = element.fechaCambioEstado.split("T")
+        element.fechaEmision = moment(fechaEmi[0]).format("DD/MM/YYYY");
+        element.fechaCaducidad = moment(fechaCadu[0]).format("DD/MM/YYYY");
+        element.fechaCambioEstado = moment(fechaCam[0]).format("DD/MM/YYYY")
+      });
+    },
+
     async obtenerArchivos(padreId) {
-      console.log(padreId);
       const request = {
         params: {
           _id: padreId,
@@ -252,7 +264,15 @@ export default {
       };
 
       await axios.get("archivo/getArchivos", request).then((result) => {
+        this.formatearFechas(result.data)
         this.archivos = result.data;
+        this.archivos.forEach(archivo => {
+          this.parametros.forEach(parametro => {
+            if(parametro._id == archivo.parametro){
+              parametro.archivo = archivo 
+            }
+          }); 
+        });
       });
     },
     editItem(item) {

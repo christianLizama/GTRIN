@@ -8,10 +8,10 @@
           :rotate="-90"
           :size="40"
           :width="5"
-          :value="calularPorcentaje()"
-          :color="obtenerColor(calularPorcentaje())"
+          :value="porcentaje"
+          :color="obtenerColor(porcentaje)"
         >
-          {{ calularPorcentaje() }}
+          {{ porcentaje}}
         </v-progress-circular>
       </template>
       <span> Nivel de cumplimiento </span>
@@ -27,8 +27,7 @@ export default {
     return {};
   },
   props: {
-    archivosSubidos: Number,
-    archivosRequeridos: Number,
+    porcentaje: Number
   },
   methods: {
     obtenerColor(valor) {
@@ -37,14 +36,6 @@ export default {
       } else {
         return "green";
       }
-    },
-    calularPorcentaje() {
-      if(this.archivosSubidos==0){
-        return 0
-      }
-      let porcentaje = (this.archivosSubidos / this.archivosRequeridos) * 100;
-      let intPorcentaje = Math.round(porcentaje);
-      return intPorcentaje;
     },
   },
 };

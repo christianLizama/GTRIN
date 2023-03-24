@@ -1,6 +1,6 @@
 <template>
   <div class="">
-    <v-card max-width="98.6%" elevation="5" outlined class="mx-auto mb-8">
+    <v-card max-width="98.6%" elevation="5" outlined class="mx-auto mb-8 mt-3">
       <v-data-table
         :headers="headers"
         :items="desserts"
@@ -12,7 +12,12 @@
             <v-toolbar-title>Contenedores</v-toolbar-title>
             <v-divider class="mx-4" inset vertical></v-divider>
             <v-spacer></v-spacer>
-            <v-btn @click="actualizarStatus" color="primary" dark class="mb-2 mr-2">
+            <v-btn
+              @click="actualizarStatus"
+              color="primary"
+              dark
+              class="mb-2 mr-2"
+            >
               update status
             </v-btn>
 
@@ -119,11 +124,7 @@
             <template v-slot:activator="{ on: menu, attrs }">
               <v-tooltip bottom>
                 <template v-slot:activator="{ on: tooltip }">
-                  <v-btn
-                    icon
-                    v-bind="attrs"
-                    v-on="{ ...tooltip, ...menu }"
-                  >
+                  <v-btn icon v-bind="attrs" v-on="{ ...tooltip, ...menu }">
                     <v-icon>mdi-cog</v-icon>
                   </v-btn>
                 </template>
@@ -201,6 +202,9 @@ export default {
     formTitle() {
       return this.editedIndex === -1 ? "Nuevo Contenedor" : "Editar Contenedor";
     },
+    // computed: {
+    //   ...mapState(['contenedores'])
+    // },
   },
 
   watch: {
@@ -217,7 +221,7 @@ export default {
   },
 
   methods: {
-    async actualizarStatus(){
+    async actualizarStatus() {
       await axios.put("archivo/updateStatus").then((result) => {
         console.log(result.data);
       });
@@ -227,7 +231,14 @@ export default {
       return fechaFormat;
     },
     async initialize() {
-        this.desserts = this.$store.getters.getContenedores;
+      await axios
+        .get("sociedad/getPadres")
+        .then((res) => {
+          this.desserts = res.data;
+        })
+        .catch((e) => {
+          console.log(e);
+        });
     },
 
     editItem(item) {
@@ -307,8 +318,8 @@ export default {
       await axios
         .post("sociedad/add", nuevaSociedad)
         .then((res) => {
-          res.data.cumplimiento=[]
-          res.data.folders=[]
+          res.data.cumplimiento = [];
+          res.data.folders = [];
           this.desserts.push(res.data);
           this.agregarContenedor(res.data);
           this.$refs.childComponent.SnackbarShow(
