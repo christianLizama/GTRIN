@@ -1,135 +1,169 @@
 <template>
-  <v-card width="98%" class="mx-auto mt-3">
-    <CronCore v-model="value" :custom-locale="locale" :periods="periods">
-      <template #default="{ fields, period, error }">
-        <div>
-          <v-row align="baseline" dense>
-            <!-- period selection -->
-            <v-col v-if="period.prefix" class="flex-grow-0">{{
-              period.prefix
-            }}</v-col>
-            <v-col cols="auto">
-              <v-select
-                class="fit"
-                v-bind="period.attrs"
-                :items="period.items"
-                @input="period.events.input"
-                item-value="id"
-                dense
-                :menu-props="{ 'offset-y': true }"
-              ></v-select>
-            </v-col>
-            <v-col v-if="period.suffix" class="flex-grow-0">{{
-              period.suffix
-            }}</v-col>
+  <div>
+    <snackbar ref="childComponent"></snackbar>
+    <v-card width="98%" class="mx-auto mt-3">
+      <v-card-text>
+        <CronCore v-model="value" :custom-locale="locale" :periods="periods">
+          <template #default="{ fields, period, error }">
+            <div>
+              <v-row align="baseline" dense>
+                <!-- period selection -->
+                <v-col v-if="period.prefix" class="flex-grow-0">{{
+                  period.prefix
+                }}</v-col>
+                <v-col cols="auto">
+                  <v-select
+                    class="fit"
+                    v-bind="period.attrs"
+                    :items="period.items"
+                    @input="period.events.input"
+                    item-value="id"
+                    dense
+                    :menu-props="{ 'offset-y': true }"
+                  ></v-select>
+                </v-col>
+                <v-col v-if="period.suffix" class="flex-grow-0">{{
+                  period.suffix
+                }}</v-col>
 
-            <!-- cron expression fields -->
-            <template v-for="f in fields">
-              <v-col
-                v-if="f.prefix"
-                class="flex-grow-0"
-                :key="f.id + '-prefix'"
-                >{{ f.prefix }}</v-col
-              >
-              <!-- custom select -->
-              <v-menu
-                offset-y
-                :key="f.id"
-                :close-on-content-click="false"
-                max-height="300"
-              >
-                <!-- menu activator -->
-                <template v-slot:activator="{ on, attrs }">
-                  <v-col v-on="on" v-bind="attrs">
-                    <v-text-field
-                      :value="f.selectedStr"
-                      dense
-                      readonly
-                    ></v-text-field>
-                  </v-col>
-                </template>
-
-                <!-- list of field items -->
-                <v-list dense>
-                  <v-list-item-group
-                    v-bind="f.attrs"
-                    @change="f.events.input"
-                    multiple
+                <!-- cron expression fields -->
+                <template v-for="f in fields">
+                  <v-col
+                    v-if="f.prefix"
+                    class="flex-grow-0"
+                    :key="f.id + '-prefix'"
+                    >{{ f.prefix }}</v-col
                   >
-                    <v-list-item
-                      v-for="item in f.items"
-                      :value="item.value"
-                      :key="item.value"
-                    >
-                      <v-list-item-content>
-                        <v-list-item-title>{{ item.text }}</v-list-item-title>
-                      </v-list-item-content>
-                    </v-list-item>
-                  </v-list-item-group>
-                </v-list>
-              </v-menu>
+                  <!-- custom select -->
+                  <v-menu
+                    offset-y
+                    :key="f.id"
+                    :close-on-content-click="false"
+                    max-height="300"
+                  >
+                    <!-- menu activator -->
+                    <template v-slot:activator="{ on, attrs }">
+                      <v-col v-on="on" v-bind="attrs">
+                        <v-text-field
+                          :value="f.selectedStr"
+                          dense
+                          readonly
+                        ></v-text-field>
+                      </v-col>
+                    </template>
 
-              <v-col
-                v-if="f.suffix"
-                class="flex-grow-0"
-                :key="f.id + '-suffix'"
-                >{{ f.suffix }}</v-col
-              >
-            </template>
-          </v-row>
+                    <!-- list of field items -->
+                    <v-list dense>
+                      <v-list-item-group
+                        v-bind="f.attrs"
+                        @change="f.events.input"
+                        multiple
+                      >
+                        <v-list-item
+                          v-for="item in f.items"
+                          :value="item.value"
+                          :key="item.value"
+                        >
+                          <v-list-item-content>
+                            <v-list-item-title>{{
+                              item.text
+                            }}</v-list-item-title>
+                          </v-list-item-content>
+                        </v-list-item>
+                      </v-list-item-group>
+                    </v-list>
+                  </v-menu>
 
-          <!-- editable cron expression -->
-          <v-row class="mt-0">
-            <v-col class="pt-0">
-              <v-text-field
-                :value="value"
-                @change="value = $event"
-                label="Expresion cron"
-                readonly
-                :error-messages="error"
-              />
-            </v-col>
-          </v-row>
-        </div>
-      </template>
-    </CronCore>
-    <v-row align="baseline">
-      <v-col>
-        <v-text-field label="Nombre Trigger" v-model="nombre"></v-text-field>
-      </v-col>
-      <v-col>
-        <v-select label="Contenedor" v-model="contenedorSeleccionado" :items="contenedores" item-text="nombre" return-object></v-select>
-      </v-col>
-      <v-col>
-        <v-select label="Carpetas" v-model="carpetaSeleccionada" :items="carpetas" item-text="nombre" return-object></v-select>
-      </v-col>
-      <v-col>
-        <v-select label="Status" v-model="estadoSeleccionado" :items="estados" item-text="nombre" return-object></v-select>
-      </v-col>
-      <v-col>
-        <v-text-field label="Asunto" v-model="asunto"></v-text-field>
-      </v-col>
-      <v-col>
-        <v-combobox
-          v-model="destino"
-          hide-selected
-          hint="Ingresar correos correctamente"
-          label="Destino(s)"
-          multiple
-          persistent-hint
-          small-chips
-        ></v-combobox>
-      </v-col>
-      <v-col>
-        <v-btn @click="crearCron()" color="primary">Crear Trigger</v-btn>
-      </v-col>
-    </v-row>
-  </v-card>
+                  <v-col
+                    v-if="f.suffix"
+                    class="flex-grow-0"
+                    :key="f.id + '-suffix'"
+                    >{{ f.suffix }}</v-col
+                  >
+                </template>
+              </v-row>
+
+              <!-- editable cron expression -->
+              <v-row class="mt-0">
+                <v-col class="pt-0">
+                  <v-text-field
+                    :value="value"
+                    @change="value = $event"
+                    label="Expresion cron"
+                    readonly
+                    :error-messages="error"
+                  />
+                </v-col>
+              </v-row>
+            </div>
+          </template>
+        </CronCore>
+      </v-card-text>
+
+      <v-card-text>
+        <v-row align="baseline">
+          <v-col>
+            <v-text-field
+              label="Nombre Trigger"
+              v-model="nombre"
+            ></v-text-field>
+          </v-col>
+          <v-col>
+            <v-select
+              label="Contenedor"
+              v-model="contenedorSeleccionado"
+              :items="contenedores"
+              item-text="nombre"
+              return-object
+            ></v-select>
+          </v-col>
+          <v-col>
+            <v-select
+              :disabled="desabilitado"
+              label="Carpetas"
+              v-model="carpetaSeleccionada"
+              :items="carpetasDisponibles"
+              item-text="nombre"
+              return-object
+            ></v-select>
+          </v-col>
+          <v-col>
+            <v-select
+              label="Status"
+              v-model="estadoSeleccionado"
+              :items="estados"
+              item-text="nombre"
+              return-object
+            ></v-select>
+          </v-col>
+          <v-col>
+            <v-text-field label="Asunto" v-model="asunto"></v-text-field>
+          </v-col>
+          <v-col>
+            <v-combobox
+              v-model="destino"
+              hide-selected
+              hint="Ingresar correos correctamente"
+              label="Destino(s)"
+              multiple
+              persistent-hint
+              small-chips
+            ></v-combobox>
+          </v-col>
+          <v-col>
+            <v-btn @click="crearCron()" color="primary">Crear Trigger</v-btn>
+          </v-col>
+        </v-row>
+      </v-card-text>
+    </v-card>
+  </div>
 </template>
 
 <script>
 import axios from "axios";
+import Snackbar from "../components/snackbar.vue";
 export default {
+  components: { Snackbar },
   data() {
     return {
       nombre: "",
@@ -138,14 +172,15 @@ export default {
       value: "* * * * *",
       destino: [],
       contenedores: [],
-      contenedorSeleccionado:{},
+      contenedorSeleccionado: {},
       carpetas: [],
-      carpetaSeleccionada:{},
+      carpetaSeleccionada: {},
+      desabilitado: true,
       estados: [
         { nombre: "Por vencer", codigo: 2 },
         { nombre: "Vencido", codigo: 1 },
       ],
-      estadoSeleccionado:{},
+      estadoSeleccionado: {},
       fields: [
         { id: "month", items: ["enero", "febrero", "marzo"] },
         { id: "dayOfWeek", items: ["lunes", "martes", "miercoles"] },
@@ -223,9 +258,24 @@ export default {
     };
   },
   created() {
-    this.obtenerTodo()
+    this.obtenerTodo();
+  },
+  computed: {
+    carpetasDisponibles() {
+      return this.obtenerCarpetasDisponibles();
+    },
   },
   methods: {
+    obtenerCarpetasDisponibles() {
+      if (this.contenedorSeleccionado.nombre) {
+        this.desabilitado = false;
+        return this.carpetas.filter(
+          (carpeta) => carpeta.padre == this.contenedorSeleccionado._id
+        );
+      } else {
+        return this.carpetas;
+      }
+    },
     async crearCron() {
       let datos = {
         nombre: this.nombre,
@@ -233,20 +283,38 @@ export default {
         destino: this.destino,
         asunto: this.asunto,
         expresion: this.value,
+        contenedor: this.contenedorSeleccionado,
+        carpeta: this.carpetaSeleccionada,
+        status: this.estadoSeleccionado,
       };
-      await axios
-        .post("correo/sendEmail", datos)
-        .then((res) => {
-          console.log(res);
-        })
-        .catch((e) => {
-          console.log(e);
-        });
+      if (
+        Object.entries(this.contenedorSeleccionado).length === 0 ||
+        Object.entries(this.carpetaSeleccionada).length === 0 ||
+        Object.entries(this.estadoSeleccionado).length === 0 ||
+        !this.nombre ||
+        this.destino.length == 0 ||
+        !this.asunto
+      ) {
+        console.log("Cron incompleto");
+        this.$refs.childComponent.SnackbarShow(
+          "error",
+          "Por favor completa el trigger"
+        );
+        console.log(datos);
+      } else {
+        await axios
+          .post("correo/sendEmail", datos)
+          .then((res) => {
+            console.log(res);
+          })
+          .catch((e) => {
+            console.log(e);
+          });
+      }
     },
     async obtenerTodo() {
       await axios.get("archivo/archivosStatus").then((result) => {
-        console.log(result)
-        let {sociedades, carpetas} = result.data;
+        let { sociedades, carpetas } = result.data;
         //this.archivos = archivos;
         this.contenedores = sociedades;
         this.carpetas = carpetas;

@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 const Schema = mongoose.Schema;
 
 const triggerSchema = new Schema({
-    nombre: {type: String, required: [true, 'Nombre obligatorio']},
+    nombre: {type: String, required: [true, 'Nombre obligatorio'],unique: true},
     asunto: {type: String, required: [true, 'Asunto obligatorio']},
     expresion: {type: String,required: [true,'Expresion obligatoria']},
     contenedor: {type: String,required: [true,'Contenedor obligatorio']},

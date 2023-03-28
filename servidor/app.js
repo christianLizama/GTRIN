@@ -6,6 +6,7 @@ import mongoose from "mongoose";
 import cookieParser from "cookie-parser";
 
 global.__basedir = __dirname;
+global.triggers = {}
 
 mongoose.set("strictQuery", false);
 require("dotenv").config();
@@ -16,8 +17,9 @@ const uri = process.env.MONGO_URL
 //Conexion DB nueva
 // console.log(uri)
 const options = {useNewUrlParser: true};
-mongoose.connect(uri, options).then(
-  () => { console.log('Conectado a DB') },
+mongoose.connect(uri, options).then(() => { 
+    console.log('Conectado a DB') 
+  },
   err => { console.log(err) }
 );
 
