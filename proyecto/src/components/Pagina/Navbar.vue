@@ -97,14 +97,14 @@
             <v-list-item-title>Configurar</v-list-item-title>
           </v-list-item-content>
         </v-list-item>
-        <!-- <v-list-item active-class="white--text" link to="/triggers">
+        <v-list-item active-class="white--text" link to="/triggers">
           <v-list-item-icon>
             <v-icon>mdi-clipboard-clock</v-icon>
           </v-list-item-icon>
           <v-list-item-content>
             <v-list-item-title>Triggers</v-list-item-title>
           </v-list-item-content>
-        </v-list-item> -->
+        </v-list-item>
       </v-list>
     </v-navigation-drawer>
   </div>

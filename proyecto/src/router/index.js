@@ -14,6 +14,14 @@ const routes = [
     }
   },
   {
+    path: '/login',
+    name: 'login',
+    component: () => import(/* webpackChunkName: "about" */ '../views/login.vue'),
+    meta: {
+      title: "login"
+    }
+  },
+  {
     path: '/triggers',
     name: 'triggers',
     // route level code-splitting

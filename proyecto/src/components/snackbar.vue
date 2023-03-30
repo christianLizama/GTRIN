@@ -37,7 +37,7 @@ export default {
         mode: null,
         position: "top",
         text: null,
-        timeout: 1500,
+        timeout: 1700,
         title: null,
         visible: false,
       },

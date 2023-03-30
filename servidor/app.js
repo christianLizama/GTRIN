@@ -4,9 +4,10 @@ import cors from "cors";
 import path from "path";
 import mongoose from "mongoose";
 import cookieParser from "cookie-parser";
+const correoController = require('./controllers/Correo/correoController');
 
 global.__basedir = __dirname;
-global.triggers = {}
+global.triggers = []
 
 mongoose.set("strictQuery", false);
 require("dotenv").config();
@@ -17,8 +18,9 @@ const uri = process.env.MONGO_URL
 //Conexion DB nueva
 // console.log(uri)
 const options = {useNewUrlParser: true};
-mongoose.connect(uri, options).then(() => { 
-    console.log('Conectado a DB') 
+mongoose.connect(uri, options).then((client) => { 
+    console.log('Conectado a DB')
+    correoController.cargarTriggers();
   },
   err => { console.log(err) }
 );
@@ -31,7 +33,7 @@ const subCarpetaRouter = require("./routes/subCarpeta");
 const archivosRouter = require("./routes/archivo");
 const uploadFileRouter = require("./routes/uploadFile");
 const correoRouter = require("./routes/correo");
-
+const usuarioRouter = require("./routes/usuario");
 const app = express();
 
 app.use(logger("dev"));
@@ -48,6 +50,8 @@ app.use("/subCarpeta",subCarpetaRouter);
 app.use("/archivo", archivosRouter);
 app.use("/uploadFile", uploadFileRouter);
 app.use("/correo",correoRouter);
+app.use("/usuario",usuarioRouter)
+
 //Puerto del server
 const appPort = process.env.PORT_SERVER || 3030
 
