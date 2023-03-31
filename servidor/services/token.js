@@ -21,9 +21,9 @@ async function checkToken(token) {
 }
 
 export default {
-  encode: async (_id, rol) => {
+  encode: async (_id, rol, nombreCompleto) => {
     const token = jwt.sign(
-      { _id: _id, rol: rol },
+      { _id: _id, rol: rol ,nombreCompleto:nombreCompleto},
       "clavesecretaparagenerartoken",
       { expiresIn: "1d" }
     );

@@ -1,15 +1,20 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
 import axios from 'axios'
-
+import decode from 'jwt-decode'
+import router from '../router'
 Vue.use(Vuex)
 
 export default new Vuex.Store({
   state: {
+    token: null,
+    usuario: null,
     contenedores:[]
   },
   getters: {
     getContenedores: (state) => state.contenedores,
+    isAuthenticated: (state) => !!state.usuario,
+    getUsuario: (state) => state.usuario
   },
   mutations: {
     SET_CONTENEDORES(state, contenedores) {
@@ -24,6 +29,12 @@ export default new Vuex.Store({
     },
     EDIT_CONTENEDOR(state,newContainers){
       state.contenedores=newContainers
+    },
+    setToken(state,token){
+      state.token=token;
+    },
+    setUsuario(state,usuario){
+      state.usuario=usuario;
     }
   },
   actions: {
@@ -47,6 +58,27 @@ export default new Vuex.Store({
     },
     eliminarContenedor({commit},eliminado){
       commit("DELETE_CONTENEDOR",eliminado)
+    },
+    guardarToken({commit}, token){
+      commit("setToken", token)
+      commit("setUsuario", decode(token))
+      localStorage.setItem("token", token)
+      localStorage.setItem("usuario", decode(token))
+    },
+    autoLogin({commit}){
+      let token = localStorage.getItem("token");
+      if(token) {
+        commit("setToken", token);
+        commit("setUsuario", decode(token));
+      }
+      
+    },
+    salir({commit}){
+      commit("setToken", null);
+      commit("setUsuario", null);
+      localStorage.removeItem("token");
+      localStorage.removeItem("usuario");
+      router.push('/login').catch(() => {});
     }
   },
   modules: {

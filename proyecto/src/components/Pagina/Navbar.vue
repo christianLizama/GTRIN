@@ -15,7 +15,9 @@
         <template v-slot:activator="{ on, attrs }">
           <v-btn v-bind="attrs" v-on="on" icon @click="changeThemeColor">
             <v-icon>{{
-              $vuetify.theme.dark ? "mdi-white-balance-sunny" : "mdi-weather-night"
+              $vuetify.theme.dark
+                ? "mdi-white-balance-sunny"
+                : "mdi-weather-night"
             }}</v-icon>
           </v-btn>
         </template>
@@ -34,10 +36,28 @@
     >
       <v-list-item class="px-2">
         <v-list-item-avatar>
-          <v-img src="https://randomuser.me/api/portraits/men/85.jpg"></v-img>
+          <v-icon>mdi-account</v-icon>
         </v-list-item-avatar>
 
-        <v-list-item-title>Admin</v-list-item-title>
+        <v-list-item-title v-if="usuario">{{
+          usuario.nombreCompleto
+        }}</v-list-item-title>
+
+        <v-tooltip bottom color="blue">
+              <template v-slot:activator="{ on, attrs }">
+                <div
+                  v-on="on"
+                  v-bind="attrs"
+                >
+                </div>
+                <v-btn @click="salir" icon dark v-bind="attrs" v-on="on">
+                  <v-icon>mdi-logout-variant</v-icon>
+                </v-btn>
+              </template>
+              <span>Salir</span>
+            </v-tooltip>
+        
+          
       </v-list-item>
 
       <v-divider elevation="1"></v-divider>
@@ -81,11 +101,16 @@
                     child.nombre
                   }}</v-list-item-title>
                 </template>
-                <span v-if="child.descripcion.length>1">{{ child.descripcion }}</span>
+                <span v-if="child.descripcion.length > 1">{{
+                  child.descripcion
+                }}</span>
                 <span v-else>No posee descripcion</span>
               </v-tooltip>
             </v-list-item-content>
-            <pogress-container :fracciones="child.cumplimiento" :cantidadCarpetas="child.folders.length"></pogress-container>
+            <pogress-container
+              :fracciones="child.cumplimiento"
+              :cantidadCarpetas="child.folders.length"
+            ></pogress-container>
           </v-list-item>
         </v-list-group>
         <v-divider></v-divider>
@@ -113,7 +138,8 @@
 <script>
 import axios from "axios";
 import { Icon } from "@iconify/vue2";
-import PogressContainer from '../PogressContainer.vue';
+import PogressContainer from "../PogressContainer.vue";
+import { mapState } from "vuex";
 export default {
   components: {
     Icon,
@@ -121,11 +147,14 @@ export default {
   },
   data() {
     return {
+      usuarioActual: "",
       drawer: false,
       mini: true,
       expand: true,
       nombre: "Christian Lizama",
-      menu: [{ action: "mdi-human-male-boy", items: [], title: "Contenedores" }],
+      menu: [
+        { action: "mdi-human-male-boy", items: [], title: "Contenedores" },
+      ],
       contenedores: [],
       cumplidos: [],
     };
@@ -134,6 +163,7 @@ export default {
     this.obtenerContenedores();
   },
   computed: {
+    ...mapState(["usuario"]),
     observarMini() {
       return this.comprobarMini();
     },
@@ -146,6 +176,9 @@ export default {
     },
   },
   methods: {
+    salir(){
+      this.$store.dispatch("salir");
+    },
     cambiar() {
       if (this.$vuetify.breakpoint.xsOnly) {
         this.drawer = !this.drawer;
@@ -165,7 +198,7 @@ export default {
         await axios.get("/sociedad/getPadres").then(async (result) => {
           for (let index = 0; index < result.data.length; index++) {
             await this.getFolders(result.data[index]);
-            this.cumplidos=[]
+            this.cumplidos = [];
           }
           this.contenedores = result.data;
           this.$store.dispatch("cambiarContenedor", this.contenedores);

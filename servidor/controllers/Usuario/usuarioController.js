@@ -72,13 +72,15 @@ async function updateUsuario(req,res) {
     }
 }
 
-async function login(req,res) {
+async function login(req,res,next) {
     try{
+        console.log(req.body)
         let user = await Usuario.findOne({email:req.body.email});
         if(user){
-            let match = bcrypt.compare(req.body.clave,user.clave);
+            let match = await bcrypt.compare(req.body.password,user.clave);
             if (match){
-                let tokenReturn = await token.encode(user._id,user.rol);
+                console.log(user.nombreCompleto)
+                let tokenReturn = await token.encode(user._id,user.rol,user.nombreCompleto);
                 res.status(200).json(tokenReturn);
             }
             else{
@@ -93,10 +95,10 @@ async function login(req,res) {
             });
         }
     } catch(e){
-        console.log(e)
         res.status(500).send({
             message: 'Ocurrio un error'
         });
+        next(e)
     }
 }
 

@@ -10,7 +10,9 @@ const routes = [
     name: 'home',
     component: HomeView,
     meta: {
-      title: "Dashboard"
+      title: "Dashboard",
+      logged:true,
+      isAdmin:true
     }
   },
   {
@@ -18,7 +20,8 @@ const routes = [
     name: 'login',
     component: () => import(/* webpackChunkName: "about" */ '../views/login.vue'),
     meta: {
-      title: "login"
+      title: "login",
+      guest: true
     }
   },
   {
@@ -29,7 +32,9 @@ const routes = [
     // which is lazy-loaded when the route is visited.
     component: () => import(/* webpackChunkName: "about" */ '../views/Triggers.vue'),
     meta: {
-      title: "Trigger"
+      title: "Trigger",
+      logged:true,
+      isAdmin:true
     }
   },
   {
@@ -45,7 +50,9 @@ const routes = [
         name:'folder',
         component: () => import(/* webpackChunkName: "about" */ '../views/Folder.vue'),
         meta: {
-          title: "Carpetas"
+          title: "Carpetas",
+          logged:true,
+          isAdmin:true
         },
       },
       {
@@ -53,7 +60,9 @@ const routes = [
         name:'subFolders',
         component: () => import(/* webpackChunkName: "about" */ '../views/SubFolders.vue'),
         meta: {
-          title: "SubCarpetas"
+          title: "SubCarpetas",
+          logged:true,
+          isAdmin:true
         },
       }, 
       {
@@ -61,7 +70,9 @@ const routes = [
         name:'files',
         component: () => import(/* webpackChunkName: "about" */ '../views/Files.vue'),
         meta: {
-          title: "Archivos"
+          title: "Archivos",
+          logged:true,
+          isAdmin:true
         },
       }
     ]
@@ -74,7 +85,9 @@ const routes = [
     // which is lazy-loaded when the route is visited.
     component: () => import(/* webpackChunkName: "about" */ '../views/Configuracion.vue'),
     meta: {
-      title: "Configuración"
+      title: "Configuración",
+      logged:true,
+      isAdmin:true
     },
   },
 ]
@@ -89,5 +102,44 @@ router.beforeEach((to,from,next)=>{
   document.title = `${to.meta.title}`;
   next();
 })
+
+router.beforeEach((to, from, next) => {
+  if (to.matched.some((record) => record.meta.guest)) {
+    var loggedIn = localStorage.getItem('token')
+    if (loggedIn) {
+      next("/");
+      return;
+    }
+    else{
+      next();
+    }
+  } else {
+    next();
+  }
+});
+
+import decode from 'jwt-decode'
+router.beforeEach((to, from, next) => {
+  if (to.matched.some((record) => record.meta.isAdmin)) {
+    var user = localStorage.getItem('token')
+    if(user!=null){
+      var user2 = decode(user)
+    }
+    else{
+      next("/login");
+      return;
+    }
+    
+    if (user2.rol != 'admin') {
+      next("/login");
+      return;
+    }
+    else{
+      next();
+    }
+  } else {
+    next();
+  }
+});
 
 export default router

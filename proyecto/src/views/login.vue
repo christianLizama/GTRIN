@@ -1,5 +1,6 @@
 <template>
   <v-container>
+    <snackbar ref="childComponent"></snackbar>
     <v-row align="center" justify="center">
       <v-col cols="12" sm="10">
         <v-card class="elevation-6 mt-15">
@@ -25,6 +26,7 @@
                 <v-row align="center" justify="center">
                   <v-col cols="12" sm="8">
                     <v-text-field
+                      v-model="email"
                       label="Email"
                       outlined
                       dense
@@ -33,6 +35,7 @@
                       class="mt-16"
                     />
                     <v-text-field
+                      v-model="password"
                       label="Contraseña"
                       outlined
                       dense
@@ -50,15 +53,16 @@
                         </v-checkbox>
                       </v-col>
                       <v-col cols="12" sm="5">
-                        <span class="caption blue--text">Olvidé la Contraseña</span>
+                        <span class="caption blue--text"
+                          >Olvidé la Contraseña</span
+                        >
                       </v-col>
                     </v-row>
-                    <v-btn color="blue" dark block tile>Iniciar Sesión</v-btn>
+                    <v-btn color="blue" dark block tile @click="login()">Iniciar Sesión</v-btn>
                   </v-col>
                 </v-row>
               </v-card-text>
             </v-col>
-            
           </v-row>
         </v-card>
       </v-col>
@@ -67,19 +71,43 @@
 </template>
 
 <script>
+import Snackbar from "../components/snackbar.vue";
+import axios from "axios";
 export default {
+  components: { Snackbar },
   data() {
     return {
-      username: "",
+      email: "",
       password: "",
     };
   },
   methods: {
-    login() {
+    async login() {
       // Aquí se puede agregar la lógica de inicio de sesión
+      //this.loading = true;
+      await axios
+        .post("usuario/login", {
+          email: this.email.toLowerCase(),
+          password: this.password,
+        })
+        .then((respuesta) => {
+          return respuesta.data;
+        })
+        .then((data) => {
+          this.$store.dispatch("guardarToken", data);
+          this.$router.push("/").catch(() => {});
+          this.$refs.childComponent.SnackbarShow("success", "Sesión iniciada con exito");
+          this.loading = false;
+        })
+        .catch((error) => {
+          this.loading = false;
+          if (error.response.status == 404) {
+            this.$refs.childComponent.SnackbarShow("error", "No existe el usuario o las credenciales son incorrectas.");
+          } else {
+            this.$refs.childComponent.SnackbarShow("error", "Ocurrio un error con el servidor");
+          }
+        });
     },
   },
 };
 </script>
-
-
