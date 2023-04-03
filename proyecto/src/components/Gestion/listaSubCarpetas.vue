@@ -17,7 +17,7 @@
         <span>Buscar</span>
       </v-tooltip>
 
-      <v-tooltip bottom>
+      <v-tooltip bottom v-if="esAdmin"> 
         <template v-slot:activator="{ on, attrs }">
           <v-btn dark v-bind="attrs" v-on="on" @click="dialogParam = !dialogParam">
             <v-icon>mdi-folder-cog</v-icon>
@@ -371,6 +371,9 @@ export default {
     this.initialize();
   },
   computed: {
+    esAdmin(){
+      return this.$store.state.usuario && this.$store.state.usuario.rol=="admin";
+    },
     formTitle() {
       return this.editedIndex === -1 ? "Nueva Carpeta" : "Editar nombre de la carpeta";
     },

@@ -16,7 +16,7 @@
         <span>Buscar</span>
       </v-tooltip>
 
-      <v-tooltip bottom>
+      <v-tooltip bottom v-if="esAdmin">
         <template v-slot:activator="{ on, attrs }">
           <v-btn
             dark
@@ -256,6 +256,9 @@ export default {
     },
   },
   computed: {
+    esAdmin(){
+      return this.$store.state.usuario && this.$store.state.usuario.rol=="admin";
+    },
     formTitle() {
       return this.editedIndex === -1
         ? "Nueva Carpeta"
