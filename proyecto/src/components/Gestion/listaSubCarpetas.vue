@@ -86,12 +86,12 @@
       <v-subheader inset> Sub-Carpetas </v-subheader>
 
       <v-list-item
-        v-for="item in resultadoBusqueda"
+        v-for="(item,index) in resultadoBusqueda"
         :key="item.nombre"
         link
         @click="enviarRuta(item)"
       >
-        <v-list-item-avatar> <v-icon>mdi-folder </v-icon> </v-list-item-avatar>
+        <v-list-item-avatar>{{index+1}}<v-icon>mdi-folder</v-icon> </v-list-item-avatar>
         <v-list-item-content>
           <v-list-item-title>{{ item.nombre }}</v-list-item-title>
           <v-list-item-subtitle>{{

@@ -11,8 +11,8 @@ const routes = [
     component: HomeView,
     meta: {
       title: "Dashboard",
-      logged:true,
-      isAdmin:true
+      admin:true,
+      usuario:true
     }
   },
   {
@@ -21,7 +21,7 @@ const routes = [
     component: () => import(/* webpackChunkName: "about" */ '../views/login.vue'),
     meta: {
       title: "login",
-      guest: true
+      libre: true,
     }
   },
   {
@@ -33,8 +33,7 @@ const routes = [
     component: () => import(/* webpackChunkName: "about" */ '../views/Triggers.vue'),
     meta: {
       title: "Trigger",
-      logged:true,
-      isAdmin:true
+      admin: true,
     }
   },
   {
@@ -51,8 +50,8 @@ const routes = [
         component: () => import(/* webpackChunkName: "about" */ '../views/Folder.vue'),
         meta: {
           title: "Carpetas",
-          logged:true,
-          isAdmin:true
+          admin: true,
+          usuario: true,
         },
       },
       {
@@ -61,8 +60,8 @@ const routes = [
         component: () => import(/* webpackChunkName: "about" */ '../views/SubFolders.vue'),
         meta: {
           title: "SubCarpetas",
-          logged:true,
-          isAdmin:true
+          admin: true,
+          usuario: true,
         },
       }, 
       {
@@ -71,8 +70,8 @@ const routes = [
         component: () => import(/* webpackChunkName: "about" */ '../views/Files.vue'),
         meta: {
           title: "Archivos",
-          logged:true,
-          isAdmin:true
+          admin: true,
+          usuario: true,
         },
       }
     ]
@@ -86,15 +85,39 @@ const routes = [
     component: () => import(/* webpackChunkName: "about" */ '../views/Configuracion.vue'),
     meta: {
       title: "Configuración",
-      logged:true,
-      isAdmin:true
+      admin: true
+    },
+  },
+  {
+    path: '/adminCrud',
+    name: 'admincrud',
+    // route level code-splitting
+    // this generates a separate chunk (about.[hash].js) for this route
+    // which is lazy-loaded when the route is visited.
+    component: () => import(/* webpackChunkName: "about" */ '../views/Admin.vue'),
+    meta: {
+      title: "admincrud",
+      admin: true
+    },
+  },
+  {
+    path: '/recuperarClave',
+    name: 'recuperar',
+    // route level code-splitting
+    // this generates a separate chunk (about.[hash].js) for this route
+    // which is lazy-loaded when the route is visited.
+    component: () => import(/* webpackChunkName: "about" */ '../views/RecuperClave.vue'),
+    meta: {
+      title: "recuperar",
+      libre: true,
     },
   },
 ]
 
 
 const router = new VueRouter({
-  routes
+  routes,
+  mode: 'history',
 })
 
 
@@ -103,43 +126,29 @@ router.beforeEach((to,from,next)=>{
   next();
 })
 
-router.beforeEach((to, from, next) => {
-  if (to.matched.some((record) => record.meta.guest)) {
-    var loggedIn = localStorage.getItem('token')
-    if (loggedIn) {
-      next("/");
-      return;
-    }
-    else{
-      next();
-    }
-  } else {
-    next();
-  }
-});
-
 import decode from 'jwt-decode'
 router.beforeEach((to, from, next) => {
-  if (to.matched.some((record) => record.meta.isAdmin)) {
-    var user = localStorage.getItem('token')
-    if(user!=null){
-      var user2 = decode(user)
-    }
-    else{
-      next("/login");
-      return;
-    }
-    
-    if (user2.rol != 'admin') {
-      next("/login");
-      return;
-    }
-    else{
+  let user = localStorage.getItem('token')
+  if(user){
+    var usuario = decode(user)
+  }
+  if(to.meta.libre){
+    next()
+  }
+  else if(usuario && usuario.rol == "admin"){
+    if(to.meta.admin){
       next();
     }
-  } else {
-    next();
+  }else if(usuario && usuario.rol == "usuario"){
+    if(to.meta.usuario){
+      next();
+    }
   }
-});
+  else{
+    next("/login")
+  }
+
+})
+
 
 export default router

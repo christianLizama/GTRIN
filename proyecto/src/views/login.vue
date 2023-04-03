@@ -1,70 +1,48 @@
 <template>
-  <v-container>
+  <v-container fluid class="fill-height">
     <snackbar ref="childComponent"></snackbar>
-    <v-row align="center" justify="center">
-      <v-col cols="12" sm="10">
-        <v-card class="elevation-6 mt-15">
-          <v-row>
-            <v-col cols="12" md="6" class="blue rounded-bl-xl">
-              <div style="text-align: center; padding: 180px 0">
-                <v-card-text class="white--text">
-                  <h3 class="text-center">Hola</h3>
-                  <h6 class="text-center">
-                    Bienvenido al sistema de transportes ruiz<br />
-                    disfruta tu experiencia
-                  </h6>
-                </v-card-text>
+    <v-row>
+      <v-col class="d-flex justify-center">
+        <v-card-text class="mt-12">
+          <h1 class="text-center">Iniciar Sesión</h1>
+          <v-row align="center" justify="center">
+            <v-col cols="12" sm="2">
+              <v-text-field
+                v-model="email"
+                label="Email"
+                outlined
+                dense
+                color="blue"
+                autocomplete="false"
+                class="mt-16"
+              />
+              <v-text-field
+                v-model="password"
+                label="Contraseña"
+                outlined
+                dense
+                color="blue"
+                autocomplete="false"
+                type="password"
+              />
+              <v-btn class="mb-4 rounded" color="blue" dark block tile @click="login()"
+                >Iniciar Sesión</v-btn
+              >
+              <div class="ajustes2">
+                <a href="/recuperarClave" class="caption blue--text"
+                  >Olvidaste la contraseña?</a
+                >
+                <p></p>
+                <v-img
+                  class="img"
+                  max-height="80"
+                  max-width="80"
+                  src="../assets/logo.e34e8d2.png"
+                ></v-img>
               </div>
             </v-col>
-            <v-col cols="12" md="6">
-              <v-card-text class="mt-12">
-                <h4 class="text-center">Ingresar al sistema</h4>
-                <h6 class="text-center grey--text">
-                  Iniciar sesión en la cuenta para poder
-                  <br />administrar este sistema
-                </h6>
-                <v-row align="center" justify="center">
-                  <v-col cols="12" sm="8">
-                    <v-text-field
-                      v-model="email"
-                      label="Email"
-                      outlined
-                      dense
-                      color="blue"
-                      autocomplete="false"
-                      class="mt-16"
-                    />
-                    <v-text-field
-                      v-model="password"
-                      label="Contraseña"
-                      outlined
-                      dense
-                      color="blue"
-                      autocomplete="false"
-                      type="password"
-                    />
-                    <v-row>
-                      <v-col cols="12" sm="7">
-                        <v-checkbox
-                          label="Remember Me"
-                          class="mt-n1"
-                          color="blue"
-                        >
-                        </v-checkbox>
-                      </v-col>
-                      <v-col cols="12" sm="5">
-                        <span class="caption blue--text"
-                          >Olvidé la Contraseña</span
-                        >
-                      </v-col>
-                    </v-row>
-                    <v-btn color="blue" dark block tile @click="login()">Iniciar Sesión</v-btn>
-                  </v-col>
-                </v-row>
-              </v-card-text>
-            </v-col>
           </v-row>
-        </v-card>
+        </v-card-text>
       </v-col>
     </v-row>
   </v-container>
@@ -96,18 +74,38 @@ export default {
         .then((data) => {
           this.$store.dispatch("guardarToken", data);
           this.$router.push("/").catch(() => {});
-          this.$refs.childComponent.SnackbarShow("success", "Sesión iniciada con exito");
+          this.$refs.childComponent.SnackbarShow(
+            "success",
+            "Sesión iniciada con exito"
+          );
           this.loading = false;
         })
         .catch((error) => {
           this.loading = false;
           if (error.response.status == 404) {
-            this.$refs.childComponent.SnackbarShow("error", "No existe el usuario o las credenciales son incorrectas.");
+            this.$refs.childComponent.SnackbarShow(
+              "error",
+              "No existe el usuario o las credenciales son incorrectas."
+            );
           } else {
-            this.$refs.childComponent.SnackbarShow("error", "Ocurrio un error con el servidor");
+            this.$refs.childComponent.SnackbarShow(
+              "error",
+              "Ocurrio un error con el servidor"
+            );
           }
         });
     },
   },
 };
 </script>
+<style>
+.img {
+  vertical-align: middle;
+}
+.ajustes2 {
+  flex-direction: column;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+</style>

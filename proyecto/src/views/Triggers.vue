@@ -452,7 +452,7 @@ export default {
     },
     comprobarStatus(){
       if(this.editedItem.status.length>0){
-        console.log(this.editedItem.status)
+        //console.log(this.editedItem.status)
         if(this.editedItem.status=="Vigente"){
           return false;
         }
@@ -547,7 +547,7 @@ export default {
         let conteo = 0;
         const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         this.editedItem.destino.forEach((destino) => {
-          console.log(destino);
+          //console.log(destino);
           if (!regex.test(destino)) {
             conteo = conteo + 1;
           }
