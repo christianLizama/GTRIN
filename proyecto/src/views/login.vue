@@ -29,9 +29,7 @@
                 >Iniciar Sesión</v-btn
               >
               <div class="ajustes2">
-                <a href="/recuperarClave" class="caption blue--text"
-                  >Olvidaste la contraseña?</a
-                >
+                <router-link to="/recuperarClave">Olvidaste la contraseña?</router-link>
                 <p></p>
                 <v-img
                   class="img"
