@@ -1,12 +1,12 @@
 <template>
-  <v-container fluid class="fill-height">
+  <v-container style="background-color: #f2f2f2;" fluid class="fill-height">
     <snackbar ref="childComponent"></snackbar>
     <v-row>
       <v-col class="d-flex justify-center">
-        <v-card-text class="mt-12">
+        <v-card-text>
           <h1 class="text-center">Iniciar Sesión</h1>
           <v-row align="center" justify="center">
-            <v-col cols="12" sm="2">
+            <v-col cols="12" sm="2" md="2">
               <v-text-field
                 v-model="email"
                 label="Email"
@@ -25,7 +25,7 @@
                 autocomplete="false"
                 type="password"
               />
-              <v-btn class="mb-4 rounded" color="blue" dark block tile @click="login()"
+              <v-btn class="mb-4 rounded" color="primary" dark block tile @click="login()"
                 >Iniciar Sesión</v-btn
               >
               <div class="ajustes2">
