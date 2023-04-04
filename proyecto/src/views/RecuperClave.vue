@@ -39,7 +39,7 @@
           <v-text-field
             v-if="codeSuccess"
             class="text-field-style"
-            prepend-inner-icon="mdi-dog"
+            prepend-inner-icon="mdi-lock"
             v-model="p1"
             color="primary"
             label="Ingrese su nueva contraseña"
@@ -49,7 +49,7 @@
           <v-text-field
             v-if="codeSuccess"
             class="text-field-style"
-            prepend-inner-icon="mdi-dog"
+            prepend-inner-icon="mdi-lock"
             v-model="p2"
             color="primary"
             label="Ingrese la contraseña nuevamente"
