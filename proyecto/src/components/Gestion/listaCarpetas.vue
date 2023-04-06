@@ -74,7 +74,7 @@
           :subCarpetas="item.subFolders"
         ></progress-folder>
 
-        <v-menu top left rounded="tr-xl" :offset-x="true" :offset-y="true">
+        <v-menu v-if="esAdmin" top left rounded="tr-xl" :offset-x="true" :offset-y="true">
           <template v-slot:activator="{ on, attrs }">
             <v-btn icon v-bind="attrs" v-on="on">
               <v-icon> mdi-cog </v-icon>

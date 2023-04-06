@@ -6,7 +6,7 @@ import { enviarCorreo2 } from "../Correo/correoController";
 
 async function getUsuarios(req, res) {
   try {
-    let usuarios = await Usuario.find({});
+    let usuarios = await Usuario.find({email:{$ne:'reportes@transportesruiz.cl'}});
     if (!usuarios) {
       res.status(404).send({
         message: "No hay ningún usuario",
@@ -63,12 +63,14 @@ async function queryUsuario(req, res) {
 
 async function postUsuario(req, res) {
   try {
-    req.body.clave = await bcrypt.hash(req.body.clave, 10);
+
+    const claveHash = await bcrypt.hash(req.body.clave, 10);
+    
     let usuario = new Usuario({
       rol: req.body.rol,
       nombreCompleto: req.body.nombreCompleto,
       email: req.body.email,
-      clave: req.body.clave,
+      clave: claveHash,
     });
 
     const findUser = await Usuario.findOne({ email: req.body.email });
@@ -76,6 +78,15 @@ async function postUsuario(req, res) {
       res.status(200).send(false);
     } else {
       const newUser = await usuario.save();
+      await enviarCorreo2(
+        `Hola ${req.body.nombreCompleto},\n\n
+        Se ha creado una cuenta en el sistema de Transportes Ruiz con tu usuario.\n
+        Su usuario es: ${req.body.email}\n
+        Su contraseña es: ${req.body.clave}`,
+        `Cuenta creada exitosamente`,
+        req.body.email
+      );
+
       res.status(200).json(newUser);
     }
   } catch (e) {
@@ -179,8 +190,8 @@ async function recuperarContrasena(req, res) {
     await enviarCorreo2(
       `Hola ${user.nombreCompleto},\n\n
             Se ha solicitado una nueva contraseña para tu cuenta.\n\n
-            Su codigo de recuperacion es: ${code}\n\n`,
-      `Recuperacion de contraseña`,
+            Su codigo de recuperación es: ${code}\n\n`,
+      `Recuperación de contraseña`,
       user.email
     );
     console.log(code);

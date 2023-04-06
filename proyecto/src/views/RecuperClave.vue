@@ -37,8 +37,13 @@
             Ingrese el codigo enviado a su correo electronico
           </v-flex>
           <v-text-field
+            :append-icon="show1 ? 'mdi-eye' : 'mdi-eye-off'"
+            :type="show1 ? 'text' : 'password'"
+            name="input-10-2"
+            hint="Debe contener 8 caracteres"
+            class="input-group--focused"
+            @click:append="show1 = !show1"
             v-if="codeSuccess"
-            class="text-field-style"
             prepend-inner-icon="mdi-lock"
             v-model="p1"
             color="primary"
@@ -47,8 +52,13 @@
           >
           </v-text-field>
           <v-text-field
+            :append-icon="show2 ? 'mdi-eye' : 'mdi-eye-off'"
+            :type="show2 ? 'text' : 'password'"
+            name="input-10-2"
+            hint="Debe contener 8 caracteres"
+            class="input-group--focused"
+            @click:append="show2 = !show2"
             v-if="codeSuccess"
-            class="text-field-style"
             prepend-inner-icon="mdi-lock"
             v-model="p2"
             color="primary"
@@ -76,6 +86,8 @@ export default {
   components: { loading },
   data() {
     return {
+      show1: false,
+      show2: false,
       email: "",
       errorM: null,
       loading: false,
@@ -100,7 +112,10 @@ export default {
           this.loading = false;
         } else {
           await axios
-            .post("usuario/cambiarContrasena", { code: this.code, password: this.p1 })
+            .post("usuario/cambiarContrasena", {
+              code: this.code,
+              password: this.p1,
+            })
             .then((res) => {
               return res.data;
             })

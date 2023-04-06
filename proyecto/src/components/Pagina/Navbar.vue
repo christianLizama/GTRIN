@@ -114,7 +114,7 @@
           </v-list-item>
         </v-list-group>
         <v-divider></v-divider>
-        <v-list-item active-class="white--text" link to="/configuracion">
+        <v-list-item v-if="esAdmin" active-class="white--text" link to="/configuracion">
           <v-list-item-icon>
             <v-icon>mdi-folder-wrench-outline</v-icon>
           </v-list-item-icon>
@@ -122,7 +122,7 @@
             <v-list-item-title>Configurar</v-list-item-title>
           </v-list-item-content>
         </v-list-item>
-        <v-list-item active-class="white--text" link to="/triggers">
+        <v-list-item v-if="esAdmin" active-class="white--text" link to="/triggers">
           <v-list-item-icon>
             <v-icon>mdi-clipboard-clock</v-icon>
           </v-list-item-icon>
@@ -130,7 +130,7 @@
             <v-list-item-title>Triggers</v-list-item-title>
           </v-list-item-content>
         </v-list-item>
-        <v-list-item active-class="white--text" link to="/adminCrud">
+        <v-list-item v-if="esAdmin" active-class="white--text" link to="/adminCrud">
           <v-list-item-icon>
             <v-icon>mdi-account-group</v-icon>
           </v-list-item-icon>
@@ -172,6 +172,9 @@ export default {
   },
   computed: {
     ...mapState(["usuario"]),
+    esAdmin(){
+      return this.$store.state.usuario && this.$store.state.usuario.rol=="admin";
+    },
     observarMini() {
       return this.comprobarMini();
     },

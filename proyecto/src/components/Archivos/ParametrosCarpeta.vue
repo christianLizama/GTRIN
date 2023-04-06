@@ -228,11 +228,12 @@ export default {
         });
       });
     },
-    async obtenerPadreSuperior(id) {
+    async obtenerPadreSuperior(id,idSubFolder) {
       await axios.get("carpeta/query?_id=" + id).then((result) => {
         this.padre = result.data;
         this.parametros = result.data.parametros;
         this.contar(result.data.parametros, result.data._id);
+        this.obtenerArchivos(idSubFolder,result.data.parametros);
       });
     },
     async initialize() {
@@ -241,8 +242,8 @@ export default {
         .then((result) => {
           this.folder = result.data;
           let idPadre = result.data.padre;
-          this.obtenerPadreSuperior(idPadre);
-          this.obtenerArchivos(result.data._id);
+          this.obtenerPadreSuperior(idPadre,result.data._id);
+          
         });
     },
     formatearFechas(archivos){
@@ -256,7 +257,7 @@ export default {
       });
     },
 
-    async obtenerArchivos(padreId) {
+    async obtenerArchivos(padreId,parametros) {
       const request = {
         params: {
           _id: padreId,
@@ -265,14 +266,14 @@ export default {
 
       await axios.get("archivo/getArchivos", request).then((result) => {
         this.formatearFechas(result.data)
-        this.archivos = result.data;
-        this.archivos.forEach(archivo => {
-          this.parametros.forEach(parametro => {
+        result.data.forEach(archivo => {
+          parametros.forEach(parametro => {
             if(parametro._id == archivo.parametro){
               parametro.archivo = archivo 
             }
           }); 
         });
+        this.archivos = result.data;
       });
     },
     editItem(item) {

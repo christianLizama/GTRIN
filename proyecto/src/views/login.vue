@@ -6,7 +6,7 @@
         <v-card-text>
           <h1 class="text-center">Iniciar Sesión</h1>
           <v-row align="center" justify="center">
-            <v-col cols="12" sm="2" md="2">
+            <v-col cols="12" sm="5" md="3" lg="2">
               <v-text-field
                 v-model="email"
                 label="Email"
@@ -17,13 +17,17 @@
                 class="mt-16"
               />
               <v-text-field
+                :append-icon="show1 ? 'mdi-eye' : 'mdi-eye-off'"
+                :type="show1 ? 'text' : 'password'"
+                name="input-10-2"
+                class="input-group--focused"
+                @click:append="show1 = !show1"
                 v-model="password"
                 label="Contraseña"
                 outlined
                 dense
                 color="blue"
                 autocomplete="false"
-                type="password"
               />
               <v-btn class="mb-4 rounded" color="primary" dark block tile @click="login()"
                 >Iniciar Sesión</v-btn
@@ -53,6 +57,7 @@ export default {
   components: { Snackbar },
   data() {
     return {
+      show1:false,
       email: "",
       password: "",
     };
