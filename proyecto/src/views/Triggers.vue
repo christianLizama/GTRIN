@@ -165,6 +165,7 @@
                         :items="parametrosDisponibles"
                         item-text="value"
                         return-object
+                        multiple
                       ></v-select>
                     </v-col>
                     <v-col>
@@ -314,7 +315,7 @@ export default {
         expresion: "* * * * *",
         contenedor: {},
         carpeta: {},
-        parametro: {},
+        parametro: [],
         rango: {},
         status: "",
       },
@@ -326,7 +327,7 @@ export default {
         expresion: "* * * * *",
         contenedor: {},
         carpeta: {},
-        parametro: {},
+        parametro: [],
         rango: {},
         status: "",
       },
@@ -530,6 +531,7 @@ export default {
       }
     },
     async crearCron(nuevoCron) {
+      //Revisamos que no se encuentren datos vacios
       if (
         Object.entries(nuevoCron.contenedor).length === 0 ||
         Object.entries(nuevoCron.carpeta).length === 0 ||
@@ -537,21 +539,25 @@ export default {
         !this.editedItem.nombre ||
         this.editedItem.destino.length == 0 ||
         !this.editedItem.asunto ||
-        Object.entries(nuevoCron.parametro).length === 0
+        !this.editedItem.parametro.length === 0
       ) {
         this.$refs.childComponent.SnackbarShow(
           "error",
           "Por favor completa el trigger"
         );
-      } else {
+      } 
+      //Si no hay datos vacios
+      else {
         let conteo = 0;
         const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        //Vamos a verificar que no se encuentren correos que no cumplen con el formato
         this.editedItem.destino.forEach((destino) => {
           //console.log(destino);
           if (!regex.test(destino)) {
             conteo = conteo + 1;
           }
         });
+        //Si no ha seleccionado un rango
         if (
           this.editedItem.status === "Vigente" &&
           Object.entries(nuevoCron.rango).length === 0
@@ -560,7 +566,9 @@ export default {
             "error",
             "Por favor seleccione un rango"
           );
-        } else {
+        } 
+        //Caso final enviamos el Cron al server
+        else {
           if (conteo == 0) {
             this.desserts.push(this.editedItem);
             this.close();

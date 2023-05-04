@@ -39,12 +39,12 @@
                 :icon="obtenerExtension(item.archivo)"
                 class="mr-2"
               ></Icon>
-              <a class="texto">
-                {{ item.archivo }}
+              <a target="_blank" class="texto" :href="item.archivo"
+                >{{ item.archivo.substring(item.archivo.lastIndexOf("/") + 1) }}
               </a>
             </div>
           </template>
-          <span>{{ item.archivo }}</span>
+          <span>{{ item.archivo.substring(item.archivo.lastIndexOf("/") + 1) }}</span>
         </v-tooltip>
       </template>
       <template v-slot:top>
@@ -86,7 +86,6 @@
               </v-toolbar>
               <loading texto="Subiendo Archivo" v-if="isUpload"></loading>
               <v-stepper v-if="!isUpload" v-model="e1">
-
                 <v-stepper-header>
                   <v-stepper-step :complete="e1 > 1" step="1">
                     Subir archivo
@@ -178,7 +177,11 @@
                                     label="Fecha de emisión"
                                     prepend-icon="mdi-calendar"
                                     v-bind="attrs"
-                                    @blur="editedItem.fechaEmision = parseDate(editedItem.fechaEmisionFormateada)"
+                                    @blur="
+                                      editedItem.fechaEmision = parseDate(
+                                        editedItem.fechaEmisionFormateada
+                                      )
+                                    "
                                     v-on="on"
                                   ></v-text-field>
                                 </template>
@@ -201,12 +204,18 @@
                               >
                                 <template v-slot:activator="{ on, attrs }">
                                   <v-text-field
-                                    v-model="editedItem.fechaCaducidadFormateada"
+                                    v-model="
+                                      editedItem.fechaCaducidadFormateada
+                                    "
                                     label="Fecha de caducidad"
                                     prepend-icon="mdi-calendar"
                                     v-bind="attrs"
                                     v-on="on"
-                                    @blur="editedItem.fechaCaducidad = parseDate(editedItem.fechaCaducidadFormateada)"
+                                    @blur="
+                                      editedItem.fechaCaducidad = parseDate(
+                                        editedItem.fechaCaducidadFormateada
+                                      )
+                                    "
                                   ></v-text-field>
                                 </template>
                                 <v-date-picker
@@ -519,11 +528,15 @@ export default {
     },
   },
   watch: {
-    "editedItem.fechaEmision": function(){
-      this.editedItem.fechaEmisionFormateada = this.formatDate(this.editedItem.fechaEmision)
+    "editedItem.fechaEmision": function () {
+      this.editedItem.fechaEmisionFormateada = this.formatDate(
+        this.editedItem.fechaEmision
+      );
     },
-    "editedItem.fechaCaducidad": function(){
-      this.editedItem.fechaCaducidadFormateada = this.formatDate(this.editedItem.fechaCaducidad)
+    "editedItem.fechaCaducidad": function () {
+      this.editedItem.fechaCaducidadFormateada = this.formatDate(
+        this.editedItem.fechaCaducidad
+      );
     },
 
     dialog(val) {
@@ -537,21 +550,23 @@ export default {
     this.initialize();
   },
   methods: {
-    formatDate (date) {
-      if (!date) return null
-      const [year, month, day] = date.split('-')
-      return `${day}/${month}/${year}`
+    formatDate(date) {
+      if (!date) return null;
+      const [year, month, day] = date.split("-");
+      return `${day}/${month}/${year}`;
     },
-    parseDate (date) {
-      if (!date) return null
-      const [day, month, year] = date.split('/')
-      return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`
+    parseDate(date) {
+      if (!date) return null;
+      const [day, month, year] = date.split("/");
+      return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
     },
     obtenerExtension(archivo) {
-      let cortes = archivo.split(".");
+      const myUrl = archivo; // la URL almacenada como una cadena de texto
+      const currentExtension = myUrl.substring(myUrl.lastIndexOf(".") + 1); // obtener la extensión
+
       let icono = "";
       this.extensiones.forEach((extension) => {
-        if (extension.type == cortes[1]) {
+        if (extension.type == currentExtension) {
           icono = extension.icon;
         }
       });
@@ -690,13 +705,14 @@ export default {
       }
     },
     downloadFile(file) {
-      UploadService.download(file)
+      let nombreArchivo = file.substring(file.lastIndexOf("/") + 1)
+      UploadService.download(nombreArchivo)
         .then((response) => {
           var fileURL = window.URL.createObjectURL(new Blob([response.data]));
           var fileLink = document.createElement("a");
 
           fileLink.href = fileURL;
-          fileLink.setAttribute("download", file);
+          fileLink.setAttribute("download", nombreArchivo);
           document.body.appendChild(fileLink);
 
           fileLink.click();
@@ -724,8 +740,10 @@ export default {
       element.fechaCambioEstado = fechaCambio[0];
       element.fechaEmision = fechaEmi[0];
       element.fechaCaducidad = fechaCadu[0];
-      element.fechaEmisionFormateada = moment(fechaEmi[0]).format("DD/MM/YYYY")
-      element.fechaCaducidadFormateada = moment(fechaCadu[0]).format("DD/MM/YYYY")
+      element.fechaEmisionFormateada = moment(fechaEmi[0]).format("DD/MM/YYYY");
+      element.fechaCaducidadFormateada = moment(fechaCadu[0]).format(
+        "DD/MM/YYYY"
+      );
       var today = new Date();
       var now = today.toISOString();
       var cortado = now.split("T");
@@ -812,7 +830,7 @@ export default {
       })
         .then((response) => {
           this.message = response.data.message;
-          let direcion = response.data.message;
+          let direcion = response.data.url;
           let peso = this.formatBytes(this.currentFile.size);
           this.editedItem.peso = peso;
           this.editedItem.archivo = direcion;
@@ -926,9 +944,11 @@ export default {
       this.closeDelete();
     },
     async borrarArchivo(archivo, index) {
+
+      let nombreArchivo = archivo.archivo.substring(archivo.archivo.lastIndexOf("/") + 1)
       var data = {
         id: archivo._id,
-        fileName: archivo.archivo,
+        fileName: nombreArchivo,
       };
       await axios.delete("archivo/remove", { data }).then((result) => {
         this.$refs.childComponent.SnackbarShow("success", result.data.message);
@@ -975,7 +995,6 @@ export default {
               "success",
               "Archivo modificado exitosamente"
             );
-            
           } else {
             this.snackTipe = false;
             this.e1 = 1;
@@ -983,14 +1002,13 @@ export default {
               "error",
               "El nombre del archivo debe tener un largo mayor a 3 caracteres"
             );
-            
           }
         } else {
           this.$refs.childComponent.SnackbarShow(
             "error",
             "Ya existe un archivo con ese nombre"
           );
-          
+
           return;
         }
       } else {

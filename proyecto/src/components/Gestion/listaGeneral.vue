@@ -204,12 +204,12 @@
                   <a
                     target="_blank"
                     class="texto"
-                    :href="link + 'uploadFile/file/' + item.archivo"
-                    >{{ item.archivo }}
+                    :href="item.archivo"
+                    >{{ item.archivo.substring(item.archivo.lastIndexOf('/') + 1) }}
                   </a>
                 </div>
               </template>
-              <span>{{ item.archivo }}</span>
+              <span>{{ item.archivo.substring(item.archivo.lastIndexOf('/') + 1) }}</span>
             </v-tooltip>
           </template>
           <template v-slot:[`expanded-item`]="{ headers, item }">
@@ -290,6 +290,7 @@ import Kpi from "../Kpi.vue";
 import loading from "../loading.vue";
 import Trigger from "../trigger.vue";
 import { Icon } from "@iconify/vue2";
+
 export default {
   components: { VueJsonToCsv, loading, Trigger, Kpi, Icon },
   data: () => ({
@@ -524,10 +525,13 @@ export default {
       }
     },
     obtenerExtension(archivo) {
-      let cortes = archivo.split(".");
+
+      const myUrl = archivo; // la URL almacenada como una cadena de texto
+      const currentExtension = myUrl.substring(myUrl.lastIndexOf('.') + 1); // obtener la extensión
+      
       let icono = "";
       this.extensiones.forEach((extension) => {
-        if (extension.type == cortes[1]) {
+        if (extension.type == currentExtension) {
           icono = extension.icon;
         }
       });
