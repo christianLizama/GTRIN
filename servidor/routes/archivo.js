@@ -21,4 +21,10 @@ router.delete('/removeAll/',archivo.removeAll)
 router.delete('/removeFolderFiles/',archivo.removeFolderFiles)
 router.get('/archivosStatus', archivo.getArchivosStatus)
 router.put('/updateStatus',archivo.updateStatus)
+router.get('/countAllFiles', archivo.countAll)
+router.get('/countVigentes', archivo.countVigentes)
+router.get('/countPorVencer', archivo.countPorVencer)
+router.get('/countVencidos', archivo.countVencidos)
+
+
 module.exports = router;

@@ -7,8 +7,20 @@ import subCarpeta from "../../models/SubCarpeta";
 import moment from "moment";
 //Metodo para enviar un correo
 
-function enviarCorreo2(mensaje, asunto, destino) {
-  const FROM_EMAIL = process.env.FROM_EMAIL;
+async function enviarCorreo2(mensaje, asunto, destino) {
+  const CLIENT_ID = process.env.CLIENT_ID;
+  const CLIENT_SECRET = process.env.CLIENT_SECRET;
+  const REDIRECT_URI = process.env.REDIRECT_URI;
+  const REFRESH_TOKEN = process.env.REFRESH_TOKEN;
+  const USER = "reportes@transportesruiz.cl";
+  const FROM_EMAIL = "reportes@transportesruiz.cl";
+
+  const oAuth2Client = new google.auth.OAuth2(
+    CLIENT_ID,
+    CLIENT_SECRET,
+    REDIRECT_URI
+  );
+  oAuth2Client.setCredentials({ refresh_token: REFRESH_TOKEN });
 
   var mailOptions = {
     from: FROM_EMAIL,
@@ -17,6 +29,19 @@ function enviarCorreo2(mensaje, asunto, destino) {
     text: mensaje,
   };
 
+  const accessToken = await oAuth2Client.getAccessToken();
+  //Crear objeto de transporte
+  var transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      type: "OAuth2",
+      user: USER,
+      clientId: CLIENT_ID,
+      clientSecret: CLIENT_SECRET,
+      refreshToken: REFRESH_TOKEN,
+      accessToken: accessToken,
+    },
+  });
   transporter.sendMail(mailOptions, function (error, info) {
     if (error) {
       console.log(error);
@@ -40,45 +65,13 @@ const enviarCorreo = async (req, res, next) => {
       parametro,
       rango,
     } = req.body;
-    let archivos = []
-    if(status==="Vigente"){
-      let diasSumados = rango.value;
-      let fechaTope = moment().add(diasSumados,"days");
-      archivos = await archivo.find({
-        padreSuperior: contenedor._id,
-        abuelo: carpeta._id,
-        status: status,
-        parametro: parametro._id,
-        fechaCambioEstado: {$gte:new Date(),$lte:fechaTope.toDate()},
-      });
-    }
-    else{
-      archivos = await archivo.find({
-        padreSuperior: contenedor._id,
-        abuelo: carpeta._id,
-        status: status,
-        parametro: parametro._id
-      });
-    }
-
-    const subCarpetas = await subCarpeta.find();
-    let result = JSON.parse(JSON.stringify(archivos));
-    let result2 = JSON.parse(JSON.stringify(subCarpetas));
-
-    result.forEach((archivo) => {
-      let fechaCadu = archivo.fechaCaducidad.split("T");
-      archivo.fechaCaducidad = moment(fechaCadu[0]).format("DD/MM/YYYY");
-      var found = result2.find((e) => e._id === archivo.padre);
-      let nombreSubCarpeta = found.nombre;
-      archivo.nombrePadre = nombreSubCarpeta;
-    });
 
     const CLIENT_ID = process.env.CLIENT_ID;
     const CLIENT_SECRET = process.env.CLIENT_SECRET;
     const REDIRECT_URI = process.env.REDIRECT_URI;
     const REFRESH_TOKEN = process.env.REFRESH_TOKEN;
-    const USER = process.env.USER;
-    const FROM_EMAIL = process.env.FROM_EMAIL;
+    const USER = "reportes@transportesruiz.cl";
+    const FROM_EMAIL = "reportes@transportesruiz.cl";
 
     const oAuth2Client = new google.auth.OAuth2(
       CLIENT_ID,
@@ -86,8 +79,56 @@ const enviarCorreo = async (req, res, next) => {
       REDIRECT_URI
     );
     oAuth2Client.setCredentials({ refresh_token: REFRESH_TOKEN });
-    async function sendEmail() {
+    async function sendEmail(
+      mensaje,
+      destino,
+      asunto,
+      contenedor,
+      carpeta,
+      status,
+      parametro,
+      rango
+    ) {
       try {
+        let archivos = [];
+        //Si el status es vigente el trigger sera por rango de dias
+        if (status === "Vigente") {
+          let diasSumados = rango.value;
+          let fechaTope = moment().add(diasSumados, "days");
+          archivos = await archivo.find({
+            padreSuperior: contenedor._id,
+            abuelo: carpeta._id,
+            status: status,
+            parametro: { $in: parametro },
+            fechaCambioEstado: { $gte: new Date(), $lte: fechaTope.toDate() },
+          });
+        } else {
+          archivos = await archivo.find({
+            padreSuperior: contenedor._id,
+            abuelo: carpeta._id,
+            status: status,
+            parametro: { $in: parametro },
+          });
+        }
+
+        const subCarpetas = await subCarpeta.find();
+
+        let result = JSON.parse(JSON.stringify(archivos));
+        let result2 = JSON.parse(JSON.stringify(subCarpetas));
+
+        result.forEach((archivo) => {
+          let fechaCadu = archivo.fechaCaducidad.split("T");
+          archivo.fechaCaducidad = moment(fechaCadu[0]).format("DD/MM/YYYY");
+          var found = result2.find((e) => e._id === archivo.padre);
+          var found2 = parametro.find(
+            (param) => param._id === archivo.parametro
+          );
+          let nombreSubCarpeta = found.nombre;
+          let nombreParametro = found2.value;
+          archivo.nombrePadre = nombreSubCarpeta;
+          archivo.nombreParametro = nombreParametro;
+        });
+
         const accessToken = await oAuth2Client.getAccessToken();
         //Crear objeto de transporte
         var transporter = nodemailer.createTransport({
@@ -105,11 +146,11 @@ const enviarCorreo = async (req, res, next) => {
         const tablaHTML = `<table BORDER>
             <caption>Contenedor: ${contenedor.nombre}</caption>
             <caption>Carpeta: ${carpeta.nombre}</caption>
-            <caption>Parametro: ${parametro.value} </caption>
             <thead>
               <tr>
                 <th>#</th>
                 <th>Nombre archivo</th>
+                <th>Parametro</th>
                 <th>Sub-Carpeta</th>
                 <th>Fecha de caducidad</th>
                 <th>Estado</th>
@@ -118,8 +159,12 @@ const enviarCorreo = async (req, res, next) => {
             <tbody>
               ${result
                 .map(
-                  (u,index) =>
-                    `<tr><td>${index+1}</td><td>${u.nombre}</td><td>${u.nombrePadre}</td><td>${u.fechaCaducidad}</td><td>${u.status}</td></tr>`
+                  (u, index) =>
+                    `<tr><td>${index + 1}</td><td>${u.nombre}</td><td>${
+                      u.nombreParametro
+                    }</td><td>${u.nombrePadre}</td><td>${
+                      u.fechaCaducidad
+                    }</td><td>${u.status}</td></tr>`
                 )
                 .join("")}
             </tbody>
@@ -153,24 +198,42 @@ const enviarCorreo = async (req, res, next) => {
       status: status,
       destino: destino,
       parametro: parametro,
-      rango: rango
+      rango: rango,
     };
 
     const reg = await trigger.create(newTrigger);
     //Si se puede guardar lo ejecutamos
     if (reg) {
-      let trabajo = cron.schedule(expresion, () => {
-        console.log("Email enviado por:" + nombre);
-        sendEmail()
-          .then()
-          .catch((err) => console.log(err));
-      });
+      // Definir la zona horaria de Santiago, Chile
+      const timezone = "America/Santiago";
+      let trabajo = cron.schedule(
+        expresion,
+        () => {
+          console.log("Email enviado por:" + nombre);
+          sendEmail(
+            mensaje,
+            destino,
+            asunto,
+            contenedor,
+            carpeta,
+            status,
+            parametro,
+            rango
+          )
+            .then()
+            .catch((err) => console.log(err));
+        },
+        {
+          scheduled: true,
+          timezone: timezone,
+        }
+      );
       trabajo.start();
       let objeto = {
         nombre: nombre,
         tarea: trabajo,
-      }
-      global.triggers.push(objeto)
+      };
+      global.triggers.push(objeto);
       res.status(200).send("Trigger creado");
     }
   } catch (e) {
@@ -185,15 +248,17 @@ const enviarCorreo = async (req, res, next) => {
 const stopCron = async (req, res, next) => {
   try {
     const { nombreCron } = req.body;
-    let buscado = global.triggers.find(element => element.nombre==nombreCron);
+    let buscado = global.triggers.find(
+      (element) => element.nombre == nombreCron
+    );
     if (buscado) {
       const tarea = buscado.tarea;
       tarea.stop();
-      const reg = await trigger.findOneAndDelete({nombre:nombreCron});
-      if(reg){
+      const reg = await trigger.findOneAndDelete({ nombre: nombreCron });
+      if (reg) {
         let respuesta = "Cron " + nombreCron + " detenido";
-        const index = global.triggers.findIndex( x => x.nombre === nombreCron );
-        global.triggers.splice(index,1);
+        const index = global.triggers.findIndex((x) => x.nombre === nombreCron);
+        global.triggers.splice(index, 1);
         res.status(200).send(respuesta);
       }
     } else {
@@ -207,44 +272,12 @@ const stopCron = async (req, res, next) => {
   }
 };
 async function cargar(trigger) {
-  let archivos = []
-  if(trigger.status==="Vigente"){
-    let diasSumados = trigger.rango.value;
-    let fechaTope = moment().add(diasSumados,"days");
-    archivos = await archivo.find({
-      padreSuperior: trigger.contenedor._id,
-      abuelo: trigger.carpeta._id,
-      status: trigger.status,
-      parametro: trigger.parametro._id,
-      fechaCambioEstado: {$gte:new Date(),$lte:fechaTope.toDate(),},
-    });
-  }
-  else{
-    archivos = await archivo.find({
-      padreSuperior: trigger.contenedor._id,
-      abuelo: trigger.carpeta._id,
-      status: trigger.status,
-      parametro: trigger.parametro._id
-    });
-  }
-  
-  const subCarpetas = await subCarpeta.find();
-  let result = JSON.parse(JSON.stringify(archivos));
-  let result2 = JSON.parse(JSON.stringify(subCarpetas));
-  result.forEach((archivo) => {
-    let fechaCadu = archivo.fechaCaducidad.split("T");
-    archivo.fechaCaducidad = moment(fechaCadu[0]).format("DD/MM/YYYY");
-    var found = result2.find((e) => e._id === archivo.padre);
-    let nombreSubCarpeta = found.nombre;
-    archivo.nombrePadre = nombreSubCarpeta;
-  });
-
   const CLIENT_ID = process.env.CLIENT_ID;
   const CLIENT_SECRET = process.env.CLIENT_SECRET;
   const REDIRECT_URI = process.env.REDIRECT_URI;
   const REFRESH_TOKEN = process.env.REFRESH_TOKEN;
-  const USER = process.env.USER;
-  const FROM_EMAIL = process.env.FROM_EMAIL;
+  const USER = "reportes@transportesruiz.cl";
+  const FROM_EMAIL = "reportes@transportesruiz.cl";
 
   const oAuth2Client = new google.auth.OAuth2(
     CLIENT_ID,
@@ -252,8 +285,42 @@ async function cargar(trigger) {
     REDIRECT_URI
   );
   oAuth2Client.setCredentials({ refresh_token: REFRESH_TOKEN });
-  async function sendEmail() {
+  async function sendEmail(mensaje,destino,asunto,contenedor,carpeta,status,parametro,rango) {
     try {
+      let archivos = [];
+      if (status === "Vigente") {
+        let diasSumados = rango.value;
+        let fechaTope = moment().add(diasSumados, "days");
+        archivos = await archivo.find({
+          padreSuperior: contenedor._id,
+          abuelo: carpeta._id,
+          status: status,
+          parametro: { $in: parametro },
+          fechaCambioEstado: { $gte: new Date(), $lte: fechaTope.toDate() },
+        });
+      } else {
+        archivos = await archivo.find({
+          padreSuperior: contenedor._id,
+          abuelo: carpeta._id,
+          status: status,
+          parametro: { $in: parametro },
+        });
+      }
+
+      const subCarpetas = await subCarpeta.find();
+      let result = JSON.parse(JSON.stringify(archivos));
+      let result2 = JSON.parse(JSON.stringify(subCarpetas));
+      result.forEach((archivo) => {
+        let fechaCadu = archivo.fechaCaducidad.split("T");
+        archivo.fechaCaducidad = moment(fechaCadu[0]).format("DD/MM/YYYY");
+        var found = result2.find((e) => e._id === archivo.padre);
+        var found2 = parametro.find((param) => param._id === archivo.parametro);
+        let nombreSubCarpeta = found.nombre;
+        let nombreParametro = found2.value;
+        archivo.nombrePadre = nombreSubCarpeta;
+        archivo.nombreParametro = nombreParametro;
+      });
+
       const accessToken = await oAuth2Client.getAccessToken();
       //Crear objeto de transporte
       var transporter = nodemailer.createTransport({
@@ -269,13 +336,13 @@ async function cargar(trigger) {
       });
 
       const tablaHTML = `<table BORDER>
-            <caption>Contenedor: ${trigger.contenedor.nombre}</caption>
-            <caption>Carpeta: ${trigger.carpeta.nombre}</caption>
-            <caption>Parametro: ${trigger.parametro.value} </caption>
+            <caption>Contenedor: ${contenedor.nombre}</caption>
+            <caption>Carpeta: ${carpeta.nombre}</caption>
             <thead>
               <tr>
                 <th>#</th>
                 <th>Nombre archivo</th>
+                <th>Parametro</th>
                 <th>Sub-Carpeta</th>
                 <th>Fecha de caducidad</th>
                 <th>Estado</th>
@@ -284,8 +351,8 @@ async function cargar(trigger) {
             <tbody>
               ${result
                 .map(
-                  (u,index) =>
-                    `<tr><td>${index}</td><td>${u.nombre}</td><td>${u.nombrePadre}</td><td>${u.fechaCaducidad}</td><td>${u.status}</td></tr>`
+                  (u, index) =>
+                    `<tr><td>${index}</td><td>${u.nombre}</td><td>${u.nombreParametro}</td><td>${u.nombrePadre}</td><td>${u.fechaCaducidad}</td><td>${u.status}</td></tr>`
                 )
                 .join("")}
             </tbody>
@@ -293,9 +360,9 @@ async function cargar(trigger) {
 
       var mailOptions = {
         from: FROM_EMAIL,
-        to: trigger.destino,
-        subject: trigger.asunto,
-        text: trigger.mensaje,
+        to: destino,
+        subject: asunto,
+        text: mensaje,
         html: tablaHTML,
       };
       // const result = await transporter.sendMail(mailOptions);
@@ -309,36 +376,56 @@ async function cargar(trigger) {
       });
     } catch (error) {}
   }
-  let trabajo = cron.schedule(trigger.expresion, () => {
-    console.log("Email enviado por:" + trigger.nombre);
-    sendEmail()
-      .then()
-      .catch((err) => console.log(err));
-  });
+  // Definir la zona horaria de Santiago, Chile
+  const timezone = "America/Santiago";
+  let trabajo = cron.schedule(
+    trigger.expresion,
+    () => {
+      console.log("Email enviado por:" + trigger.nombre);
+      sendEmail(
+        trigger.mensaje,
+        trigger.destino,
+        trigger.asunto,
+        trigger.contenedor,
+        trigger.carpeta,
+        trigger.status,
+        trigger.parametro,
+        trigger.rango
+      )
+        .then()
+        .catch((err) => console.log(err));
+    },
+    {
+      scheduled: true,
+      timezone: timezone,
+    }
+  );
+
   trabajo.start();
+
   let objeto = {
     nombre: trigger.nombre,
     tarea: trabajo,
-  }
-  global.triggers.push(objeto)
+  };
+  global.triggers.push(objeto);
 }
 
-async function cargarTriggers () {
+async function cargarTriggers() {
   try {
-    console.log("Leyendo triggers")
+    console.log("Leyendo triggers");
     const reg = await trigger.find();
     if (reg.length == 0) {
-      console.log("No hay ningun trigger creado")
+      console.log("No hay ningun trigger creado");
     } else {
-      reg.forEach(trigger => {
-        cargar(trigger)
+      reg.forEach((trigger) => {
+        cargar(trigger);
       });
     }
   } catch (e) {
-    console.log("Ocurrio un error")
+    console.log("Ocurrio un error");
     next(e);
   }
-};
+}
 
 const obtenerTriggers = async (req, res, next) => {
   try {
@@ -364,5 +451,5 @@ module.exports = {
   enviarCorreo2,
   stopCron,
   obtenerTriggers,
-  cargarTriggers
+  cargarTriggers,
 };

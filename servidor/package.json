@@ -8,6 +8,7 @@
     "devbabel": "nodemon app.js --exec babel-node"
   },
   "dependencies": {
+    "@google-cloud/storage": "^6.0.0",
     "@babel/cli": "^7.20.7",
     "@babel/core": "^7.20.12",
     "@babel/node": "^7.20.7",

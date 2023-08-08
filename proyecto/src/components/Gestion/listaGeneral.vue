@@ -6,7 +6,7 @@
     </v-toolbar>
     <loading v-if="isLoading" texto="Obteniendo información"></loading>
     <v-card elevation="5" outlined class="mx-auto mt-2" max-width="98.6%">
-      <Kpi v-if="!isLoading" :items="kpi"></Kpi>
+      <Kpi v-if="!isLoading"></Kpi>
     </v-card>
 
     <div class="contenedor" v-if="!isLoading">
@@ -347,40 +347,6 @@ export default {
     subCarpetas: [],
     todoSubCarpetas: [],
     subCarpetasDefault: [{ nombre: "Todo", _id: "" }],
-    kpi: [
-      {
-        nombre: "Archivos totales",
-        color: "blue",
-        icon: "mdi-file",
-        id: 0,
-        total: 0,
-        porcentaje: 0,
-      },
-      {
-        nombre: "Vigentes",
-        color: "green",
-        id: 3,
-        icon: "mdi-check",
-        total: 0,
-        porcentaje: 0,
-      },
-      {
-        nombre: "Por Vencer",
-        color: "orange",
-        icon: "mdi-alert-octagon-outline",
-        id: 2,
-        total: 0,
-        porcentaje: 0,
-      },
-      {
-        nombre: "Vencidos",
-        color: "red",
-        icon: "mdi-close-box-outline",
-        id: 1,
-        total: 0,
-        porcentaje: 0,
-      },
-    ],
     estados: [
       { nombre: "Todos", codigo: 0 },
       { nombre: "Vigente", codigo: 3 },
@@ -557,12 +523,7 @@ export default {
         .format("DD/MM/YYYY");
       return fecha;
     },
-    contadorArchivos(lista, opcion) {
-      let archivosFiltrados = lista.filter(
-        (archivo) => archivo.status === opcion
-      );
-      return archivosFiltrados.length;
-    },
+    
     carpetasHijas(carpetas) {
       if (this.sociedadSeleccionada.nombre == "Todo") {
         this.carpetaSelecionada = this.carpetasDefault[0];
@@ -739,34 +700,6 @@ export default {
       let nombreParametro = found.value;
       return nombreParametro;
     },
-    iniciarKpi(archivos) {
-      let total = 0;
-      var porcentaje = 0;
-      var intPorcentaje = 0;
-      this.kpi.forEach((element) => {
-        element.porcentaje = 0;
-        if (element.id == 0) {
-          element.total = archivos.length;
-          total = archivos.length;
-          element.porcentaje = 100;
-        } else if (element.id == 3) {
-          element.total = this.contadorArchivos(archivos, "Vigente");
-          porcentaje = (element.total / total) * 100;
-          intPorcentaje = Math.round(porcentaje);
-          element.porcentaje = intPorcentaje;
-        } else if (element.id == 2) {
-          element.total = this.contadorArchivos(archivos, "Por vencer");
-          porcentaje = (element.total / total) * 100;
-          intPorcentaje = Math.round(porcentaje);
-          element.porcentaje = intPorcentaje;
-        } else {
-          element.total = this.contadorArchivos(archivos, "Vencido");
-          porcentaje = (element.total / total) * 100;
-          intPorcentaje = Math.round(porcentaje);
-          element.porcentaje = intPorcentaje;
-        }
-      });
-    },
     async obtenerTodo() {
       await axios.get("archivo/archivosStatus").then((result) => {
         let { archivos, sociedades, carpetas, subCarpetas, parametros } =
@@ -781,7 +714,6 @@ export default {
         this.todoSubCarpetas = subCarpetas;
 
         this.isLoading = false;
-        this.iniciarKpi(archivos);
       });
     },
     obtenerDiferencia(fechaEmision, fechaVencimiento) {

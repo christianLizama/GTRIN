@@ -5,6 +5,83 @@ import { Carpeta } from "../../models/Carpeta";
 import subCarpeta from "../../models/SubCarpeta";
 import sociedad from "../../models/Sociedad";
 const fs = require("fs");
+const { Storage } = require("@google-cloud/storage");
+
+const storage = new Storage({ keyFilename: "cool-kit-375714-32d9f4710e16.json" });
+const bucket = storage.bucket("prueba-2");
+
+//Metodo para contar archivos
+const countAll = async (req, res, next) => {  
+  try { 
+    const reg = await archivo.find().count();
+    let retorno = { nombre: "Archivos Totales",total: reg, porcentaje: 100 };
+    res.status(200).json(retorno);
+  } catch (e) {
+    res.status(500).send({
+      message: "Ocurrio un error",
+    });
+    next(e);
+  }
+};
+//Metodo para contar archivos vigentes
+const countVigentes = async (req, res, next) => { 
+  try {
+    const reg = await archivo.find({ status: "Vigente" }).count();
+    const total = await archivo.find().count();
+    const porcentaje = (reg / total) * 100;
+    let intPorcentaje = Math.round(porcentaje);
+    if(reg == 0){
+      intPorcentaje = 0;
+    }
+    
+    let retorno = { nombre: "Vigentes",total: reg, porcentaje: intPorcentaje };
+    res.status(200).json(retorno);
+  } catch (e) {
+    res.status(500).send({
+      message: "Ocurrio un error",
+    });
+    next(e);
+  }
+};
+//Metodo para contar archivos por vencer
+const countPorVencer = async (req, res, next) => {
+  try {
+    const reg = await archivo.find({ status: "Por vencer" }).count();
+    const total = await archivo.find().count();
+    const porcentaje = (reg / total) * 100;
+    let intPorcentaje = Math.round(porcentaje);
+    if(reg == 0){
+      intPorcentaje = 0;
+    }
+    let retorno = { nombre: "Por Vencer",total: reg, porcentaje: intPorcentaje };
+    res.status(200).json(retorno);
+  } catch (e) {
+    res.status(500).send({
+      message: "Ocurrio un error",
+    });
+    next(e);
+  }
+};
+
+//Metodo para contar archivos vencidos
+const countVencidos = async (req, res, next) => {
+  try {
+    const reg = await archivo.find({ status: "Vencido" }).count();
+    const total = await archivo.find().count();
+    const porcentaje = (reg / total) * 100;
+    let intPorcentaje = Math.round(porcentaje);
+    if(reg == 0){
+      intPorcentaje = 0;
+    }
+    let retorno = { nombre:"Vencidos", total: reg, porcentaje: intPorcentaje };
+    res.status(200).json(retorno);
+  } catch (e) {
+    res.status(500).send({
+      message: "Ocurrio un error",
+    });
+    next(e);
+  }
+};
 
 //Metodo para crear un archivo
 const add = async (req, res, next) => {
@@ -323,17 +400,32 @@ const update = async (req, res, next) => {
 const remove = async (req, res, next) => {
   try {
     const { id, fileName } = req.body;
+    console.log(fileName)
     const reg = await archivo.findByIdAndDelete({ _id: id });
     if (reg) {
-      const directoryPath = __basedir + "/uploads/";
-      fs.unlink(directoryPath + fileName, (err) => {
-        if (err) {
-          console.log("Este archivo no existe");
-        }
+      // Delete the file from the bucket
+      bucket.file(fileName).delete().then(() => {
+        console.log(`Archivo:///${fileName} ha sido eliminado.`);
         res.status(200).send({
           message: "El archivo " + fileName + " ha sido borrado",
         });
+      })
+      .catch((err) => {
+        console.log("El archivo no existe")
+        res.status(200).send({
+          message: "El archivo " + fileName + " no existe en el gestor, sin embargo ha sido borrado del programa",
+        });  
       });
+
+      // const directoryPath = __basedir + "/uploads/";
+      // fs.unlink(directoryPath + fileName, (err) => {
+      //   if (err) {
+      //     console.log("Este archivo no existe");
+      //   }
+      //   res.status(200).send({
+      //     message: "El archivo " + fileName + " ha sido borrado",
+      //   });
+      // });
     }
   } catch (e) {
     res.status(500).send({
@@ -454,4 +546,9 @@ module.exports = {
   removeFolderFiles,
   getArchivosStatus,
   updateStatus,
+  countAll,
+  countVigentes,
+  countVencidos,
+  countPorVencer,
+  
 };
