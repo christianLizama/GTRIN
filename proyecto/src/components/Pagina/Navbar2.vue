@@ -44,20 +44,14 @@
         }}</v-list-item-title>
 
         <v-tooltip bottom color="blue">
-              <template v-slot:activator="{ on, attrs }">
-                <div
-                  v-on="on"
-                  v-bind="attrs"
-                >
-                </div>
-                <v-btn @click="salir" icon dark v-bind="attrs" v-on="on">
-                  <v-icon>mdi-logout-variant</v-icon>
-                </v-btn>
-              </template>
-              <span>Salir</span>
-            </v-tooltip>
-        
-          
+          <template v-slot:activator="{ on, attrs }">
+            <div v-on="on" v-bind="attrs"></div>
+            <v-btn @click="salir" icon dark v-bind="attrs" v-on="on">
+              <v-icon>mdi-logout-variant</v-icon>
+            </v-btn>
+          </template>
+          <span>Salir</span>
+        </v-tooltip>
       </v-list-item>
 
       <v-divider elevation="1"></v-divider>
@@ -73,10 +67,10 @@
         </v-list-item>
         <v-list-group
           active-class="white--text"
-          v-for="item in obtenerLista"
+          v-for="item in menu"
           :key="item.title"
           v-model="item.active"
-          :prepend-icon="item.action"
+          :prepend-icon="item.icon"
         >
           <template v-slot:activator>
             <v-list-item-content>
@@ -88,7 +82,7 @@
             active-class="white--text"
             link
             :to="'/archivos/' + child.nombre"
-            v-for="child in item.items"
+            v-for="child in contenedores"
             :key="child.title"
           >
             <v-list-item-icon>
@@ -107,15 +101,18 @@
                 <span v-else>No posee descripcion</span>
               </v-tooltip>
             </v-list-item-content>
-            <!-- <pogress-container
-              :fracciones="child.cumplimiento"
-              :cantidadCarpetas="child.folders.length"
-            ></pogress-container> -->
-            <p>{{ child.porcentaje}}</p>
+            <pogress-container
+              :porcentaje="child.porcentaje"
+            ></pogress-container>
           </v-list-item>
         </v-list-group>
         <v-divider></v-divider>
-        <v-list-item v-if="esAdmin" active-class="white--text" link to="/configuracion">
+        <v-list-item
+          v-if="esAdmin"
+          active-class="white--text"
+          link
+          to="/configuracion"
+        >
           <v-list-item-icon>
             <v-icon>mdi-folder-wrench-outline</v-icon>
           </v-list-item-icon>
@@ -123,7 +120,12 @@
             <v-list-item-title>Configurar</v-list-item-title>
           </v-list-item-content>
         </v-list-item>
-        <v-list-item v-if="esAdmin" active-class="white--text" link to="/triggers">
+        <v-list-item
+          v-if="esAdmin"
+          active-class="white--text"
+          link
+          to="/triggers"
+        >
           <v-list-item-icon>
             <v-icon>mdi-clipboard-clock</v-icon>
           </v-list-item-icon>
@@ -131,7 +133,12 @@
             <v-list-item-title>Triggers</v-list-item-title>
           </v-list-item-content>
         </v-list-item>
-        <v-list-item v-if="esAdmin" active-class="white--text" link to="/adminCrud">
+        <v-list-item
+          v-if="esAdmin"
+          active-class="white--text"
+          link
+          to="/adminCrud"
+        >
           <v-list-item-icon>
             <v-icon>mdi-account-group</v-icon>
           </v-list-item-icon>
@@ -147,12 +154,11 @@
 <script>
 import axios from "axios";
 import { Icon } from "@iconify/vue2";
-//import PogressContainer from "../PogressContainer.vue";
+import PogressContainer from "../PogressContainer.vue";
 import { mapState } from "vuex";
 export default {
   components: {
-    Icon,
-    
+    Icon,PogressContainer
   },
   data() {
     return {
@@ -160,35 +166,27 @@ export default {
       drawer: false,
       mini: true,
       expand: true,
-      nombre: "Christian Lizama",
-      menu: [
-        { action: "mdi-human-male-boy", items: [], title: "Contenedores" },
-      ],
+      menu: [{ icon: "mdi-human-male-boy", items: [], title: "Contenedores" }],
       contenedores: [],
       cumplidos: [],
     };
   },
-  mounted() {
+  created() {
     this.obtenerContenedores();
   },
   computed: {
     ...mapState(["usuario"]),
-    esAdmin(){
-      return this.$store.state.usuario && this.$store.state.usuario.rol=="admin";
+    esAdmin() {
+      return (
+        this.$store.state.usuario && this.$store.state.usuario.rol == "admin"
+      );
     },
     observarMini() {
       return this.comprobarMini();
     },
-    obtenerLista() {
-      if (this.$store.getters.getContenedores) {
-        this.initialize();
-        return this.menu;
-      }
-      return this.menu;
-    },
   },
   methods: {
-    salir(){
+    salir() {
       this.$store.dispatch("salir");
     },
     cambiar() {
@@ -208,60 +206,11 @@ export default {
     async obtenerContenedores() {
       try {
         await axios.get("/sociedad/getPadres").then(async (result) => {
-          // for (let index = 0; index < result.data.length; index++) {
-          //   await this.getFolders(result.data[index]);
-          //   this.cumplidos = [];
-          // }
           this.contenedores = result.data;
-          // this.$store.dispatch("cambiarContenedor", this.contenedores);
         });
       } catch (error) {
         console.log(error);
       }
-    },
-    async getFolders(padre) {
-      await axios
-        .get("sociedad/queryFolders?_id=" + padre._id)
-        .then(async (res) => {
-          for (let index = 0; index < res.data.length; index++) {
-            await this.getSubFolders(res.data[index]);
-          }
-          padre.folders = res.data;
-          padre.cumplimiento = this.cumplidos;
-        })
-        .catch((e) => {
-          console.log(e);
-        });
-    },
-    async getSubFolders(padre) {
-      const request = {
-        params: {
-          _id: padre._id,
-          padre: padre.padre,
-        },
-      };
-
-      await axios
-        .get("carpeta/contarCumplimiento", request)
-        .then(async (res) => {
-          let cumplidas = 0;
-          let totales = res.data.length;
-          res.data.forEach((subCarpeta) => {
-            if (subCarpeta.cumplimiento == "cumple") {
-              cumplidas = cumplidas + 1;
-            }
-          });
-          padre.cumplidas = cumplidas;
-          padre.totales = totales;
-          this.cumplidos.push([cumplidas, totales]);
-          padre.subFolders = res.data;
-        })
-        .catch((e) => {
-          console.log(e);
-        });
-    },
-    initialize() {
-      this.menu[0].items = this.$store.getters.getContenedores;
     },
     changeThemeColor() {
       if (this.$vuetify.theme.dark === true) {

@@ -29,7 +29,6 @@
         </template>
         <span>Agregar carpeta</span>
       </v-tooltip>
-
     </v-toolbar>
 
     <loading texto="Cargando Datos" v-if="isLoading"></loading>
@@ -69,12 +68,16 @@
           }}</v-list-item-subtitle>
         </v-list-item-content>
 
-        <progress-folder
-          :cantidadCarpetas="item.subFolders.length"
-          :subCarpetas="item.subFolders"
-        ></progress-folder>
+        <progress-folder :porcentaje="item.porcentaje"></progress-folder>
 
-        <v-menu v-if="esAdmin" top left rounded="tr-xl" :offset-x="true" :offset-y="true">
+        <v-menu
+          v-if="esAdmin"
+          top
+          left
+          rounded="tr-xl"
+          :offset-x="true"
+          :offset-y="true"
+        >
           <template v-slot:activator="{ on, attrs }">
             <v-btn icon v-bind="attrs" v-on="on">
               <v-icon> mdi-cog </v-icon>
@@ -256,8 +259,10 @@ export default {
     },
   },
   computed: {
-    esAdmin(){
-      return this.$store.state.usuario && this.$store.state.usuario.rol=="admin";
+    esAdmin() {
+      return (
+        this.$store.state.usuario && this.$store.state.usuario.rol == "admin"
+      );
     },
     formTitle() {
       return this.editedIndex === -1
@@ -482,9 +487,9 @@ export default {
       await axios
         .get("sociedad/queryFolders?_id=" + id)
         .then(async (res) => {
-          for (let index = 0; index < res.data.length; index++) {
-            await this.getSubFolders(res.data[index]);
-          }
+          // for (let index = 0; index < res.data.length; index++) {
+          //   await this.getSubFolders(res.data[index]);
+          // }
           this.carpetas = res.data;
           this.isLoading = false;
         })
@@ -496,7 +501,7 @@ export default {
       await axios
         .post("carpeta/add", { carpeta: nuevaCarpeta })
         .then((res) => {
-          res.data.subFolders = []
+          res.data.subFolders = [];
           this.carpetas.push(res.data);
           this.actualizarHijos();
         })
@@ -505,7 +510,6 @@ export default {
         });
     },
     crearCarpeta() {
-      console.log("hola")
       if (this.editedItem.nombre.length > 3) {
         var nueva = {
           nombre: this.editedItem.nombre,
@@ -524,7 +528,7 @@ export default {
       this.descripcion = "";
     },
     createF() {
-      console.log(this.editedItem)
+      console.log(this.editedItem);
       const resultado = this.carpetas.find(
         (carpeta) => carpeta.nombre === this.editedItem.nombre
       );

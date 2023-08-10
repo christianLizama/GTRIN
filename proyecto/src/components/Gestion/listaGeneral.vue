@@ -133,7 +133,7 @@
           sort-by="statusId"
           class="elevation-1"
           :search="search"
-          :items-per-page="-1"
+          :items-per-page="30"
         >
           <template v-slot:[`item.number`]="{index}">
             {{ index+1}}
@@ -302,6 +302,7 @@ export default {
       { type: "xlsx", icon: "vscode-icons:file-type-excel" },
       { type: "jpg", icon: "vscode-icons:file-type-image" },
       { type: "csv", icon: "vscode-icons:file-type-excel" },
+      { type: "docx", icon: "vscode-icons:file-type-word"}
     ],
     numero:0,
     fechaHoy: new Date().toLocaleString(),

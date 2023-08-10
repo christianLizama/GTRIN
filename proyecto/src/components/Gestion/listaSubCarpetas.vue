@@ -699,8 +699,8 @@ export default {
     async initialize() {
       await axios.get("carpeta/query?_id=" + this.$route.params.Folder).then((result) => {
         this.padre = result.data;
-        this.getSubCarpetaCumplimiento(result.data)
-        //this.getSubFolders(result.data._id);
+        //this.getSubCarpetaCumplimiento(result.data)
+        this.getSubFolders(result.data._id);
         result.data.parametros.forEach((element) => {
           this.finds.push(element);
         });
@@ -760,10 +760,10 @@ export default {
       await axios
         .get("carpeta/querysubFolders?_id=" + id)
         .then((res) => {
-          this.contarRequeridos(this.primerosParametros);
-          res.data.forEach((element) => {
-            this.contar(element, this.primerosParametros);
-          });
+          // this.contarRequeridos(this.primerosParametros);
+          // res.data.forEach((element) => {
+          //   this.contar(element, this.primerosParametros);
+          // });
           this.carpetas = res.data;
           this.isLoading = false;
         })

@@ -9,7 +9,7 @@
           :size="40"
           :width="5"
           :value="valor"
-          :color="obtenerColor(calularPorcentaje())"
+          :color="obtenerColor()"
         >
           {{ porcentaje }}
         </v-progress-circular>
@@ -22,22 +22,15 @@
 <script>
 
 export default {
-  name: "Test2",
-  created() {
-    this.contarCumplidas()
-    this.calularPorcentaje()
-  },
+  name: "ProgressFolder",
   data() {
     return {
-      carpetasCumplidas:0,
-      porcentaje:0,
       interval: {},
       valor:0,
     };
   },
   props: {
-    cantidadCarpetas: Number,
-    subCarpetas: Array,
+    porcentaje: Number, 
   },
   beforeDestroy () {
     clearInterval(this.interval)
@@ -51,29 +44,12 @@ export default {
     }, 8)
   },
   methods: {
-    contarCumplidas(){
-      let cumplidas=0;
-      this.subCarpetas.forEach(subCarpeta => {
-        if(subCarpeta.cumplimiento == "cumple"){
-          cumplidas=cumplidas+1
-        }
-      });
-      this.carpetasCumplidas = cumplidas
-    },
-    obtenerColor(valor) {
-      if (valor < 100) {
+    obtenerColor() {
+      if (this.porcentaje < 100) {
         return "red";
       } else {
         return "green";
       }
-    },
-    calularPorcentaje() {
-      if (this.carpetasCumplidas == 0) {
-        return 0;
-      }
-      let porcentaje = (this.carpetasCumplidas / this.subCarpetas.length) * 100;
-      let intPorcentaje = Math.round(porcentaje);
-      this.porcentaje = intPorcentaje
     },
   },
 };

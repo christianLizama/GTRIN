@@ -2,7 +2,8 @@ import { Carpeta } from "../../models/Carpeta";
 import subCarpeta from "../../models/SubCarpeta";
 import Archivo from "../../models/Archivo";
 const fs = require("fs");
-import { json } from "express";
+const cumplimiento = require("../../utils/cumplimientos");
+
 //Metodo para crear una Carpeta
 const add = async (req, res, next) => {
   try {
@@ -12,6 +13,11 @@ const add = async (req, res, next) => {
     //   buscado.parametros.push(element);
     // });
     // const actualizado = await Carpeta.findByIdAndUpdate(buscado._id, buscado, { new: true });
+    if(reg){
+      //Actualizamos el cumplimiento de la sociedad
+      const idSociedad = reg.padre;
+      await cumplimiento.calcularCumplimientoSociedad(idSociedad);
+    }
     res.status(200).json(reg);
   } catch (e) {
     res.status(500).send({
@@ -239,6 +245,8 @@ const remove = async (req, res, next) => {
     //console.log(id);
     const reg = await Carpeta.findByIdAndDelete({ _id: id.id });
     if (reg) {
+      const idSociedad = reg.padre;
+      await cumplimiento.calcularCumplimientoSociedad(idSociedad);
       res.status(200).json(reg);
     }
   } catch (e) {
