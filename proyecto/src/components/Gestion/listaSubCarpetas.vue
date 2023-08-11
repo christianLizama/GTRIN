@@ -447,6 +447,8 @@ export default {
               this.addPermission = false;
             }
             this.dialogFindDelete = false;
+            
+            window.location.reload();
           })
           .catch((e) => {
             console.log(e);
@@ -543,19 +545,6 @@ export default {
       this.dialogParam = false;
       this.finds = Object.assign([], this.primerosParametros);
     },
-    async deleteFiles(item) {
-      await axios.delete("/carpeta/deleteSubFolders/" + item._id).then((result) => {
-        console.log(result);
-        this.$refs.childComponent.SnackbarShow(
-          "success",
-          "Carpeta eliminada correctamente"
-        );
-        // this.alerta = "Carpeta eliminada correctamente";
-        // this.snackbar = true;
-        // this.textSnackbar = "Carpeta eliminada correctamente";
-        this.actualizarHijos();
-      });
-    },
     async deleteAllFiles(idPadre) {
       var data = {
         id: idPadre,
@@ -568,7 +557,6 @@ export default {
       await axios.delete("/subCarpeta/remove/" + item._id).then((result) => {
         this.actualizarHijos();
         this.deleteAllFiles(result.data._id);
-        //this.deleteFiles(item);
       });
     },
     deleteOrEdit(item, opcion) {
@@ -659,42 +647,6 @@ export default {
           console.log(e.response);
         });
     },
-    contarRequeridos(parametros) {
-      parametros.forEach((element) => {
-        if (element.option) {
-          this.archivosRequeridos = this.archivosRequeridos + 1;
-        }
-      });
-    },
-    async contar(subCarpeta, parametros) {
-      let contador = 0;
-      subCarpeta.archivosSubidos = 0;
-      parametros.forEach(async (parametro) => {
-        const request = {
-          params: {
-            _id: parametro._id,
-            padre: subCarpeta._id,
-          },
-        };
-        await axios.get("archivo/countFiles", request).then((result) => {
-          parametro.cantidad = result.data;
-          if (parametro.option) {
-            if (parametro.cantidad > 0) {
-              contador = contador + 1;
-            }
-          }
-        });
-        subCarpeta.archivosSubidos = contador;
-        subCarpeta.archivosRequeridos = this.archivosRequeridos;
-        let porcentaje = 0;
-        if (this.archivosSubidos == 0) {
-          porcentaje = 0;
-        }
-        porcentaje = (contador / this.archivosRequeridos) * 100;
-        let intPorcentaje = Math.round(porcentaje);
-        subCarpeta.cumplimiento = intPorcentaje;
-      });
-    },
 
     async initialize() {
       await axios.get("carpeta/query?_id=" + this.$route.params.Folder).then((result) => {
@@ -760,10 +712,6 @@ export default {
       await axios
         .get("carpeta/querysubFolders?_id=" + id)
         .then((res) => {
-          // this.contarRequeridos(this.primerosParametros);
-          // res.data.forEach((element) => {
-          //   this.contar(element, this.primerosParametros);
-          // });
           this.carpetas = res.data;
           this.isLoading = false;
         })

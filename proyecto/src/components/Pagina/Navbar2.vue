@@ -65,7 +65,15 @@
             <v-list-item-title>Dashboard</v-list-item-title>
           </v-list-item-content>
         </v-list-item>
-        <v-list-group
+        <v-list-item active-class="white--text" link to="/sociedades">
+          <v-list-item-icon>
+            <v-icon>mdi-human-male-boy</v-icon>
+          </v-list-item-icon>
+          <v-list-item-content>
+            <v-list-item-title>Contenedores</v-list-item-title>
+          </v-list-item-content>
+        </v-list-item>
+        <!-- <v-list-group
           active-class="white--text"
           v-for="item in menu"
           :key="item.title"
@@ -105,7 +113,7 @@
               :porcentaje="child.porcentaje"
             ></pogress-container>
           </v-list-item>
-        </v-list-group>
+        </v-list-group> -->
         <v-divider></v-divider>
         <v-list-item
           v-if="esAdmin"
@@ -153,22 +161,17 @@
 
 <script>
 import axios from "axios";
-import { Icon } from "@iconify/vue2";
-import PogressContainer from "../PogressContainer.vue";
 import { mapState } from "vuex";
 export default {
-  components: {
-    Icon,PogressContainer
-  },
+  components: {},
   data() {
     return {
       usuarioActual: "",
       drawer: false,
       mini: true,
       expand: true,
-      menu: [{ icon: "mdi-human-male-boy", items: [], title: "Contenedores" }],
+      // menu: [{ icon: "mdi-human-male-boy", items: [], title: "Contenedores" }],
       contenedores: [],
-      cumplidos: [],
     };
   },
   created() {

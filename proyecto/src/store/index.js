@@ -14,7 +14,7 @@ export default new Vuex.Store({
   getters: {
     getContenedores: (state) => state.contenedores,
     isAuthenticated: (state) => !!state.usuario,
-    getUsuario: (state) => state.usuario
+    getUsuario: (state) => state.usuario,
   },
   mutations: {
     SET_CONTENEDORES(state, contenedores) {

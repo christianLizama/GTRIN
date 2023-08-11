@@ -2,6 +2,9 @@
   <v-card>
     <snackbar ref="childComponent"></snackbar>
     <v-toolbar dense dark>
+      <v-btn @click="atras" big icon>
+        <v-icon>mdi-chevron-left</v-icon>
+      </v-btn>
       <v-toolbar-title class="white--text">
         {{ padre.nombre }}
       </v-toolbar-title>
@@ -283,6 +286,9 @@ export default {
     },
   },
   methods: {
+    atras() {
+      this.$router.go(-1);
+    },
     addFind: function () {
       this.finds.push({ value: "" });
     },
