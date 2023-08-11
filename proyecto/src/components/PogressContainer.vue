@@ -23,20 +23,17 @@
 <script>
 export default {
   name: "progressContainer",
-  created() {
-    this.calularPorcentaje();
-  },
   data() {
     return {
       carpetasCumplidas: 0,
-      porcentaje: 0,
       interval: {},
       valor: 0,
     };
   },
+  created(){
+  },
   props: {
-    cantidadCarpetas: Number,
-    fracciones: Array,
+    porcentaje: Number,
   },
   beforeDestroy() {
     clearInterval(this.interval);
@@ -58,27 +55,6 @@ export default {
         return "#FF6D00"
       }
       return "#00E676"
-    },
-    calularPorcentaje() {
-      if (this.fracciones.length == 0) {
-        return 0;
-      }
-      let calculo = 0;
-      this.fracciones.forEach((fraccion) => {
-        let numerador = fraccion[0];
-        let denominador = fraccion[1];
-        let resultado = numerador / denominador;
-        if(numerador==0 || denominador==0){
-          calculo=calculo+0
-        }
-        else{
-          calculo = calculo + resultado;
-        }
-      });
-
-      let porcentaje = (calculo / this.cantidadCarpetas) * 100;
-      let intPorcentaje = Math.round(porcentaje);
-      this.porcentaje = intPorcentaje;
     },
   },
 };

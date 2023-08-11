@@ -1,6 +1,7 @@
 import subCarpeta from "../../models/SubCarpeta";
 import archivo from "../../models/Archivo";
-import moment from "moment";
+const cumplimiento = require("../../utils/cumplimientos");
+
 //Metodo para crear una sub carpeta
 const add = async (req, res, next) => {
   try {
@@ -10,6 +11,12 @@ const add = async (req, res, next) => {
     //   buscado.parametros.push(element); 
     // });
     // const actualizado = await subCarpeta.findByIdAndUpdate(buscado._id, buscado, { new: true });
+    if(reg){
+      const idCarpeta = reg.padre;
+      const idSociedad = reg.padreSuperior;
+      await cumplimiento.calcularCumplimientoCarpeta(idCarpeta);
+      await cumplimiento.calcularCumplimientoSociedad(idSociedad);
+    }
     res.status(200).json(reg);
   } catch (e) {
     res.status(500).send({
@@ -70,6 +77,7 @@ const getArchivosParametro = async (req, res, next) => {
       });
     } else {
       res.status(200).json(reg);
+      console.log(reg);
     }
   } catch (e) {
     res.status(500).send({
@@ -139,6 +147,10 @@ const remove = async (req, res, next) => {
     //console.log(id);
     const reg = await subCarpeta.findByIdAndDelete({ _id: id.id });
     if (reg) {
+      const idCarpeta = reg.padre;
+      const idSociedad = reg.padreSuperior;
+      await cumplimiento.calcularCumplimientoCarpeta(idCarpeta);
+      await cumplimiento.calcularCumplimientoSociedad(idSociedad);
       res.status(200).json(reg);
     }
   } catch (e) {
@@ -178,6 +190,7 @@ const getAllSubFolders = async (req, res, next) => {
     next(e);
   }
 };
+
 
 module.exports = {
   add,

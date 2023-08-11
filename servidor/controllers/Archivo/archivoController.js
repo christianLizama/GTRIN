@@ -1,20 +1,21 @@
-import { json } from "express";
 import moment from "moment";
 import archivo from "../../models/Archivo";
-import { Carpeta } from "../../models/Carpeta";
+import { Parametro, Carpeta } from "../../models/Carpeta";
 import subCarpeta from "../../models/SubCarpeta";
 import sociedad from "../../models/Sociedad";
-const fs = require("fs");
 const { Storage } = require("@google-cloud/storage");
+const cumplimiento = require("../../utils/cumplimientos.js");
 
-const storage = new Storage({ keyFilename: "cool-kit-375714-32d9f4710e16.json" });
+const storage = new Storage({
+  keyFilename: "cool-kit-375714-32d9f4710e16.json",
+});
 const bucket = storage.bucket("prueba-2");
 
 //Metodo para contar archivos
-const countAll = async (req, res, next) => {  
-  try { 
+const countAll = async (req, res, next) => {
+  try {
     const reg = await archivo.find().count();
-    let retorno = { nombre: "Archivos Totales",total: reg, porcentaje: 100 };
+    let retorno = { nombre: "Archivos Totales", total: reg, porcentaje: 100 };
     res.status(200).json(retorno);
   } catch (e) {
     res.status(500).send({
@@ -23,18 +24,19 @@ const countAll = async (req, res, next) => {
     next(e);
   }
 };
+
 //Metodo para contar archivos vigentes
-const countVigentes = async (req, res, next) => { 
+const countVigentes = async (req, res, next) => {
   try {
     const reg = await archivo.find({ status: "Vigente" }).count();
     const total = await archivo.find().count();
     const porcentaje = (reg / total) * 100;
     let intPorcentaje = Math.round(porcentaje);
-    if(reg == 0){
+    if (reg == 0) {
       intPorcentaje = 0;
     }
-    
-    let retorno = { nombre: "Vigentes",total: reg, porcentaje: intPorcentaje };
+
+    let retorno = { nombre: "Vigentes", total: reg, porcentaje: intPorcentaje };
     res.status(200).json(retorno);
   } catch (e) {
     res.status(500).send({
@@ -43,6 +45,7 @@ const countVigentes = async (req, res, next) => {
     next(e);
   }
 };
+
 //Metodo para contar archivos por vencer
 const countPorVencer = async (req, res, next) => {
   try {
@@ -50,10 +53,14 @@ const countPorVencer = async (req, res, next) => {
     const total = await archivo.find().count();
     const porcentaje = (reg / total) * 100;
     let intPorcentaje = Math.round(porcentaje);
-    if(reg == 0){
+    if (reg == 0) {
       intPorcentaje = 0;
     }
-    let retorno = { nombre: "Por Vencer",total: reg, porcentaje: intPorcentaje };
+    let retorno = {
+      nombre: "Por Vencer",
+      total: reg,
+      porcentaje: intPorcentaje,
+    };
     res.status(200).json(retorno);
   } catch (e) {
     res.status(500).send({
@@ -70,10 +77,10 @@ const countVencidos = async (req, res, next) => {
     const total = await archivo.find().count();
     const porcentaje = (reg / total) * 100;
     let intPorcentaje = Math.round(porcentaje);
-    if(reg == 0){
+    if (reg == 0) {
       intPorcentaje = 0;
     }
-    let retorno = { nombre:"Vencidos", total: reg, porcentaje: intPorcentaje };
+    let retorno = { nombre: "Vencidos", total: reg, porcentaje: intPorcentaje };
     res.status(200).json(retorno);
   } catch (e) {
     res.status(500).send({
@@ -83,23 +90,33 @@ const countVencidos = async (req, res, next) => {
   }
 };
 
+//Contar archivos
+
 //Metodo para crear un archivo
 const add = async (req, res, next) => {
   try {
     let file = req.body;
-    let cortado = file.fechaCambioEstado.split("T")
-    let fechaCambioEstado = moment(cortado[0])
+    let cortado = file.fechaCambioEstado.split("T");
+    let fechaCambioEstado = moment(cortado[0]);
     if (new Date() >= moment(file.fechaCaducidad)) {
-      // console.log("Estoy vencido");
       file.status = "Vencido";
     } else if (new Date() >= fechaCambioEstado._d) {
-      // console.log("Estoy por vencer");
       file.status = "Por vencer";
     } else {
-      // console.log("Estoy vigente");
       file.status = "Vigente";
     }
     const reg = await archivo.create(req.body);
+    if (reg) {
+      //Calcular el cumplimiento de la carpeta, subcarpeta y sociedad
+      //console.log(reg);
+      let idSubCarpeta = reg.padre;
+      let idCarpeta = reg.abuelo;
+      let idSociedad = reg.padreSuperior;
+      await cumplimiento.calcularCumplimientoSubCarpeta(idSubCarpeta);
+      await cumplimiento.calcularCumplimientoCarpeta(idCarpeta);
+      await cumplimiento.calcularCumplimientoSociedad(idSociedad);
+    }
+
     res.status(200).json(reg);
   } catch (e) {
     res.status(500).send({
@@ -204,23 +221,21 @@ function iniciarFile(element, padres, carpetas, subCarpetas, parametros) {
     parametros
   );
 
-  if(element.status == "Vigente"){
-    element.statusId=3
-  }
-  else if(element.status == "Por vencer"){
-    element.statusId=2
-  }
-  else{
-    element.statusId=1
+  if (element.status == "Vigente") {
+    element.statusId = 3;
+  } else if (element.status == "Por vencer") {
+    element.statusId = 2;
+  } else {
+    element.statusId = 1;
   }
 
   let fechaEmi = element.fechaEmision.split("T");
   let fechaCadu = element.fechaCaducidad.split("T");
-  let fechaCam = element.fechaCambioEstado.split("T")
+  let fechaCam = element.fechaCambioEstado.split("T");
   element.fechaEmision = fechaEmi[0];
   element.fechaCaducidad = fechaCadu[0];
-  element.fechaCambioEstado = fechaCam[0]
-  
+  element.fechaCambioEstado = fechaCam[0];
+
   let fechaEmision = moment(fechaEmi[0]);
   let fechaCaducidad = moment(fechaCadu[0]);
   let diasAviso = element.diasAviso;
@@ -375,8 +390,8 @@ const update = async (req, res, next) => {
   try {
     const id = req.body._id;
     const file = req.body.archivo;
-    let cortado = file.fechaCambioEstado.split("T")
-    let fechaCambioEstado = moment(cortado[0])
+    let cortado = file.fechaCambioEstado.split("T");
+    let fechaCambioEstado = moment(cortado[0]);
     if (new Date() >= moment(file.fechaCaducidad)) {
       // console.log("Estoy vencido");
       file.status = "Vencido";
@@ -400,32 +415,32 @@ const update = async (req, res, next) => {
 const remove = async (req, res, next) => {
   try {
     const { id, fileName } = req.body;
-    console.log(fileName)
     const reg = await archivo.findByIdAndDelete({ _id: id });
-    if (reg) {
-      // Delete the file from the bucket
-      bucket.file(fileName).delete().then(() => {
-        console.log(`Archivo:///${fileName} ha sido eliminado.`);
-        res.status(200).send({
-          message: "El archivo " + fileName + " ha sido borrado",
-        });
-      })
-      .catch((err) => {
-        console.log("El archivo no existe")
-        res.status(200).send({
-          message: "El archivo " + fileName + " no existe en el gestor, sin embargo ha sido borrado del programa",
-        });  
-      });
 
-      // const directoryPath = __basedir + "/uploads/";
-      // fs.unlink(directoryPath + fileName, (err) => {
-      //   if (err) {
-      //     console.log("Este archivo no existe");
-      //   }
-      //   res.status(200).send({
-      //     message: "El archivo " + fileName + " ha sido borrado",
-      //   });
-      // });
+    if (reg) {
+      //Calculamos todos los cumplimientos de las carpetas, subcarpetas y sociedades
+      await cumplimiento.calcularCumplimientoSubCarpeta(reg.padre);
+      await cumplimiento.calcularCumplimientoCarpeta(reg.abuelo);
+      await cumplimiento.calcularCumplimientoSociedad(reg.padreSuperior);
+      // Delete the file from the bucket
+      bucket
+        .file(fileName)
+        .delete()
+        .then(() => {
+          console.log(`Archivo:///${fileName} ha sido eliminado.`);
+          res.status(200).send({
+            message: "El archivo " + fileName + " ha sido borrado",
+          });
+        })
+        .catch((err) => {
+          console.log("El archivo no existe");
+          res.status(200).send({
+            message:
+              "El archivo " +
+              fileName +
+              " no existe en el gestor, sin embargo ha sido borrado del programa",
+          });
+        });
     }
   } catch (e) {
     res.status(500).send({
@@ -442,12 +457,20 @@ const removeAll = async (req, res, next) => {
     const archivos = await archivo.find({ padre: id });
     const reg = await archivo.deleteMany({ padre: id });
     if (reg) {
-      const directoryPath = __basedir + "/uploads/";
       if (archivos.length > 0) {
         archivos.forEach((element) => {
-          fs.unlink(directoryPath + element.archivo, (err) => {
-            if (err) console.log(err);
-          });
+          let nombreArchivo = element.archivo.substring(
+            element.archivo.lastIndexOf("/") + 1
+          );
+          bucket
+            .file(nombreArchivo)
+            .delete()
+            .then(() => {
+              console.log(`Archivo:///${nombreArchivo} ha sido eliminado.`);
+            })
+            .catch((err) => {
+              console.log("El archivo no existe");
+            });
         });
         res.status(200).send({
           message: "Todos los archivos han sido borrados",
@@ -473,12 +496,29 @@ const removeFolderFiles = async (req, res, next) => {
     const archivos = await archivo.find({ abuelo: id });
     const reg = await archivo.deleteMany({ abuelo: id });
     if (reg) {
-      const directoryPath = __basedir + "/uploads/";
       if (archivos.length > 0) {
         archivos.forEach((element) => {
-          fs.unlink(directoryPath + element.archivo, (err) => {
-            if (err) console.log(err);
-          });
+          let nombreArchivo = element.archivo.substring(
+            element.archivo.lastIndexOf("/") + 1
+          );
+          bucket
+            .file(nombreArchivo)
+            .delete()
+            .then(() => {
+              console.log(`Archivo:///${nombreArchivo} ha sido eliminado.`);
+              res.status(200).send({
+                message: "El archivo " + nombreArchivo + " ha sido borrado",
+              });
+            })
+            .catch((err) => {
+              console.log("El archivo no existe");
+              res.status(200).send({
+                message:
+                  "El archivo " +
+                  nombreArchivo +
+                  " no existe en el gestor, sin embargo ha sido borrado del programa",
+              });
+            });
         });
         res.status(200).send({
           message: "Todos los archivos han sido borrados",
@@ -525,6 +565,9 @@ const updateStatus = async (req, res, next) => {
       ],
       { multi: true }
     );
+    await cumplimiento.actualizarCumplimientoTodasSubCarpetas();
+    await cumplimiento.actualizarCumplimientoTodasCarpetas();
+    await cumplimiento.actualizarCumplimientoTodasSociedades();
     res.status(200).json(reg);
   } catch (e) {
     res.status(500).send({
@@ -550,5 +593,4 @@ module.exports = {
   countVigentes,
   countVencidos,
   countPorVencer,
-  
 };

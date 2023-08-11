@@ -47,7 +47,6 @@ import axios from "axios";
 export default {
   name: "Test",
   created() {
-    console.log(this.indice);
     this.solicitarDatos();
   },
   data() {
