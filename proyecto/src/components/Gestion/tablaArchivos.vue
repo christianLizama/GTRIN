@@ -467,6 +467,7 @@ export default {
       abuelo: "",
       padreSuperior: "",
       parametro: "",
+      usuarioCreador: "",
     },
     defaultItem: {
       nombre: "",
@@ -488,6 +489,7 @@ export default {
       abuelo: "",
       padreSuperior: "",
       parametro: "",
+      usuarioCreador: "",
     },
   }),
   computed: {
@@ -838,6 +840,7 @@ export default {
           this.editedItem.abuelo = this.padre.padre;
           this.editedItem.padreSuperior = this.padre.padreSuperior;
           this.editedItem.parametro = this.Parametro;
+          this.editedItem.usuarioCreador = this.$store.state.usuario._id;
           let fechaCambio = moment(this.editedItem.fechaEmision).add(
             this.editedItem.diasAviso,
             "days"
@@ -946,10 +949,15 @@ export default {
     async borrarArchivo(archivo, index) {
 
       let nombreArchivo = archivo.archivo.substring(archivo.archivo.lastIndexOf("/") + 1)
+      let idUsuario = this.$store.state.usuario._id;
+      console.log(idUsuario)
+
       var data = {
         id: archivo._id,
         fileName: nombreArchivo,
+        idUser: idUsuario,
       };
+      
       await axios.delete("archivo/remove", { data }).then((result) => {
         this.$refs.childComponent.SnackbarShow("success", result.data.message);
         this.archivos.splice(index, 1);

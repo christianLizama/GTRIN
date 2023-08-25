@@ -58,6 +58,19 @@
                     label="Descripción"
                     placeholder="Ingrese descripción"
                   ></v-text-field>
+                  <v-select
+                    v-model="editItem.usuariosConAcceso"
+                    outlined
+                    :items="usuarios"
+                    label="Usuarios"
+                    multiple
+                    chips
+                    return-object
+                    item-text="email"
+                    hint="Selecciona usuarios con acceso"
+                    persistent-hint
+                    :no-data-text="usuarios.length === 0 ? 'No hay usuarios disponibles' : ''"
+                  ></v-select>
                 </v-card-text>
 
                 <v-card-actions>
@@ -167,12 +180,11 @@ export default {
   data: () => ({
     dialog: false,
     dialogDelete: false,
-
+    usuarios: [],
     direction: "left",
     fabx: false,
     hover: false,
     transition: "slide-y-reverse-transition",
-
     headers: [
       {
         text: "Nombre contenedor",
@@ -182,7 +194,7 @@ export default {
       },
       { text: "Fecha Creación", value: "fechaCreacion" },
       { text: "Descripción", value: "descripcion" },
-      { text: "Actions", value: "acciones", sortable: false },
+      { text: "Acciones", value: "acciones", sortable: false, align: "center" },
     ],
     desserts: [],
     editedIndex: -1,
@@ -190,11 +202,13 @@ export default {
       nombre: "",
       descripcion: "",
       fechaCreacion: "",
+      usuariosConAcceso: [],
     },
     defaultItem: {
       nombre: "",
       descripcion: "",
       fechaCreacion: "",
+      usuariosConAcceso: [],
     },
   }),
 
@@ -216,8 +230,9 @@ export default {
     },
   },
 
-  mounted() {
+  created() {
     this.initialize();
+    this.getUsers();
   },
 
   methods: {
@@ -231,10 +246,26 @@ export default {
       return fechaFormat;
     },
     async initialize() {
+      const token = localStorage.getItem('token');
+      const headers = {
+        Authorization: `Bearer ${token}`
+      };
       await axios
-        .get("sociedad/getPadres")
+        .get("sociedad/getPadres",{ headers })
         .then((res) => {
           this.desserts = res.data;
+        })
+        .catch((e) => {
+          console.log(e);
+        });
+    },
+
+    async getUsers() {
+      await axios
+        .get("usuario/getUsuariosNormales")
+        .then((res) => {
+          this.usuarios = res.data;
+          console.log(this.usuarios)
         })
         .catch((e) => {
           console.log(e);

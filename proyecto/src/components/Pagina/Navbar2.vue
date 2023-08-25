@@ -73,47 +73,6 @@
             <v-list-item-title>Contenedores</v-list-item-title>
           </v-list-item-content>
         </v-list-item>
-        <!-- <v-list-group
-          active-class="white--text"
-          v-for="item in menu"
-          :key="item.title"
-          v-model="item.active"
-          :prepend-icon="item.icon"
-        >
-          <template v-slot:activator>
-            <v-list-item-content>
-              <v-list-item-title>{{ item.title }}</v-list-item-title>
-            </v-list-item-content>
-          </template>
-
-          <v-list-item
-            active-class="white--text"
-            link
-            :to="'/archivos/' + child.nombre"
-            v-for="child in contenedores"
-            :key="child.title"
-          >
-            <v-list-item-icon>
-              <Icon width="25" heigh="25" icon="material-symbols:boy"></Icon>
-            </v-list-item-icon>
-            <v-list-item-content>
-              <v-tooltip top>
-                <template v-slot:activator="{ on, attrs }">
-                  <v-list-item-title v-on="on" v-bind="attrs">{{
-                    child.nombre
-                  }}</v-list-item-title>
-                </template>
-                <span v-if="child.descripcion.length > 1">{{
-                  child.descripcion
-                }}</span>
-                <span v-else>No posee descripcion</span>
-              </v-tooltip>
-            </v-list-item-content>
-            <pogress-container
-              :porcentaje="child.porcentaje"
-            ></pogress-container>
-          </v-list-item>
-        </v-list-group> -->
         <v-divider></v-divider>
         <v-list-item
           v-if="esAdmin"
@@ -154,6 +113,19 @@
             <v-list-item-title>Usuarios</v-list-item-title>
           </v-list-item-content>
         </v-list-item>
+        <v-list-item
+          v-if="esAdmin"
+          active-class="white--text"
+          link
+          to="/archivosEliminados"
+        >
+          <v-list-item-icon>
+            <v-icon>mdi-file-chart-outline</v-icon>
+          </v-list-item-icon>
+          <v-list-item-content>
+            <v-list-item-title>Control Archivos</v-list-item-title>
+          </v-list-item-content>
+        </v-list-item>
       </v-list>
     </v-navigation-drawer>
   </div>
@@ -175,7 +147,7 @@ export default {
     };
   },
   created() {
-    this.obtenerContenedores();
+    //this.obtenerContenedores();
   },
   computed: {
     ...mapState(["usuario"]),

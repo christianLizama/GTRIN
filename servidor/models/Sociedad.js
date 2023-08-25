@@ -7,6 +7,7 @@ const sociedadSchema = new Schema({
     descripcion:{type: String},
     carpetas:{type: [Schema.ObjectId], ref: 'Carpeta'},
     porcentaje:{type: Number, default:0},
+    usuariosConAcceso: [{ type: Schema.Types.ObjectId, ref: 'Usuario' }]
 });
 
 const Sociedad = mongoose.model('Sociedad', sociedadSchema);

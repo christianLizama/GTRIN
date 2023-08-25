@@ -3,8 +3,10 @@ import archivo from "../../models/Archivo";
 import { Parametro, Carpeta } from "../../models/Carpeta";
 import subCarpeta from "../../models/SubCarpeta";
 import sociedad from "../../models/Sociedad";
+import eliminado from "../../models/Eliminado";
 const { Storage } = require("@google-cloud/storage");
 const cumplimiento = require("../../utils/cumplimientos.js");
+import usuario from "../../models/Usuario";
 
 const storage = new Storage({
   keyFilename: "cool-kit-375714-32d9f4710e16.json",
@@ -105,7 +107,11 @@ const add = async (req, res, next) => {
     } else {
       file.status = "Vigente";
     }
-    const reg = await archivo.create(req.body);
+    let iduser = req.body.usuarioCreador;
+    let user = await usuario.findOne({ _id: iduser });
+    file.usuarioCreador = user.email;
+
+    const reg = await archivo.create(file);
     if (reg) {
       //Calcular el cumplimiento de la carpeta, subcarpeta y sociedad
       //console.log(reg);
@@ -414,10 +420,47 @@ const update = async (req, res, next) => {
 //Metodo para eliminar un archivo mediante _id y su nombre
 const remove = async (req, res, next) => {
   try {
-    const { id, fileName } = req.body;
+    const { id, fileName, idUser } = req.body;
+    //obtenemos el archivo con los nombres de sus ancestros
+    const file = await archivo
+      .findById({ _id: id })
+      .populate({
+        path: "padre",
+        select: "nombre",
+      })
+      .populate({
+        path: "abuelo",
+        select: "nombre",
+      })
+      .populate({
+        path: "padreSuperior",
+        select: "nombre",
+      })
+    //Buscamos el usuario que elimino el archivo
+    const user = await usuario.findOne({ _id: idUser });
+    //Eliminamos el archivo de la colección de archivos
     const reg = await archivo.findByIdAndDelete({ _id: id });
+    let archivoEliminado = {
+      nombre: reg.nombre,
+      archivo: reg.archivo,
+      diasAviso: reg.diasAviso,
+      peso: reg.peso,
+      fechaCreacion: reg.fechaCreacion,
+      fechaEmision: reg.fechaEmision,
+      fechaCambioEstado: reg.fechaCambioEstado,
+      fechaCaducidad: reg.fechaCaducidad,
+      padre: file.padre.nombre,
+      abuelo: file.abuelo.nombre,
+      padreSuperior: file.padreSuperior.nombre,
+      parametro: reg.parametro,
+      descripcion: reg.descripcion,
+      usuarioCreador: reg.usuarioCreador,
+      usuarioEliminador: user.email,
+    };
+    //Agregamos el archivo eliminado a la colección de eliminados
+    const reg2 = await eliminado.create(archivoEliminado);
 
-    if (reg) {
+    if (reg && reg2) {
       //Calculamos todos los cumplimientos de las carpetas, subcarpetas y sociedades
       await cumplimiento.calcularCumplimientoSubCarpeta(reg.padre);
       await cumplimiento.calcularCumplimientoCarpeta(reg.abuelo);

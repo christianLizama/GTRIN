@@ -285,6 +285,7 @@ async function cargar(trigger) {
     REDIRECT_URI
   );
   oAuth2Client.setCredentials({ refresh_token: REFRESH_TOKEN });
+  
   async function sendEmail(mensaje,destino,asunto,contenedor,carpeta,status,parametro,rango) {
     try {
       let archivos = [];
@@ -417,6 +418,7 @@ async function cargarTriggers() {
     if (reg.length == 0) {
       console.log("No hay ningun trigger creado");
     } else {
+      console.log("Hay triggers creados");
       reg.forEach((trigger) => {
         cargar(trigger);
       });

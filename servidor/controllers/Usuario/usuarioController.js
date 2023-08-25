@@ -6,7 +6,9 @@ import { enviarCorreo2 } from "../Correo/correoController";
 
 async function getUsuarios(req, res) {
   try {
-    let usuarios = await Usuario.find({email:{$ne:'reportes@transportesruiz.cl'}});
+    let usuarios = await Usuario.find({
+      email: { $ne: "reportes@transportesruiz.cl" },
+    });
     if (!usuarios) {
       res.status(404).send({
         message: "No hay ningún usuario",
@@ -21,6 +23,26 @@ async function getUsuarios(req, res) {
     next(e);
   }
 }
+
+//Obtener usuarios normales
+async function getUsuariosNormales(req, res) {
+  try {
+    let usuarios = await Usuario.find({ rol: "usuario" }, { clave: 0 });
+    if (!usuarios) {
+      res.status(404).send({
+        message: "No hay ningún usuario",
+      });
+    } else {
+      res.status(200).json(usuarios);
+    }
+  } catch (e) {
+    res.status(500).send({
+      message: "Ocurrió un error",
+    });
+    next(e);
+  }
+}
+
 async function queryTokenID(req, res) {
   try {
     let tokenReturn = await token.decode(req.query._id);
@@ -63,9 +85,8 @@ async function queryUsuario(req, res) {
 
 async function postUsuario(req, res) {
   try {
-
     const claveHash = await bcrypt.hash(req.body.clave, 10);
-    
+
     let usuario = new Usuario({
       rol: req.body.rol,
       nombreCompleto: req.body.nombreCompleto,
@@ -134,7 +155,6 @@ async function updateUsuario(req, res) {
 
 async function login(req, res, next) {
   try {
-    console.log(req.body);
     let user = await Usuario.findOne({ email: req.body.email });
     if (user) {
       let match = await bcrypt.compare(req.body.password, user.clave);
@@ -168,6 +188,42 @@ async function removeUsuario(req, res, next) {
   try {
     const reg = await Usuario.findByIdAndDelete({ _id: req.body._id });
     res.status(200).json(reg);
+  } catch (e) {
+    res.status(500).send({
+      message: "Ocurrió un error",
+    });
+    next(e);
+  }
+}
+
+async function verificarToken(req, res, next) {
+  try {
+    const tokenActual = req.headers.authorization.split(" ")[1];
+    if (!tokenActual) {
+      return res.status(404).send({
+        message: "No token",
+      });
+    }
+    try {
+      const usuario = await token.verificarTokenValido(tokenActual);
+      res.status(200).json("Autorizado");
+    } catch (error) {
+      if (error.message === "Token expirado") {
+        return res.status(401).send({
+          message: "Token expirado",
+        });
+      } else if (error.message === "Token inválido") {
+        return res.status(401).send({
+          message: "Token inválido",
+        });
+      } else if (error.message === "Usuario no encontrado") {
+        return res.status(401).send({
+          message: "Usuario no encontrado",
+        });
+      } else {
+        throw error; // Si es otro tipo de error, propagar hacia arriba
+      }
+    }
   } catch (e) {
     res.status(500).send({
       message: "Ocurrió un error",
@@ -237,6 +293,7 @@ function generateCode() {
 }
 
 export {
+  getUsuariosNormales,
   getUsuarios,
   queryUsuario,
   postUsuario,
@@ -247,4 +304,5 @@ export {
   recuperarContrasena,
   compararCodigo,
   cambiarContrasena,
+  verificarToken,
 };

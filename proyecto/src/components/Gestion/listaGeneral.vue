@@ -107,12 +107,7 @@
                   >
                     Limpiar
                   </v-btn>
-                  <v-btn
-                    color="primary"
-                    @click="menu = false"
-                  >
-                    Listo
-                  </v-btn>
+                  <v-btn color="primary" @click="menu = false"> Listo </v-btn>
                 </v-date-picker>
               </v-menu>
             </v-col>
@@ -134,9 +129,12 @@
           class="elevation-1"
           :search="search"
           :items-per-page="30"
+          :footer-props="{
+            'items-per-page-options': [15, 20, 25, 30, 35, 40],
+          }"
         >
-          <template v-slot:[`item.number`]="{index}">
-            {{ index+1}}
+          <template v-slot:[`item.number`]="{ index }">
+            {{ index + 1 }}
           </template>
           <template v-slot:[`item.fechaCambioEstado`]="{ item }">
             {{ fechaFormateada(item.fechaCambioEstado) }}
@@ -163,10 +161,12 @@
                   class="text-truncate"
                   style="max-width: 140px"
                 >
-                {{item.diasVigencia}}     
+                  {{ item.diasVigencia }}
                 </div>
               </template>
-              <span>{{ transformarDiasVigencia(item.fechaEmision,item.fechaCaducidad) }}</span>
+              <span>{{
+                transformarDiasVigencia(item.fechaEmision, item.fechaCaducidad)
+              }}</span>
             </v-tooltip>
           </template>
 
@@ -201,15 +201,16 @@
                     :icon="obtenerExtension(item.archivo)"
                     class="mr-2"
                   ></Icon>
-                  <a
-                    target="_blank"
-                    class="texto"
-                    :href="item.archivo"
-                    >{{ item.archivo.substring(item.archivo.lastIndexOf('/') + 1) }}
+                  <a target="_blank" class="texto" :href="item.archivo"
+                    >{{
+                      item.archivo.substring(item.archivo.lastIndexOf("/") + 1)
+                    }}
                   </a>
                 </div>
               </template>
-              <span>{{ item.archivo.substring(item.archivo.lastIndexOf('/') + 1) }}</span>
+              <span>{{
+                item.archivo.substring(item.archivo.lastIndexOf("/") + 1)
+              }}</span>
             </v-tooltip>
           </template>
           <template v-slot:[`expanded-item`]="{ headers, item }">
@@ -302,9 +303,9 @@ export default {
       { type: "xlsx", icon: "vscode-icons:file-type-excel" },
       { type: "jpg", icon: "vscode-icons:file-type-image" },
       { type: "csv", icon: "vscode-icons:file-type-excel" },
-      { type: "docx", icon: "vscode-icons:file-type-word"}
+      { type: "docx", icon: "vscode-icons:file-type-word" },
     ],
-    numero:0,
+    numero: 0,
     fechaHoy: new Date().toLocaleString(),
     searchClosed: true,
     showScheduleForm: false,
@@ -449,15 +450,17 @@ export default {
     this.obtenerTodo();
   },
   methods: {
-    transformarDiasVigencia(fechaEmision,fechaCaducidad){
+    transformarDiasVigencia(fechaEmision, fechaCaducidad) {
       var date1 = moment(fechaEmision);
       var date2 = moment(fechaCaducidad);
-      var years = date2.diff(date1,'years')
-      date1.add(years,'years')
-      var months = date2.diff(date1, 'months');
-      date1.add(months, 'months');
-      var days = date2.diff(date1, 'days');
-      return years + ' ' + 'Años, '+  months + ' ' + 'Meses, '+ ' ' + days + " Días"
+      var years = date2.diff(date1, "years");
+      date1.add(years, "years");
+      var months = date2.diff(date1, "months");
+      date1.add(months, "months");
+      var days = date2.diff(date1, "days");
+      return (
+        years + " " + "Años, " + months + " " + "Meses, " + " " + days + " Días"
+      );
     },
     valoresFecha() {
       if (this.dates.length == 2) {
@@ -492,10 +495,9 @@ export default {
       }
     },
     obtenerExtension(archivo) {
-
       const myUrl = archivo; // la URL almacenada como una cadena de texto
-      const currentExtension = myUrl.substring(myUrl.lastIndexOf('.') + 1); // obtener la extensión
-      
+      const currentExtension = myUrl.substring(myUrl.lastIndexOf(".") + 1); // obtener la extensión
+
       let icono = "";
       this.extensiones.forEach((extension) => {
         if (extension.type == currentExtension) {
@@ -524,7 +526,7 @@ export default {
         .format("DD/MM/YYYY");
       return fecha;
     },
-    
+
     carpetasHijas(carpetas) {
       if (this.sociedadSeleccionada.nombre == "Todo") {
         this.carpetaSelecionada = this.carpetasDefault[0];
@@ -608,7 +610,7 @@ export default {
           !archivo.padreSuperior.indexOf(this.sociedadSeleccionada._id)
       );
     },
-    
+
     filtroCarpetas(archivos) {
       if (
         this.sociedadSeleccionada.nombre != "Todo" &&
@@ -671,7 +673,7 @@ export default {
       }
       return archivos;
     },
-    limpiarCalendario(){
+    limpiarCalendario() {
       this.dates = ["", ""];
     },
     limpiarFiltros() {
