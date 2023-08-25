@@ -34,6 +34,7 @@ const archivosRouter = require("./routes/archivo");
 const uploadFileRouter = require("./routes/uploadFile");
 const correoRouter = require("./routes/correo");
 const usuarioRouter = require("./routes/usuario");
+const eliminadoRouter = require("./routes/eliminado");
 const app = express();
 
 app.use(logger("dev"));
@@ -50,7 +51,8 @@ app.use("/subCarpeta",subCarpetaRouter);
 app.use("/archivo", archivosRouter);
 app.use("/uploadFile", uploadFileRouter);
 app.use("/correo",correoRouter);
-app.use("/usuario",usuarioRouter)
+app.use("/usuario",usuarioRouter);
+app.use("/eliminado",eliminadoRouter);
 
 //Puerto del server
 const appPort = process.env.PORT_SERVER || 3030

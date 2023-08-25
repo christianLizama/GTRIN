@@ -1,7 +1,7 @@
 <template>
   <v-card>
     <v-toolbar dense dark>
-      <v-toolbar-title class="white--text"> sociedades </v-toolbar-title>
+      <v-toolbar-title class="white--text"> Contenedores </v-toolbar-title>
       <v-spacer></v-spacer>
       <v-tooltip bottom>
         <template v-slot:activator="{ on, attrs }">
@@ -105,7 +105,11 @@ export default {
     },
     async initialize() {
       try {
-        await axios.get("/sociedad/getPadres").then(async (result) => {
+        const token = localStorage.getItem('token');
+        const headers = {
+          Authorization: `Bearer ${token}`
+        };
+        await axios.get("/sociedad/getPadres",{ headers }).then(async (result) => {
           this.sociedades = result.data;
           this.isLoading = false;
         });

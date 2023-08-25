@@ -140,7 +140,7 @@ async function calcularCumplimientoSubCarpeta(subCarpetaId) {
     // Obtener los archivos válidos de la subcarpeta
     const archivosValidos = await archivo.find({
       padre: subCarpetaId,
-      status: "Vigente",
+      status: { $in: ["Vigente", "Por vencer"] },
     });
 
     // Obtener los parámetros de la carpeta que tienen option = true

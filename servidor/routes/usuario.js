@@ -8,6 +8,8 @@ router.get("/", function (req, res, next) {
 });
 
 //Usuarios
+router.get("/getUsuariosNormales", usuario.getUsuariosNormales);
+router.get("/verificarTokenValido", usuario.verificarToken);
 router.get("/getUsuarios", usuario.getUsuarios);
 router.get("/queryUsuario", usuario.queryUsuario);
 router.get("/queryTokenID", usuario.queryTokenID);

@@ -58,6 +58,23 @@
                     label="Descripción"
                     placeholder="Ingrese descripción"
                   ></v-text-field>
+                  <v-select
+                    v-model="editedItem.usuariosConAcceso"
+                    outlined
+                    :items="usuariosDisponibles"
+                    label="Usuarios"
+                    multiple
+                    chips
+                    return-object
+                    :item-text="(user) => user.email"
+                    hint="Selecciona usuarios con acceso"
+                    persistent-hint
+                    :no-data-text="
+                      usuariosDisponibles.length === 0
+                        ? 'No hay usuarios disponibles'
+                        : ''
+                    "
+                  ></v-select>
                 </v-card-text>
 
                 <v-card-actions>
@@ -167,12 +184,11 @@ export default {
   data: () => ({
     dialog: false,
     dialogDelete: false,
-
+    usuarios: [],
     direction: "left",
     fabx: false,
     hover: false,
     transition: "slide-y-reverse-transition",
-
     headers: [
       {
         text: "Nombre contenedor",
@@ -182,7 +198,7 @@ export default {
       },
       { text: "Fecha Creación", value: "fechaCreacion" },
       { text: "Descripción", value: "descripcion" },
-      { text: "Actions", value: "acciones", sortable: false },
+      { text: "Acciones", value: "acciones", sortable: false, align: "center" },
     ],
     desserts: [],
     editedIndex: -1,
@@ -190,11 +206,13 @@ export default {
       nombre: "",
       descripcion: "",
       fechaCreacion: "",
+      usuariosConAcceso: [],
     },
     defaultItem: {
       nombre: "",
       descripcion: "",
       fechaCreacion: "",
+      usuariosConAcceso: [],
     },
   }),
 
@@ -202,6 +220,29 @@ export default {
     formTitle() {
       return this.editedIndex === -1 ? "Nuevo Contenedor" : "Editar Contenedor";
     },
+
+    usuariosDisponibles() {
+      if (this.editedIndex === -1) {
+        // Creando nueva carpeta
+        return this.usuarios;
+      } else {
+        // Editando carpeta existente
+        const usuariosNormales = this.usuarios.filter(
+          (user) => user.rol !== "admin"
+        );
+        const usuariosSeleccionados = this.editedItem.usuariosConAcceso.map(
+          (user) => user._id
+        );
+
+        return usuariosNormales.map((user) => {
+          return {
+            ...user,
+            selected: usuariosSeleccionados.includes(user._id),
+          };
+        });
+      }
+    },
+
     // computed: {
     //   ...mapState(['contenedores'])
     // },
@@ -216,8 +257,9 @@ export default {
     },
   },
 
-  mounted() {
+  created() {
     this.initialize();
+    this.getUsers();
   },
 
   methods: {
@@ -231,10 +273,25 @@ export default {
       return fechaFormat;
     },
     async initialize() {
+      const token = localStorage.getItem("token");
+      const headers = {
+        Authorization: `Bearer ${token}`,
+      };
       await axios
-        .get("sociedad/getPadres")
+        .get("sociedad/getPadres", { headers })
         .then((res) => {
           this.desserts = res.data;
+        })
+        .catch((e) => {
+          console.log(e);
+        });
+    },
+
+    async getUsers() {
+      await axios
+        .get("usuario/getUsuariosNormales")
+        .then((res) => {
+          this.usuarios = res.data;
         })
         .catch((e) => {
           console.log(e);
@@ -274,8 +331,12 @@ export default {
     },
 
     async verificarExistencias(item, index) {
+      const token = localStorage.getItem("token");
+      const headers = {
+        Authorization: `Bearer ${token}`,
+      };
       await axios
-        .get("sociedad/queryFolders?_id=" + item._id)
+        .get("sociedad/queryFolders?_id=" + item._id,{ headers })
         .then((res) => {
           this.carpetas = res.data;
           if (this.carpetas.length < 1) {

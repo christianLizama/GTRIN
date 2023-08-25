@@ -17,9 +17,14 @@
         <span>Buscar</span>
       </v-tooltip>
 
-      <v-tooltip bottom v-if="esAdmin"> 
+      <v-tooltip bottom v-if="esAdmin">
         <template v-slot:activator="{ on, attrs }">
-          <v-btn dark v-bind="attrs" v-on="on" @click="dialogParam = !dialogParam">
+          <v-btn
+            dark
+            v-bind="attrs"
+            v-on="on"
+            @click="dialogParam = !dialogParam"
+          >
             <v-icon>mdi-folder-cog</v-icon>
           </v-btn>
         </template>
@@ -40,6 +45,20 @@
         </template>
         <span>Agregar carpeta</span>
       </v-tooltip>
+
+      <v-tooltip bottom>
+        <template v-slot:activator="{ on, attrs }">
+          <v-btn v-bind="attrs" v-on="on" icon @click="toggleOrdenarPor">
+            <v-icon>{{
+              ordenarPor === "nombre"
+                ? "mdi-sort-alphabetical-ascending"
+                : "mdi-sort-numeric-ascending"
+            }}</v-icon>
+          </v-btn>
+        </template>
+        <span>Ordenar por nombre o cumplimiento</span>
+      </v-tooltip>
+
       <vue-json-to-csv
         :json-data="carpetas"
         :labels="{
@@ -82,16 +101,17 @@
           ></v-text-field>
         </v-expand-transition>
       </div>
-
       <v-subheader inset> Sub-Carpetas </v-subheader>
 
       <v-list-item
-        v-for="(item,index) in resultadoBusqueda"
+        v-for="(item, index) in resultadoBusqueda"
         :key="item.nombre"
         link
         @click="enviarRuta(item)"
       >
-        <v-list-item-avatar>{{index+1}}<v-icon>mdi-folder</v-icon> </v-list-item-avatar>
+        <v-list-item-avatar
+          >{{ index + 1 }}<v-icon>mdi-folder</v-icon>
+        </v-list-item-avatar>
         <v-list-item-content>
           <v-list-item-title>{{ item.nombre }}</v-list-item-title>
           <v-list-item-subtitle>{{
@@ -99,9 +119,7 @@
           }}</v-list-item-subtitle>
         </v-list-item-content>
 
-        <progress-file
-          :porcentaje="item.porcentaje"
-        ></progress-file>
+        <progress-file :porcentaje="item.porcentaje"></progress-file>
 
         <v-menu top left rounded="tr-xl" :offset-x="true" :offset-y="true">
           <template v-slot:activator="{ on, attrs }">
@@ -153,7 +171,11 @@
 
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn color="grey" text class="body-2 font-weight-bold" @click="closeDelete"
+          <v-btn
+            color="grey"
+            text
+            class="body-2 font-weight-bold"
+            @click="closeDelete"
             >Cancelar</v-btn
           >
           <v-btn
@@ -239,7 +261,11 @@
     <!-- Dialogo de parametrización -->
     <v-dialog v-model="dialogParam" max-width="500px">
       <v-card v-if="isUpload">
-        <loading texto="Subiendo Datos" :overlay="false" v-if="isUpload"></loading>
+        <loading
+          texto="Subiendo Datos"
+          :overlay="false"
+          v-if="isUpload"
+        ></loading>
       </v-card>
       <v-card v-if="!isUpload">
         <v-toolbar dark color="black darken-3" dense flat>
@@ -288,7 +314,11 @@
                     :key="index"
                     autofocus
                   >
-                    <v-icon @click="deleteFind(find)" slot="append-outer" color="red">
+                    <v-icon
+                      @click="deleteFind(find)"
+                      slot="append-outer"
+                      color="red"
+                    >
                       mdi-minus
                     </v-icon>
                   </v-text-field>
@@ -335,6 +365,7 @@ export default {
     hidden: true,
     searchClosed: true,
     timeout: 7500,
+    ordenarPor: "nombre",
     encabezado: "",
     addPermission: true,
     finds: [],
@@ -371,12 +402,17 @@ export default {
     this.initialize();
   },
   computed: {
-    esAdmin(){
-      return this.$store.state.usuario && this.$store.state.usuario.rol=="admin";
+    esAdmin() {
+      return (
+        this.$store.state.usuario && this.$store.state.usuario.rol == "admin"
+      );
     },
     formTitle() {
-      return this.editedIndex === -1 ? "Nueva Carpeta" : "Editar nombre de la carpeta";
+      return this.editedIndex === -1
+        ? "Nueva Carpeta"
+        : "Editar nombre de la carpeta";
     },
+
     resultadoBusqueda() {
       return this.carpetas
         .filter((item) => {
@@ -385,14 +421,12 @@ export default {
             .split(" ")
             .every((v) => item.nombre.toLowerCase().includes(v));
         })
-        .sort(function (a, b) {
-          if (a.nombre < b.nombre) {
-            return -1;
+        .sort((a, b) => {
+          if (this.ordenarPor === "nombre") {
+            return a.nombre.localeCompare(b.nombre);
+          } else if (this.ordenarPor === "porcentaje") {
+            return a.porcentaje - b.porcentaje;
           }
-          if (a.nombre > b.nombre) {
-            return 1;
-          }
-          return 0;
         });
     },
   },
@@ -408,6 +442,9 @@ export default {
     },
   },
   methods: {
+    toggleOrdenarPor() {
+      this.ordenarPor = this.ordenarPor === "nombre" ? "porcentaje" : "nombre";
+    },
     yesOrNo(value) {
       if (value) {
         return "Si";
@@ -447,7 +484,7 @@ export default {
               this.addPermission = false;
             }
             this.dialogFindDelete = false;
-            
+
             window.location.reload();
           })
           .catch((e) => {
@@ -649,22 +686,24 @@ export default {
     },
 
     async initialize() {
-      await axios.get("carpeta/query?_id=" + this.$route.params.Folder).then((result) => {
-        this.padre = result.data;
-        //this.getSubCarpetaCumplimiento(result.data)
-        this.getSubFolders(result.data._id);
-        result.data.parametros.forEach((element) => {
-          this.finds.push(element);
-        });
+      await axios
+        .get("carpeta/query?_id=" + this.$route.params.Folder)
+        .then((result) => {
+          this.padre = result.data;
+          //this.getSubCarpetaCumplimiento(result.data)
+          this.getSubFolders(result.data._id);
+          result.data.parametros.forEach((element) => {
+            this.finds.push(element);
+          });
 
-        this.primerosParametros = result.data.parametros;
-        if (result.data.parametros.length >= 1) {
-          this.addPermission = false;
-          this.encabezado = "Editar Parametros";
-        } else {
-          this.encabezado = "Agregar Parametros";
-        }
-      });
+          this.primerosParametros = result.data.parametros;
+          if (result.data.parametros.length >= 1) {
+            this.addPermission = false;
+            this.encabezado = "Editar Parametros";
+          } else {
+            this.encabezado = "Agregar Parametros";
+          }
+        });
     },
     async actualizarSubCarpeta(carpeta, index) {
       carpeta.nombre = this.editedItem.nombre;
@@ -691,7 +730,7 @@ export default {
           console.log(e.response);
         });
     },
-    async getSubCarpetaCumplimiento(padre){
+    async getSubCarpetaCumplimiento(padre) {
       const request = {
         params: {
           _id: padre._id,
@@ -701,7 +740,7 @@ export default {
       await axios
         .get("carpeta/contarCumplimiento", request)
         .then((res) => {
-          this.carpetas = res.data
+          this.carpetas = res.data;
           this.isLoading = false;
         })
         .catch((e) => {

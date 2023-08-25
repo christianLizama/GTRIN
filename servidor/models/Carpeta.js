@@ -16,6 +16,7 @@ const carpetaSchema = new Schema({
     padre: { type: Schema.ObjectId, ref: 'Sociedad' ,required: [true, 'padre obligatorio']},
     hijos: {type: [Schema.ObjectId], ref:'subCarpeta'},
     porcentaje: {type: Number, default:0},
+    usuariosConAcceso: [{ type: Schema.Types.ObjectId, ref: 'Usuario' }]
 });
 
 const Carpeta = mongoose.model('Carpeta', carpetaSchema);

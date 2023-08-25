@@ -21,6 +21,23 @@ async function checkToken(token) {
 }
 
 export default {
+  verificarTokenValido: async (token) => {
+    try {
+      const { _id } = jwt.verify(token, "clavesecretaparagenerartoken");
+      const user = await Usuario.findOne({ _id });
+      if (user) {
+        return user; // Devolver el usuario si el token es válido
+      } else {
+        throw new Error('Usuario no encontrado');
+      }
+    } catch (error) {
+      if (error.name === 'TokenExpiredError') {
+        throw new Error('Token expirado'); // Lanzar un error si el token ha expirado
+      } else {
+        throw new Error('Token inválido'); // Lanzar un error si el token es inválido
+      }
+    }
+  },
   encode: async (_id, rol, nombreCompleto) => {
     const token = jwt.sign(
       { _id: _id, rol: rol ,nombreCompleto:nombreCompleto},

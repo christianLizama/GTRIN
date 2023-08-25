@@ -274,7 +274,6 @@ export default {
             });
         } else {
           if (this.editedItem.option == "No") {
-            console.log("hola");
             await axios
               .put("usuario/updateUsuario", {
                 _id: this.editedItem._id,
@@ -340,8 +339,13 @@ export default {
     },
     async listarAdmins() {
       let me = this;
+
+      const token = localStorage.getItem('token');
+      const headers = {
+        Authorization: `Bearer ${token}`
+      };
       await axios
-        .get("usuario/getUsuarios")
+        .get("usuario/getUsuarios",{ headers })
         .then(function (response) {
           me.admins = response.data;
         })
