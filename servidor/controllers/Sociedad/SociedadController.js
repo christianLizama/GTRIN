@@ -18,9 +18,10 @@ const add = async (req, res, next) => {
       ...idsUsuariosAdministradores,
       ...sociedadNueva.usuariosConAcceso,
     ];
-
     const reg = await sociedad.create(sociedadNueva);
-    res.status(200).json(reg);
+    //Buscar esa sociedad y devolverla con los usuariosConAcceso populados
+    const sociedadPopulada = await sociedad.findOne({ _id: reg._id }).populate({ path: "usuariosConAcceso", select: "_id email rol" });
+    res.status(200).json(sociedadPopulada);
   } catch (e) {
     res.status(500).send({
       message: "Ocurrio un error",
@@ -70,8 +71,18 @@ const queryNombre = async (req, res, next) => {
 //Metodo para obtener Carpetas de una sociedad segun el id de la sociedad
 const queryFolders = async (req, res, next) => {
   try {
+    const tokenActual = req.headers.authorization.split(" ")[1];
+    // Verificar si el token es válido y obtener el usuario
+    const user = await Token.verificarTokenValido(tokenActual);
+
     const id = req.query._id;
-    const reg = await Carpeta.find({ padre: id });
+
+    // Obtener todas las carpetas que contienen al usuario actual en usuariosConAcceso
+    const reg = await Carpeta.find({
+      padre: id,
+      usuariosConAcceso: user._id,
+    }).populate({ path: "usuariosConAcceso", select: "_id email rol" });
+
     if (!reg) {
       res.status(404).send({
         message: "El registro no existe",
@@ -108,8 +119,9 @@ const update = async (req, res, next) => {
   try {
     const id = req.body._id;
     let body = req.body.sociedad;
-    const reg = await sociedad.findByIdAndUpdate(id, body, { new: true });
-
+    // transformar el arreglo de usuariosConAcceso a un arreglo solo de ids
+    body.usuariosConAcceso = body.usuariosConAcceso.map((usuario) => usuario._id);
+    const reg = await sociedad.findByIdAndUpdate(id, body, { new: true }).populate({ path: "usuariosConAcceso", select: "_id email rol" });
     res.status(200).json(reg);
   } catch (e) {
     res.status(500).send({
@@ -118,6 +130,7 @@ const update = async (req, res, next) => {
     next(e);
   }
 };
+
 //Metodo para eliminar una sociedad mediante _id
 const remove = async (req, res, next) => {
   try {
@@ -176,9 +189,12 @@ const getPadres = async (req, res, next) => {
 
     try {
       const usuario = await Token.verificarTokenValido(token);
-      console.log("Usuario válido:", usuario);
+      //console.log("Usuario válido:", usuario);
 
-      const reg = await sociedad.find({ usuariosConAcceso: usuario._id });
+      const reg = await sociedad.find({ usuariosConAcceso: usuario._id }).populate({
+        path: "usuariosConAcceso",
+        select: "_id email rol"
+      });;
       res.status(200).json(reg);
     } catch (error) {
       if (

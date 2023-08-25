@@ -100,7 +100,7 @@ export default new Vuex.Store({
       commit("setUsuario", null);
       localStorage.removeItem("token");
       localStorage.removeItem("usuario");
-      router.push("/login").catch(() => {});
+      router.push("/login");
     },
   },
   modules: {},

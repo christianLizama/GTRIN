@@ -59,17 +59,21 @@
                     placeholder="Ingrese descripción"
                   ></v-text-field>
                   <v-select
-                    v-model="editItem.usuariosConAcceso"
+                    v-model="editedItem.usuariosConAcceso"
                     outlined
-                    :items="usuarios"
+                    :items="usuariosDisponibles"
                     label="Usuarios"
                     multiple
                     chips
                     return-object
-                    item-text="email"
+                    :item-text="(user) => user.email"
                     hint="Selecciona usuarios con acceso"
                     persistent-hint
-                    :no-data-text="usuarios.length === 0 ? 'No hay usuarios disponibles' : ''"
+                    :no-data-text="
+                      usuariosDisponibles.length === 0
+                        ? 'No hay usuarios disponibles'
+                        : ''
+                    "
                   ></v-select>
                 </v-card-text>
 
@@ -216,6 +220,29 @@ export default {
     formTitle() {
       return this.editedIndex === -1 ? "Nuevo Contenedor" : "Editar Contenedor";
     },
+
+    usuariosDisponibles() {
+      if (this.editedIndex === -1) {
+        // Creando nueva carpeta
+        return this.usuarios;
+      } else {
+        // Editando carpeta existente
+        const usuariosNormales = this.usuarios.filter(
+          (user) => user.rol !== "admin"
+        );
+        const usuariosSeleccionados = this.editedItem.usuariosConAcceso.map(
+          (user) => user._id
+        );
+
+        return usuariosNormales.map((user) => {
+          return {
+            ...user,
+            selected: usuariosSeleccionados.includes(user._id),
+          };
+        });
+      }
+    },
+
     // computed: {
     //   ...mapState(['contenedores'])
     // },
@@ -246,12 +273,12 @@ export default {
       return fechaFormat;
     },
     async initialize() {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
       const headers = {
-        Authorization: `Bearer ${token}`
+        Authorization: `Bearer ${token}`,
       };
       await axios
-        .get("sociedad/getPadres",{ headers })
+        .get("sociedad/getPadres", { headers })
         .then((res) => {
           this.desserts = res.data;
         })
@@ -265,7 +292,6 @@ export default {
         .get("usuario/getUsuariosNormales")
         .then((res) => {
           this.usuarios = res.data;
-          console.log(this.usuarios)
         })
         .catch((e) => {
           console.log(e);
@@ -305,8 +331,12 @@ export default {
     },
 
     async verificarExistencias(item, index) {
+      const token = localStorage.getItem("token");
+      const headers = {
+        Authorization: `Bearer ${token}`,
+      };
       await axios
-        .get("sociedad/queryFolders?_id=" + item._id)
+        .get("sociedad/queryFolders?_id=" + item._id,{ headers })
         .then((res) => {
           this.carpetas = res.data;
           if (this.carpetas.length < 1) {

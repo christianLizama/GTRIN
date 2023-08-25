@@ -3,12 +3,26 @@ import Recover from "../../models/Recover.js";
 import bcrypt from "bcryptjs";
 import token from "../../services/token.js";
 import { enviarCorreo2 } from "../Correo/correoController";
+import Sociedad from "../../models/Sociedad.js";
 
 async function getUsuarios(req, res) {
   try {
-    let usuarios = await Usuario.find({
+    const tokenActual = req.headers.authorization.split(" ")[1];
+    // Verificar si el token es válido y obtener el usuario
+    const user = await token.verificarTokenValido(tokenActual);
+
+    let usuariosQuery = {
+      _id: { $ne: user._id },
       email: { $ne: "reportes@transportesruiz.cl" },
-    });
+    };
+
+    // Si el usuario es admin, ajustar la consulta para excluir administradores
+    if (user.rol === "admin" && user.email !== "reportes@transportesruiz.cl") {
+      usuariosQuery.rol = "usuario";
+    }
+
+    const usuarios = await Usuario.find(usuariosQuery);
+
     if (!usuarios) {
       res.status(404).send({
         message: "No hay ningún usuario",
@@ -20,7 +34,6 @@ async function getUsuarios(req, res) {
     res.status(500).send({
       message: "Ocurrió un error",
     });
-    next(e);
   }
 }
 
@@ -99,6 +112,18 @@ async function postUsuario(req, res) {
       res.status(200).send(false);
     } else {
       const newUser = await usuario.save();
+
+      if (req.body.rol === "admin") {
+        const sociedades = await Sociedad.find();
+        const usuarioId = newUser._id;
+
+        // Agregar el nuevo usuario a usuariosConAcceso de cada sociedad
+        for (const sociedadItem of sociedades) {
+          sociedadItem.usuariosConAcceso.push(usuarioId);
+          await sociedadItem.save();
+        }
+      }
+
       await enviarCorreo2(
         `Hola ${req.body.nombreCompleto},\n\n
         Se ha creado una cuenta en el sistema de Transportes Ruiz con tu usuario.\n
@@ -130,6 +155,23 @@ async function updateUsuario(req, res) {
           clave: req.body.clave,
         }
       );
+
+      // Si el usuario recupera el rol de admin, agregarlo a todas las sociedades
+      if (req.body.rol === "admin") {
+        await Sociedad.updateMany(
+          {},
+          { $addToSet: { usuariosConAcceso: reg._id } }
+        );
+      }
+
+      // Si el usuario ya no es admin, eliminarlo de usuariosConAcceso en todas las sociedades
+      if (req.body.rol !== "admin") {
+        await Sociedad.updateMany(
+          { usuariosConAcceso: reg._id },
+          { $pull: { usuariosConAcceso: reg._id } }
+        );
+      }
+
       res.status(200).json(reg);
     } else if (req.body.option == "No") {
       const reg = await Usuario.findByIdAndUpdate(
@@ -142,6 +184,21 @@ async function updateUsuario(req, res) {
         },
         { new: true }
       );
+      // Si el usuario recupera el rol de admin, agregarlo a todas las sociedades
+      if (req.body.rol === "admin") {
+        await Sociedad.updateMany(
+          {},
+          { $addToSet: { usuariosConAcceso: reg._id } }
+        );
+      }
+
+      // Si el usuario ya no es admin, eliminarlo de usuariosConAcceso en todas las sociedades
+      if (req.body.rol !== "admin") {
+        await Sociedad.updateMany(
+          { usuariosConAcceso: reg._id },
+          { $pull: { usuariosConAcceso: reg._id } }
+        );
+      }
       console.log(reg);
       res.status(200).json(reg);
     }

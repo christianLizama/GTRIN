@@ -176,20 +176,25 @@
             label="Descripción"
             placeholder="Ingrese descripción"
           ></v-text-field>
+          <v-select
+            v-model="editedItem.usuariosConAcceso"
+            outlined
+            :items="usuariosDisponibles"
+            label="Usuarios"
+            multiple
+            chips
+            return-object
+            :item-text="(user) => user.email"
+            hint="Selecciona usuarios con acceso"
+            persistent-hint
+            :no-data-text="
+              usuariosDisponibles.length === 0
+                ? 'No hay usuarios disponibles'
+                : ''
+            "
+          ></v-select>
         </v-card-text>
-        <!-- <v-card-text>
-          <h3>Apartados a controlar *</h3>
-          <v-btn icon @click="addFind">
-            <v-icon>mdi-plus</v-icon>
-          </v-btn>
-          <div v-for="(find, index) in editedItem.parametros" :key="find.nombre">
-            <v-text-field
-              :label="'Apartado ' + (index + 1)"
-              v-model="find.value"
-              :key="index"
-            />
-          </div>
-        </v-card-text> -->
+
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn
@@ -223,7 +228,7 @@ import ProgressFolder from "../ProgressFolder.vue";
 export default {
   components: { loading, Snackbar, ProgressFolder },
   data: () => ({
-    // finds: [],
+    usuarios: [],
     hidden: true,
     searchClosed: true,
     busqueda: "",
@@ -242,16 +247,19 @@ export default {
     editedItem: {
       nombre: "",
       descripcion: "",
+      usuariosConAcceso: [],
       // parametros:[]
     },
     defaulteditedItem: {
       nombre: "",
       descripcion: "",
+      usuariosConAcceso: [],
       // parametros:[]
     },
   }),
   created() {
     this.initialize();
+    this.getUsers();
   },
   watch: {
     dialogDelete(val) {
@@ -262,6 +270,27 @@ export default {
     },
   },
   computed: {
+    usuariosDisponibles() {
+      if (this.editedIndex === -1) {
+        // Creando nueva carpeta
+        return this.usuarios;
+      } else {
+        // Editando carpeta existente
+        const usuariosNormales = this.usuarios.filter(
+          (user) => user.rol !== "admin"
+        );
+        const usuariosSeleccionados = this.editedItem.usuariosConAcceso.map(
+          (user) => user._id
+        );
+
+        return usuariosNormales.map((user) => {
+          return {
+            ...user,
+            selected: usuariosSeleccionados.includes(user._id),
+          };
+        });
+      }
+    },
     esAdmin() {
       return (
         this.$store.state.usuario && this.$store.state.usuario.rol == "admin"
@@ -286,6 +315,17 @@ export default {
     },
   },
   methods: {
+    async getUsers() {
+      await axios
+        .get("usuario/getUsuariosNormales")
+        .then((res) => {
+          this.usuarios = res.data;
+        })
+        .catch((e) => {
+          console.log(e);
+        });
+    },
+
     atras() {
       this.$router.go(-1);
     },
@@ -490,12 +530,13 @@ export default {
         });
     },
     async getFolders(id) {
+      const token = localStorage.getItem("token");
+      const headers = {
+        Authorization: `Bearer ${token}`,
+      };
       await axios
-        .get("sociedad/queryFolders?_id=" + id)
+        .get("sociedad/queryFolders?_id=" + id, { headers })
         .then(async (res) => {
-          // for (let index = 0; index < res.data.length; index++) {
-          //   await this.getSubFolders(res.data[index]);
-          // }
           this.carpetas = res.data;
           this.isLoading = false;
         })
@@ -521,6 +562,7 @@ export default {
           nombre: this.editedItem.nombre,
           descripcion: this.editedItem.descripcion,
           padre: this.padre._id,
+          usuariosConAcceso: this.editedItem.usuariosConAcceso,
         };
         //this.createServerFolder(nueva);
         this.postFolder(nueva);

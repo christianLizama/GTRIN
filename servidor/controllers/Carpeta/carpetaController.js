@@ -1,8 +1,10 @@
 import { Carpeta } from "../../models/Carpeta";
 import subCarpeta from "../../models/SubCarpeta";
 import Archivo from "../../models/Archivo";
+import Usuario from "../../models/Usuario";
 const cumplimiento = require("../../utils/cumplimientos");
 const { Storage } = require("@google-cloud/storage");
+
 
 const storage = new Storage({
   keyFilename: "cool-kit-375714-32d9f4710e16.json",
@@ -12,13 +14,27 @@ const bucket = storage.bucket("prueba-2");
 //Metodo para crear una Carpeta
 const add = async (req, res, next) => {
   try {
-    const reg = await Carpeta.create(req.body.carpeta);
+    let nuevaCarpeta = req.body.carpeta;
+    //obtener todos los usuarios administradores
+    const usuariosAdministradores = await Usuario.find({ rol: "admin" }, "_id");
+    const idsUsuariosAdministradores = usuariosAdministradores.map(
+      (usuario) => usuario._id
+    );
+    //mezclar arreglo de usuarios administradores con arreglo de usuarios con acceso
+    nuevaCarpeta.usuariosConAcceso = [
+      ...idsUsuariosAdministradores,
+      ...nuevaCarpeta.usuariosConAcceso,
+    ];
+
+    const reg = await Carpeta.create(nuevaCarpeta);
     if (reg) {
       //Actualizamos el cumplimiento de la sociedad
       const idSociedad = reg.padre;
       await cumplimiento.calcularCumplimientoSociedad(idSociedad);
     }
-    res.status(200).json(reg);
+    //Buscar esa carpeta y devolverla con los usuariosConAcceso populados
+    const carpetaPopulada = await Carpeta.findOne({ _id: reg._id }).populate({ path: "usuariosConAcceso", select: "_id email rol" });
+    res.status(200).json(carpetaPopulada);
   } catch (e) {
     res.status(500).send({
       message: "Ocurrio un error",
@@ -202,9 +218,10 @@ const addFolder = async (req, res, next) => {
 const update = async (req, res, next) => {
   try {
     const id = req.body._id;
-    const body = req.body.carpeta;
-    //console.log(body);
-    const reg = await Carpeta.findByIdAndUpdate(id, body, { new: true });
+    let body = req.body.carpeta;
+    // transformar el arreglo de usuariosConAcceso a un arreglo solo de ids
+    body.usuariosConAcceso = body.usuariosConAcceso.map((usuario) => usuario._id);
+    const reg = await Carpeta.findByIdAndUpdate(id, body, { new: true }).populate({ path: "usuariosConAcceso", select: "_id email rol" });
     res.status(200).json(reg);
   } catch (e) {
     res.status(500).send({
