@@ -44,7 +44,9 @@
               </a>
             </div>
           </template>
-          <span>{{ item.archivo.substring(item.archivo.lastIndexOf("/") + 1) }}</span>
+          <span>{{
+            item.archivo.substring(item.archivo.lastIndexOf("/") + 1)
+          }}</span>
         </v-tooltip>
       </template>
       <template v-slot:top>
@@ -403,6 +405,8 @@ export default {
       { title: "Editar", icon: "mdi-pencil" },
       { title: "Eliminar", icon: "mdi-delete" },
       { title: "Descargar", icon: "mdi-download" },
+      { title: "Compartir", icon: "mdi-share" },
+      { title: "Copiar url", icon: "mdi-clipboard-outline" },
     ],
     headers: [
       {
@@ -679,8 +683,45 @@ export default {
         this.deleteItem(item);
       } else if (opcion == 3) {
         this.downloadFile(item.archivo);
+      } else if (opcion == 4) {
+        this.shareFile(item);
+      } else if (opcion == 5) {
+        this.copiarAlPortapapeles(item.archivo);
       }
     },
+    shareFile(archivo) {
+      if (navigator.share) {
+        navigator
+          .share({
+            title: `Nombre de archivo: ${archivo.nombre}`,
+            text: "Archivo compartido desde la aplicación de gestión de archivos de Transportes Ruiz <p>hola</p>",
+            url: archivo.archivo,
+          })
+          .then(() => console.log("Contenido compartido exitosamente"))
+          .catch((error) => console.error("Error al compartir:", error));
+      } else {
+        console.log("La API de compartir no es compatible en este navegador.");
+      }
+    },
+
+    copiarAlPortapapeles(archivo) {
+      navigator.clipboard
+        .writeText(archivo)
+        .then(() => {
+          this.$refs.childComponent.SnackbarShow(
+            "success",
+            "Url copiada al portapapeles"
+          );
+        })
+        .catch((error) => {
+          console.error("Error al copiar al portapapeles:", error);
+          this.$refs.childComponent.SnackbarShow(
+            "error",
+            "Error al copiar al portapapeles"
+          );
+        });
+    },
+
     obtenerDiferencia(fechaEmision, fechaVencimiento) {
       var fecha1 = moment(fechaEmision);
       var fecha2 = moment(fechaVencimiento);
@@ -707,7 +748,7 @@ export default {
       }
     },
     downloadFile(file) {
-      let nombreArchivo = file.substring(file.lastIndexOf("/") + 1)
+      let nombreArchivo = file.substring(file.lastIndexOf("/") + 1);
       UploadService.download(nombreArchivo)
         .then((response) => {
           var fileURL = window.URL.createObjectURL(new Blob([response.data]));
@@ -947,17 +988,18 @@ export default {
       this.closeDelete();
     },
     async borrarArchivo(archivo, index) {
-
-      let nombreArchivo = archivo.archivo.substring(archivo.archivo.lastIndexOf("/") + 1)
+      let nombreArchivo = archivo.archivo.substring(
+        archivo.archivo.lastIndexOf("/") + 1
+      );
       let idUsuario = this.$store.state.usuario._id;
-      console.log(idUsuario)
+      console.log(idUsuario);
 
       var data = {
         id: archivo._id,
         fileName: nombreArchivo,
         idUser: idUsuario,
       };
-      
+
       await axios.delete("archivo/remove", { data }).then((result) => {
         this.$refs.childComponent.SnackbarShow("success", result.data.message);
         this.archivos.splice(index, 1);

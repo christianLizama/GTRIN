@@ -1,7 +1,7 @@
-import archivo from "../models/Archivo";
-import { Carpeta } from "../models/Carpeta";
-import subCarpeta from "../models/SubCarpeta";
-import sociedad from "../models/Sociedad";
+import archivo from "../models/Archivo.js";
+import Carpeta from "../models/Carpeta.js";
+import subCarpeta from "../models/SubCarpeta.js";
+import sociedad from "../models/Sociedad.js";
 
 // Actualizar el cumplimiento de todas las carpetas
 async function actualizarCumplimientoTodasCarpetas() {
@@ -261,7 +261,7 @@ async function calcularCumplimientoSociedad(idSociedad) {
   }
 }
 
-module.exports = {
+export default {
   calcularCumplimientoCarpeta,
   calcularCumplimientoSubCarpeta,
   calcularCumplimientoSociedad,

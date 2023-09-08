@@ -2,7 +2,7 @@ import Usuario from "../../models/Usuario.js";
 import Recover from "../../models/Recover.js";
 import bcrypt from "bcryptjs";
 import token from "../../services/token.js";
-import { enviarCorreo2 } from "../Correo/correoController";
+import enviarCorreo2 from "../Correo/correoController.js";
 import Sociedad from "../../models/Sociedad.js";
 
 async function getUsuarios(req, res) {
@@ -243,7 +243,22 @@ async function login(req, res, next) {
 
 async function removeUsuario(req, res, next) {
   try {
-    const reg = await Usuario.findByIdAndDelete({ _id: req.body._id });
+    const userId = req.body._id;
+
+    // Eliminar al usuario de las sociedades
+    await Sociedad.updateMany(
+      { usuariosConAcceso: userId },
+      { $pull: { usuariosConAcceso: userId } }
+    );
+
+    // Eliminar al usuario de las carpetas
+    await Carpeta.updateMany(
+      { usuariosConAcceso: userId },
+      { $pull: { usuariosConAcceso: userId } }
+    );
+
+    // Eliminar al usuario
+    const reg = await Usuario.findByIdAndDelete(userId);
     res.status(200).json(reg);
   } catch (e) {
     res.status(500).send({
@@ -349,7 +364,7 @@ function generateCode() {
   return code;
 }
 
-export {
+export default {
   getUsuariosNormales,
   getUsuarios,
   queryUsuario,

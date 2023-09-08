@@ -1,5 +1,5 @@
-const express = require('express')
-const subCarpeta = require('../controllers/SubCarpeta/subCarpetaController');
+import express from 'express';
+import subCarpeta from '../controllers/SubCarpeta/subCarpetaController.js';
 const router = express.Router();
 
 
@@ -20,4 +20,4 @@ router.put('/updateSubFolder', subCarpeta.updateHijos)
 router.get('/getAllSubFolders',subCarpeta.getAllSubFolders)
 router.get('/getArchivosParam',subCarpeta.getArchivosParametro)
 
-module.exports = router;
+export default router;

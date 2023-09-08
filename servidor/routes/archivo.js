@@ -1,5 +1,5 @@
-const express = require('express')
-const archivo = require('../controllers/Archivo/archivoController');
+import express from 'express';
+import archivo from '../controllers/Archivo/archivoController.js';
 const router = express.Router();
 
 
@@ -27,4 +27,4 @@ router.get('/countPorVencer', archivo.countPorVencer)
 router.get('/countVencidos', archivo.countVencidos)
 
 
-module.exports = router;
+export default router;  

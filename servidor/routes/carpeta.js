@@ -1,5 +1,5 @@
-const express = require('express')
-const folder = require('../controllers/Carpeta/carpetaController');
+import express from 'express';
+import folder from '../controllers/Carpeta/carpetaController.js';
 const router = express.Router();
 
 
@@ -23,4 +23,4 @@ router.put('/addParams',folder.agregarParametros)
 router.put('/updateParams',folder.actualizarParametros)
 router.get('/contarCumplimiento',folder.contarCumplimiento)
 
-module.exports = router;
+export default router;

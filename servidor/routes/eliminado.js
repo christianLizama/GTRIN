@@ -1,5 +1,5 @@
-const express = require('express')
-const eliminado = require('../controllers/Eliminado/eliminadoController');
+import express from 'express';
+import eliminado from '../controllers/Eliminado/eliminadoController.js';
 const router = express.Router();
 
 
@@ -10,4 +10,4 @@ router.get('/', function(req, res, next) {
 
 router.get('/allDeletedFiles', eliminado.getAllDeletedFiles)
 
-module.exports = router;
+export default router;

@@ -1,5 +1,5 @@
-const express = require("express");
-const usuario = require("../controllers/Usuario/usuarioController");
+import express from "express";
+import usuario from "../controllers/Usuario/usuarioController.js";
 const router = express.Router();
 
 /* GET home page. */
@@ -22,5 +22,5 @@ router.post("/recuperarContrasena", usuario.recuperarContrasena);
 router.post("/compararCodigo", usuario.compararCodigo);
 router.post("/cambiarContrasena", usuario.cambiarContrasena);
 
-module.exports = router
+export default router;
 

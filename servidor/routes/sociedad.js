@@ -1,6 +1,6 @@
-const express = require('express')
-const createFolder = require('../controllers/Sociedad/createFolder');
-const sociedadController = require('../controllers/Sociedad/SociedadController');
+import express from 'express';
+import createFolder from '../controllers/Sociedad/createFolder.js';
+import sociedadController from '../controllers/Sociedad/SociedadController.js';
 const router = express.Router();
 
 
@@ -27,5 +27,4 @@ router.put('/getArchivos', sociedadController.getArchivos)
 router.get('/getPadres',sociedadController.getPadres)
 router.get('/queryFolders', sociedadController.queryFolders)
 
-
-module.exports = router;
+export default router;

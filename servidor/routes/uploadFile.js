@@ -1,5 +1,6 @@
-const express = require('express')
-const file = require('../controllers/file.controller');
+import express from 'express';
+//import file from '../controllers/file.controller.js';
+//const file = require('../controllers/file.controller');
 const router = express.Router();
 
 
@@ -9,11 +10,10 @@ router.get('/', function(req, res, next) {
 });
 
 //para agregar carpetas y subcarpetas al servidor
-router.post("/upload", file.upload);
-router.get("/files", file.getListFiles);
-router.get("/files/:name", file.download);
-router.delete("/files/:name", file.remove);
-router.get("/file/:name",file.showPdf)
+// router.post("/upload", file.upload);
+// router.get("/files", file.getListFiles);
+// router.get("/files/:name", file.download);
+// router.delete("/files/:name", file.remove);
+// router.get("/file/:name",file.showPdf)
 
-
-module.exports = router;
+export default router;

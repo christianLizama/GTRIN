@@ -95,7 +95,7 @@ const addsubFolder = async (req, res, next) => {
 
 //Metodo para obtener las carpetas dentro de otras carpetas
 
-module.exports = {
+export default {
   addFolder,
   addsubFolder,
   renameFolder,

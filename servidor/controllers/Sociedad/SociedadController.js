@@ -1,8 +1,10 @@
 // importar el modelo sociedad
-import sociedad from "../../models/Sociedad";
-import usuario from "../../models/Usuario";
-import { Carpeta } from "../../models/Carpeta";
+import sociedad from "../../models/Sociedad.js";
+import usuario from "../../models/Usuario.js";
+import folder from "../../models/Carpeta.js";
 import Token from "../../services/token.js";
+
+const Carpeta = folder.Carpeta;
 
 //Metodo para añadir una sociedad
 const add = async (req, res, next) => {
@@ -216,7 +218,7 @@ const getPadres = async (req, res, next) => {
   }
 };
 
-module.exports = {
+export default {
   add,
   query,
   update,
