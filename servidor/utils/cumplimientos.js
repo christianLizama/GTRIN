@@ -1,7 +1,9 @@
 import archivo from "../models/Archivo.js";
-import Carpeta from "../models/Carpeta.js";
+import folder from "../models/Carpeta.js";
 import subCarpeta from "../models/SubCarpeta.js";
 import sociedad from "../models/Sociedad.js";
+
+const Carpeta = folder.Carpeta;
 
 // Actualizar el cumplimiento de todas las carpetas
 async function actualizarCumplimientoTodasCarpetas() {

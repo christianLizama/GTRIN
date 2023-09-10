@@ -1,9 +1,13 @@
-const util = require("util");
-const multer = require("multer");
+//const util = require("util");
+import util from 'util';
+import multer from 'multer';
+import path from 'path';
+
+// const multer = require("multer");
 const maxSize = 5 * 1024 * 1024;
 // const fs = require("fs");
 // const directoryPath = __basedir + "/uploads/";
-const path = require("path");
+// const path = require("path");y
 
 let storage = multer.memoryStorage({
   // destination: (req, file, cb) => {
@@ -33,4 +37,7 @@ let uploadFile = multer({
 }).single("file");
 
 let uploadFileMiddleware = util.promisify(uploadFile);
-module.exports = uploadFileMiddleware;
+
+export default {
+  uploadFileMiddleware
+}

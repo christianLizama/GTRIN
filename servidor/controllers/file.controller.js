@@ -1,15 +1,21 @@
-const uploadFile = require("../middleware/upload");
-const fs = require("fs");
-const { format } = require("util");
-const { Storage } = require("@google-cloud/storage");
+//const uploadFile = require("../middleware/upload");
+// const fs = require("fs");
+import uploadFileMiddleware  from "../middleware/upload.js";
+import fs from 'fs';
+import {format} from 'util';
+// const { format } = require("util");
+// const { Storage } = require("@google-cloud/storage");
+import { Storage } from '@google-cloud/storage';
+import path from 'path';
 
-const storage = new Storage({ keyFilename: "cool-kit-375714-32d9f4710e16.json" });
+const storage = new Storage({
+  keyFilename: "cool-kit-375714-32d9f4710e16.json",
+});
 const bucket = storage.bucket("prueba-2");
-const path = require("path");
 
 const upload = async (req, res) => {
   try {
-    await uploadFile(req, res);
+    await uploadFileMiddleware.uploadFileMiddleware(req, res);
 
     if (req.file==undefined) {
       return res.status(400).send({ message: "Please upload a file!" });
@@ -160,7 +166,7 @@ const showPdf = (req, res) => {
   }
 };
 
-module.exports = {
+export default {
   upload,
   getListFiles,
   download,
