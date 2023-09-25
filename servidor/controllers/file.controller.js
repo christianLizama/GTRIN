@@ -27,6 +27,7 @@ const upload = async (req, res) => {
 
     req.file.originalname = `${filename}-${fecha}${extname}`;
     const blob = bucket.file(req.file.originalname);
+    
     const blobStream = blob.createWriteStream({
       resumable: false,
     });
@@ -56,17 +57,9 @@ const upload = async (req, res) => {
         message: req.file.originalname,
         url: publicUrl,
       });
-      // res.status(200).send({
-      //   message: "Uploaded the file successfully: " + req.file.filename,
-      //   url: publicUrl,
-      // });
     });
 
-    blobStream.end(req.file.buffer);
-    
-    // res.status(200).send({
-    //   message: req.file.filename,
-    // });
+    blobStream.end(req.file.buffer);    
 
   } catch (err) {
     console.log(err);
