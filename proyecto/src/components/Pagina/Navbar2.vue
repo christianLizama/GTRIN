@@ -117,6 +117,19 @@
           v-if="esAdmin"
           active-class="white--text"
           link
+          to="/configurarParametros"
+        >
+          <v-list-item-icon>
+            <v-icon>mdi-relation-one-or-many-to-one</v-icon>
+          </v-list-item-icon>
+          <v-list-item-content>
+            <v-list-item-title>Parametros</v-list-item-title>
+          </v-list-item-content>
+        </v-list-item>
+        <v-list-item
+          v-if="esAdmin"
+          active-class="white--text"
+          link
           to="/archivosEliminados"
         >
           <v-list-item-icon>

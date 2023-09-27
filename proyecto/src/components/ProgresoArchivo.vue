@@ -45,7 +45,7 @@
 <script>
 import axios from "axios";
 export default {
-  name: "Test",
+  name: "progresoarchivo",
   created() {
     this.solicitarDatos();
   },
@@ -58,32 +58,15 @@ export default {
   props: {
     indice: Number,
     color: String,
+    apiEndpoint: String, // Nueva propiedad para el endpoint de la API
   },
   methods: {
     async solicitarDatos() {
-      switch (this.indice) {
-        case 0:
-          await axios.get("archivo/countAllFiles").then((res) => {
-            this.item = res.data
-          });
-          break;
-        case 1:
-          await axios.get("archivo/countVigentes").then((res) => {
-            this.item = res.data
-          });
-          break;
-        case 2:
-          await axios.get("archivo/countPorVencer").then((res) => {
-            this.item = res.data
-          });
-          break;
-        case 3:
-          await axios.get("archivo/countVencidos").then((res) => {
-            this.item = res.data
-          });
-          break;
-        default:
-          break;
+      try {
+        const response = await axios.get(this.apiEndpoint);
+        this.item = response.data;
+      } catch (error) {
+        console.error("Error al cargar datos:", error);
       }
     },
   },
