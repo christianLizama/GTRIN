@@ -1,9 +1,9 @@
-const { google } = require("googleapis");
-const nodemailer = require("nodemailer");
-const cron = require("node-cron");
-import trigger from "../../models/Trigger";
-import archivo from "../../models/Archivo";
-import subCarpeta from "../../models/SubCarpeta";
+import { google } from 'googleapis';
+import nodemailer from 'nodemailer';
+import cron from 'node-cron';
+import trigger from "../../models/Trigger.js";
+import archivo from "../../models/Archivo.js";
+import subCarpeta from "../../models/SubCarpeta.js";
 import moment from "moment";
 //Metodo para enviar un correo
 
@@ -448,10 +448,18 @@ const obtenerTriggers = async (req, res, next) => {
   }
 };
 
-module.exports = {
+export default {
   enviarCorreo,
   enviarCorreo2,
   stopCron,
   obtenerTriggers,
   cargarTriggers,
-};
+}
+
+// module.exports = {
+//   enviarCorreo,
+//   enviarCorreo2,
+//   stopCron,
+//   obtenerTriggers,
+//   cargarTriggers,
+// };

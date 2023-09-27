@@ -1,15 +1,21 @@
-const uploadFile = require("../middleware/upload");
-const fs = require("fs");
-const { format } = require("util");
-const { Storage } = require("@google-cloud/storage");
+//const uploadFile = require("../middleware/upload");
+// const fs = require("fs");
+import uploadFileMiddleware  from "../middleware/upload.js";
+import fs from 'fs';
+import {format} from 'util';
+// const { format } = require("util");
+// const { Storage } = require("@google-cloud/storage");
+import { Storage } from '@google-cloud/storage';
+import path from 'path';
 
-const storage = new Storage({ keyFilename: "cool-kit-375714-32d9f4710e16.json" });
+const storage = new Storage({
+  keyFilename: "cool-kit-375714-32d9f4710e16.json",
+});
 const bucket = storage.bucket("prueba-2");
-const path = require("path");
 
 const upload = async (req, res) => {
   try {
-    await uploadFile(req, res);
+    await uploadFileMiddleware.uploadFileMiddleware(req, res);
 
     if (req.file==undefined) {
       return res.status(400).send({ message: "Please upload a file!" });
@@ -21,6 +27,7 @@ const upload = async (req, res) => {
 
     req.file.originalname = `${filename}-${fecha}${extname}`;
     const blob = bucket.file(req.file.originalname);
+    
     const blobStream = blob.createWriteStream({
       resumable: false,
     });
@@ -50,17 +57,9 @@ const upload = async (req, res) => {
         message: req.file.originalname,
         url: publicUrl,
       });
-      // res.status(200).send({
-      //   message: "Uploaded the file successfully: " + req.file.filename,
-      //   url: publicUrl,
-      // });
     });
 
-    blobStream.end(req.file.buffer);
-    
-    // res.status(200).send({
-    //   message: req.file.filename,
-    // });
+    blobStream.end(req.file.buffer);    
 
   } catch (err) {
     console.log(err);
@@ -160,7 +159,7 @@ const showPdf = (req, res) => {
   }
 };
 
-module.exports = {
+export default {
   upload,
   getListFiles,
   download,

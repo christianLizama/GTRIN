@@ -21,7 +21,7 @@ const carpetaSchema = new Schema({
 
 const Carpeta = mongoose.model('Carpeta', carpetaSchema);
 
-export{
+export default {
     Carpeta,
     Parametro
 };

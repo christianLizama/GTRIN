@@ -1,12 +1,16 @@
 import moment from "moment";
-import archivo from "../../models/Archivo";
-import { Parametro, Carpeta } from "../../models/Carpeta";
-import subCarpeta from "../../models/SubCarpeta";
-import sociedad from "../../models/Sociedad";
-import eliminado from "../../models/Eliminado";
-const { Storage } = require("@google-cloud/storage");
-const cumplimiento = require("../../utils/cumplimientos.js");
-import usuario from "../../models/Usuario";
+import archivo from "../../models/Archivo.js";
+import folder from "../../models/Carpeta.js";
+import subCarpeta from "../../models/SubCarpeta.js";
+import sociedad from "../../models/Sociedad.js";
+import eliminado from "../../models/Eliminado.js";
+import { Storage } from '@google-cloud/storage';
+import cumplimiento from '../../utils/cumplimientos.js';
+import usuario from "../../models/Usuario.js";
+
+// Para acceder a Carpeta
+const Carpeta = folder.Carpeta;
+
 
 const storage = new Storage({
   keyFilename: "cool-kit-375714-32d9f4710e16.json",
@@ -620,7 +624,7 @@ const updateStatus = async (req, res, next) => {
   }
 };
 
-module.exports = {
+export default {
   add,
   query,
   update,

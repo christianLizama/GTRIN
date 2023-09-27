@@ -58,14 +58,11 @@
         </template>
         <span>Ordenar por nombre o cumplimiento</span>
       </v-tooltip>
-
       <vue-json-to-csv
         :json-data="carpetas"
         :labels="{
           nombre: { title: 'Nombre Carpeta' },
           descripcion: { title: 'Descripcion' },
-          archivosSubidos: { title: 'Archivos Subidos' },
-          archivosRequeridos: { title: 'Archivos Requeridos' },
           porcentaje: { title: 'Porcentaje cumplimiento' },
         }"
         :csv-title="'resumen ' + padre.nombre + '-' + fechaHoy"
@@ -83,6 +80,7 @@
     </v-toolbar>
 
     <loading texto="Cargando Datos" v-if="isLoading"></loading>
+
     <v-list v-if="!isLoading" two-line subheader>
       <div class="container">
         <v-expand-transition>
@@ -425,7 +423,7 @@ export default {
           if (this.ordenarPor === "nombre") {
             return a.nombre.localeCompare(b.nombre);
           } else if (this.ordenarPor === "porcentaje") {
-            return a.porcentaje - b.porcentaje;
+            return b.porcentaje - a.porcentaje;
           }
         });
     },

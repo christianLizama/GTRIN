@@ -1,5 +1,5 @@
-const express = require('express')
-const correo = require('../controllers/Correo/correoController');
+import express from 'express';
+import correo from '../controllers/Correo/correoController.js';
 const router = express.Router();
 
 
@@ -14,4 +14,4 @@ router.post('/sendEmail', correo.enviarCorreo);
 router.post('/stopCron', correo.stopCron);
 router.get('/getTriggers', correo.obtenerTriggers)
 
-module.exports = router;
+export default router;

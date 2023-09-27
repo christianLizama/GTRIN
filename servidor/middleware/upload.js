@@ -1,25 +1,12 @@
-const util = require("util");
-const multer = require("multer");
+//const util = require("util");
+import util from 'util';
+import multer from 'multer';
+import path from 'path';
+
+
 const maxSize = 5 * 1024 * 1024;
-// const fs = require("fs");
-// const directoryPath = __basedir + "/uploads/";
-const path = require("path");
 
-let storage = multer.memoryStorage({
-  // destination: (req, file, cb) => {
-  //   if (!fs.existsSync(directoryPath)) {
-  //     fs.mkdirSync(directoryPath);
-  //   }
-  //   cb(null, directoryPath);
-  // },
-  // filename: (req, file, cb) => {
-  //   cb(
-  //     null, file.originalname.split(".")[0] + "-" + Date.now() + path.extname(file.originalname)
-  //   );
-  // },
-});
-
-
+let storage = multer.memoryStorage();
 
 let uploadFile = multer({
   storage: storage,
@@ -33,4 +20,7 @@ let uploadFile = multer({
 }).single("file");
 
 let uploadFileMiddleware = util.promisify(uploadFile);
-module.exports = uploadFileMiddleware;
+
+export default {
+  uploadFileMiddleware
+}

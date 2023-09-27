@@ -1,4 +1,4 @@
-import eliminado from "../../models/Eliminado";
+import eliminado from "../../models/Eliminado.js";
 
 // Función para formatear la fecha
 function formatearFechaYHoraChilenaConGuion(fecha) {
@@ -61,6 +61,6 @@ const getAllDeletedFiles = async (req, res, next) => {
   }
 };
 
-module.exports = {
+export default {
   getAllDeletedFiles,
 };

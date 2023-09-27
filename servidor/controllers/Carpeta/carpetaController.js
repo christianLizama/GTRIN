@@ -1,10 +1,11 @@
-import { Carpeta } from "../../models/Carpeta";
-import subCarpeta from "../../models/SubCarpeta";
-import Archivo from "../../models/Archivo";
-import Usuario from "../../models/Usuario";
-const cumplimiento = require("../../utils/cumplimientos");
-const { Storage } = require("@google-cloud/storage");
+import folder from "../../models/Carpeta.js";
+import subCarpeta from "../../models/SubCarpeta.js";
+import Archivo from "../../models/Archivo.js";
+import Usuario from "../../models/Usuario.js";
+import cumplimiento from '../../utils/cumplimientos.js'; // Importación con ruta relativa
+import { Storage } from '@google-cloud/storage'; // Importación de un paquete npm
 
+const Carpeta = folder.Carpeta;
 
 const storage = new Storage({
   keyFilename: "cool-kit-375714-32d9f4710e16.json",
@@ -369,7 +370,7 @@ const contarCumplimiento = async (req, res, next) => {
   }
 };
 
-module.exports = {
+export default {
   add,
   query,
   update,

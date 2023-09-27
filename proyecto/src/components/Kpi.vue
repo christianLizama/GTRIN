@@ -2,8 +2,8 @@
   <div>
     <v-container fluid>
       <v-row class="fill-height" align="center" justify="center">
-        <v-col v-for="index in 4" :key="index">
-          <progreso-archivo :color="colores[index-1]" :indice="index-1"></progreso-archivo>
+        <v-col v-for="(color, index) in colores" :key="index">
+          <progreso-archivo :color="color" :apiEndpoint="apiEndpoints.archivo[countEndpoints[index]]" />
         </v-col>
       </v-row>
     </v-container>
@@ -18,9 +18,16 @@ export default {
   created() {},
   data() {
     return {
-      model: null,
-      cantidad: 4,
       colores: ["blue", "green", "orange", "red"],
+      apiEndpoints: {
+        archivo: {
+          countAllFiles: "archivo/countAllFiles",
+          countVigentes: "archivo/countVigentes",
+          countPorVencer: "archivo/countPorVencer",
+          countVencidos: "archivo/countVencidos",
+        },
+      },
+      countEndpoints: ["countAllFiles", "countVigentes", "countPorVencer", "countVencidos"], // Nuevos endpoints correspondientes a cada color
     };
   },
   props: {

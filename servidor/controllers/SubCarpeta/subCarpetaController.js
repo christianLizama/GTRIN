@@ -1,6 +1,6 @@
-import subCarpeta from "../../models/SubCarpeta";
-import archivo from "../../models/Archivo";
-const cumplimiento = require("../../utils/cumplimientos");
+import subCarpeta from "../../models/SubCarpeta.js";
+import archivo from "../../models/Archivo.js";
+import cumplimiento from "../../utils/cumplimientos.js";
 
 //Metodo para crear una sub carpeta
 const add = async (req, res, next) => {
@@ -191,8 +191,7 @@ const getAllSubFolders = async (req, res, next) => {
   }
 };
 
-
-module.exports = {
+export default {
   add,
   query,
   update,
