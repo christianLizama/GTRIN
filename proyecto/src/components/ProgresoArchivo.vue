@@ -59,12 +59,32 @@ export default {
     indice: Number,
     color: String,
     apiEndpoint: String, // Nueva propiedad para el endpoint de la API
+    parametroSeleccionado: String,
+  },
+  watch: {
+    parametroSeleccionado: function(newParametro, oldParametro) {
+      // Aquí puedes ejecutar código cuando parametroSeleccionado cambie
+      console.log("Nuevo valor seleccionado:", newParametro);
+      console.log("Valor anterior seleccionado:", oldParametro);
+      this.solicitarDatos();
+      // Puedes llamar a métodos o realizar otras acciones necesarias aquí
+    },
   },
   methods: {
     async solicitarDatos() {
       try {
-        const response = await axios.get(this.apiEndpoint);
-        this.item = response.data;
+        if (!this.parametroSeleccionado) {
+          const response = await axios.get(this.apiEndpoint);
+          this.item = response.data;
+        } else {
+          const request = {
+            params: {
+              _id: this.parametroSeleccionado,
+            },
+          };
+          const response = await axios.get(this.apiEndpoint, request);
+          this.item = response.data;
+        }
       } catch (error) {
         console.error("Error al cargar datos:", error);
       }

@@ -124,14 +124,14 @@ async function postUsuario(req, res) {
         }
       }
 
-      await enviarCorreo2(
-        `Hola ${req.body.nombreCompleto},\n\n
-        Se ha creado una cuenta en el sistema de Transportes Ruiz con tu usuario.\n
-        Su usuario es: ${req.body.email}\n
-        Su contraseña es: ${req.body.clave}`,
-        `Cuenta creada exitosamente`,
-        req.body.email
-      );
+      // await enviarCorreo2(
+      //   `Hola ${req.body.nombreCompleto},\n\n
+      //   Se ha creado una cuenta en el sistema de Transportes Ruiz con tu usuario.\n
+      //   Su usuario es: ${req.body.email}\n
+      //   Su contraseña es: ${req.body.clave}`,
+      //   `Cuenta creada exitosamente`,
+      //   req.body.email
+      // );
 
       res.status(200).json(newUser);
     }

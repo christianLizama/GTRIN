@@ -50,6 +50,7 @@ import uploadFileRouter from "./routes/uploadFile.js";
 import correoRouter from "./routes/correo.js";
 import usuarioRouter from "./routes/usuario.js";
 import eliminadoRouter from "./routes/eliminado.js";
+import parametroRouter from "./routes/parametro.js";
 const app = express();
 
 app.use(logger("dev"));
@@ -68,6 +69,7 @@ app.use("/uploadFile", uploadFileRouter);
 app.use("/correo",correoRouter);
 app.use("/usuario",usuarioRouter);
 app.use("/eliminado",eliminadoRouter);
+app.use("/parametro",parametroRouter);
 
 //Puerto del server
 const appPort = process.env.PORT_SERVER || 3030

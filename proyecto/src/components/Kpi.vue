@@ -3,7 +3,7 @@
     <v-container fluid>
       <v-row class="fill-height" align="center" justify="center">
         <v-col v-for="(color, index) in colores" :key="index">
-          <progreso-archivo :color="color" :apiEndpoint="apiEndpoints.archivo[countEndpoints[index]]" />
+          <progreso-archivo :parametroSeleccionado="parametroSeleccionado" :color="color" :apiEndpoint="apiEndpoints[countEndpoints[index]]" />
         </v-col>
       </v-row>
     </v-container>
@@ -15,25 +15,20 @@ import ProgresoArchivo from './ProgresoArchivo.vue';
 export default {
   components: { ProgresoArchivo },
   name: "kpi",
-  created() {},
+  created() {
+  },
   data() {
     return {
       colores: ["blue", "green", "orange", "red"],
-      apiEndpoints: {
-        archivo: {
-          countAllFiles: "archivo/countAllFiles",
-          countVigentes: "archivo/countVigentes",
-          countPorVencer: "archivo/countPorVencer",
-          countVencidos: "archivo/countVencidos",
-        },
-      },
       countEndpoints: ["countAllFiles", "countVigentes", "countPorVencer", "countVencidos"], // Nuevos endpoints correspondientes a cada color
     };
   },
   props: {
-    items: Array,
+    apiEndpoints: Object, // Prop para los endpoints de la API
+    parametroSeleccionado: String,
   },
   methods: {},
+  
 };
 </script>
 

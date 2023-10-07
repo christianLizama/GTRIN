@@ -6,7 +6,7 @@
     </v-toolbar>
     <loading v-if="isLoading" texto="Obteniendo información"></loading>
     <v-card elevation="5" outlined class="mx-auto mt-2" max-width="98.6%">
-      <Kpi v-if="!isLoading"></Kpi>
+      <Kpi :apiEndpoints="apiEndpointArchivo" v-if="!isLoading"></Kpi>
     </v-card>
 
     <div class="contenedor" v-if="!isLoading">
@@ -349,6 +349,12 @@ export default {
     subCarpetas: [],
     todoSubCarpetas: [],
     subCarpetasDefault: [{ nombre: "Todo", _id: "" }],
+    apiEndpointArchivo: {
+      countAllFiles: "archivo/countAllFiles",
+      countVigentes: "archivo/countVigentes",
+      countPorVencer: "archivo/countPorVencer",
+      countVencidos: "archivo/countVencidos",
+    },
     estados: [
       { nombre: "Todos", codigo: 0 },
       { nombre: "Vigente", codigo: 3 },
