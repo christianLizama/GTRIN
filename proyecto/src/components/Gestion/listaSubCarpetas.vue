@@ -196,10 +196,7 @@
           </v-toolbar-title>
         </v-toolbar>
 
-        <v-card-text class="pa-4">
-          Si has eliminado parametros se borraran los archivos asociados a tales
-          parametros.
-        </v-card-text>
+        <v-card-text class="pa-4"> No se pueden eliminar. </v-card-text>
 
         <v-card-actions>
           <v-spacer></v-spacer>
@@ -276,8 +273,53 @@
         </v-toolbar>
 
         <v-card-text class="pa-4">
-          <!-- <h3>Apartados a controlar: *</h3> -->
-          <h4>
+          <!-- Apartados a controlar: -->
+          <p>{{parametrosSeleccionado}}</p>
+          <div class="selector-container">
+            <v-select
+              v-model="parametrosSeleccionado"
+              :items="parametros"
+              label="Selecciona un parámetro"
+              hide-details
+              outlined
+              item-text="value"
+              item-value="_id"
+              @input.native="cargarParametros"
+              ref="vSelect"
+              return-object
+              multiple
+            >
+              <template v-slot:append-item>
+                <div v-intersect="endIntersect" />
+              </template>
+              
+              <template v-slot:selection="{ item, index }">
+                <v-chip v-if="index === 0">
+                  <span>{{ item.value }}</span>
+                </v-chip>
+                <span v-if="index === 1" class="grey--text text-caption">
+                  (+{{ parametrosSeleccionado.length - 1 }} parametro(s))
+                </span>
+              </template>
+              <!-- <template v-slot:item="{ item }">
+                <span
+                  style="margin-right: 10px"
+                  :style="{
+                    color: item.option ? 'green' : 'red',
+                    'pointer-events':
+                      item.cantidadArchivos > 0 ? 'none' : 'auto',
+                  }"
+                >
+                  {{ item.value }}
+                  <span v-if="item.cantidadArchivos > 0" style="color: red"
+                    >(Tiene archivos)</span
+                  >
+                </span>
+              </template> -->
+            </v-select>
+          </div>
+
+          <!-- <h4>
             Agregar Apartado
             <v-btn icon @click="addFind">
               <v-icon color="green">mdi-plus</v-icon>
@@ -323,7 +365,7 @@
                 </v-col>
               </v-row>
             </v-container>
-          </div>
+          </div> -->
         </v-card-text>
 
         <v-card-actions>
@@ -359,6 +401,14 @@ import VueJsonToCsv from "vue-json-to-csv";
 export default {
   components: { VueJsonToCsv, loading, Snackbar, ProgressFile },
   data: () => ({
+    parametrosSeleccionado: [],
+    parametros: [],
+    currentPage: 1,
+    itemsPerPage: 15,
+    search: "",
+    totalItems: 0,
+    totalPages: 0,
+    reachedEnd: false,
     fechaHoy: new Date().toLocaleString(),
     hidden: true,
     searchClosed: true,
@@ -398,6 +448,7 @@ export default {
   }),
   created() {
     this.initialize();
+    this.cargarParametros();
   },
   computed: {
     esAdmin() {
@@ -440,6 +491,61 @@ export default {
     },
   },
   methods: {
+    endIntersect(entries, observer, isIntersecting) {
+      if (isIntersecting) {
+        this.cargarMasParametros();
+      }
+    },
+    async cargarMasParametros() {
+      if (
+        !this.loading &&
+        this.currentPage <= this.totalPages &&
+        !this.reachedEnd
+      ) {
+        console.log("Evento de scroll activado");
+        this.currentPage++;
+        await this.cargarParametros();
+      }
+    },
+    async cargarParametros() {
+      this.loading = true;
+      try {
+        const response = await this.getServerData(
+          0,
+          0,
+          this.currentPage,
+          this.itemsPerPage
+        );
+
+        // Agrega los nuevos elementos a la lista existente
+        this.parametros = this.parametros.concat(response.parametros);
+        this.totalItems = response.cantidad;
+        this.totalPages = response.pages;
+
+        // Verificar si se ha alcanzado el final
+        if (this.currentPage >= this.totalPages) {
+          this.reachedEnd = true;
+        }
+        this.loading = false;
+      } catch (error) {
+        console.error("Error al obtener parámetros:", error);
+        this.loading = false;
+      }
+    },
+
+    async getServerData(sortBy, sortDesc, page, itemsPerPage) {
+      try {
+        const response = await axios.get(
+          `parametro/allParametros?search=${""}&page=${page}&limit=${itemsPerPage}`
+        );
+        return response.data;
+      } catch (error) {
+        console.error("Error al obtener datos del servidor:", error);
+        this.loading = false;
+        return [];
+      }
+    },
+
     toggleOrdenarPor() {
       this.ordenarPor = this.ordenarPor === "nombre" ? "porcentaje" : "nombre";
     },
@@ -452,62 +558,46 @@ export default {
     },
     async updateParams() {
       this.isUpload = true;
-      let contador = 0;
-      this.finds.forEach((element) => {
-        if (element.value == "") {
-          contador = contador + 1;
-        }
-      });
-      if (contador == 0) {
-        await axios
-          .put("/carpeta/updateParams/", {
-            id: this.padre._id,
-            parametros: this.finds,
-            eliminados: this.eliminados,
-          })
-          .then((result) => {
-            this.finds = result.data.parametros;
-            this.primerosParametros = Object.assign([], result.data.parametros);
-            // this.$root.Snackbar.SnackbarShow("success", "Parametros modificados exitosamente");
-            this.$refs.childComponent.SnackbarShow(
-              "success",
-              "Parametros modificados exitosamente"
-            );
-            this.eliminados = [];
-            this.isUpload = false;
-            this.dialogParam = false;
-            if (result.data.parametros.length < 1) {
-              this.addPermission = true;
-            } else {
-              this.addPermission = false;
-            }
-            this.dialogFindDelete = false;
+      //Vamos a hacer un update a los parametros
+      await axios
+        .put("/carpeta/updateParams/", {
+          id: this.padre._id,
+          parametros: this.parametrosSeleccionado,
+        })
+        .then((result) => {
+          this.parametrosSeleccionado = result.data.parametros;
+          this.primerosParametros = Object.assign([], result.data.parametros);
+          // this.$root.Snackbar.SnackbarShow("success", "Parametros modificados exitosamente");
+          this.$refs.childComponent.SnackbarShow(
+            "success",
+            "Parametros modificados exitosamente"
+          );
+          this.isUpload = false;
+          this.dialogParam = false;
+          if (result.data.parametros.length < 1) {
+            this.addPermission = true;
+          } else {
+            this.addPermission = false;
+          }
+          this.dialogFindDelete = false;
 
-            window.location.reload();
-          })
-          .catch((e) => {
-            console.log(e);
-            this.$refs.childComponent.SnackbarShow(
-              "error",
-              "Error agregando los parametros"
-            );
-            this.isUpload = false;
-          });
-      } else {
-        this.$refs.childComponent.SnackbarShow(
-          "error",
-          "No se pueden agregar parametros vacios"
-        );
-        this.isUpload = false;
-        this.dialogFindDelete = false;
-      }
+          window.location.reload();
+        })
+        .catch((e) => {
+          console.log(e);
+          this.$refs.childComponent.SnackbarShow(
+            "error",
+            "Error agregando los parametros"
+          );
+          this.isUpload = false;
+        });
     },
     async addParams() {
       this.isUpload = true;
       await axios
         .put("/carpeta/addParams/", {
           id: this.padre._id,
-          parametros: this.finds,
+          parametros: this.parametrosSeleccionado,
         })
         .then((result) => {
           console.log(result);
@@ -684,24 +774,32 @@ export default {
     },
 
     async initialize() {
-      await axios
-        .get("carpeta/query?_id=" + this.$route.params.Folder)
-        .then((result) => {
-          this.padre = result.data;
-          //this.getSubCarpetaCumplimiento(result.data)
-          this.getSubFolders(result.data._id);
-          result.data.parametros.forEach((element) => {
-            this.finds.push(element);
-          });
 
-          this.primerosParametros = result.data.parametros;
-          if (result.data.parametros.length >= 1) {
-            this.addPermission = false;
-            this.encabezado = "Editar Parametros";
-          } else {
-            this.encabezado = "Agregar Parametros";
-          }
-        });
+      const token = localStorage.getItem("token");
+      const headers = {
+        Authorization: `Bearer ${token}`,
+      };
+
+      const response = await axios.get(
+        "carpeta/query?_id=" + this.$route.params.Folder, { headers }
+      );
+
+      const folder = response.data.folder;
+      console.log(folder)
+      this.padre = folder;
+      this.getSubFolders(folder._id);
+      //Guardamos los parametros que ya contiene la carpeta al inicio
+      folder.parametros.forEach((element) => {
+        this.primerosParametros.push(element);
+      });
+
+      this.parametrosSeleccionado = folder.parametros;
+      if (folder.parametros.length >= 1) {
+        this.addPermission = false;
+        this.encabezado = "Editar Parametros";
+      } else {
+        this.encabezado = "Agregar Parametros";
+      }
     },
     async actualizarSubCarpeta(carpeta, index) {
       carpeta.nombre = this.editedItem.nombre;

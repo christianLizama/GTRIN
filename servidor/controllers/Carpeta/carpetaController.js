@@ -2,8 +2,10 @@ import folder from "../../models/Carpeta.js";
 import subCarpeta from "../../models/SubCarpeta.js";
 import Archivo from "../../models/Archivo.js";
 import Usuario from "../../models/Usuario.js";
-import cumplimiento from '../../utils/cumplimientos.js'; // Importación con ruta relativa
-import { Storage } from '@google-cloud/storage'; // Importación de un paquete npm
+import cumplimiento from "../../utils/cumplimientos.js"; // Importación con ruta relativa
+import { Storage } from "@google-cloud/storage"; // Importación de un paquete npm
+import Parametro from "../../models/Parametro.js";
+import Token from "../../services/token.js";
 
 const Carpeta = folder.Carpeta;
 
@@ -34,7 +36,10 @@ const add = async (req, res, next) => {
       await cumplimiento.calcularCumplimientoSociedad(idSociedad);
     }
     //Buscar esa carpeta y devolverla con los usuariosConAcceso populados
-    const carpetaPopulada = await Carpeta.findOne({ _id: reg._id }).populate({ path: "usuariosConAcceso", select: "_id email rol" });
+    const carpetaPopulada = await Carpeta.findOne({ _id: reg._id }).populate({
+      path: "usuariosConAcceso",
+      select: "_id email rol",
+    });
     res.status(200).json(carpetaPopulada);
   } catch (e) {
     res.status(500).send({
@@ -78,56 +83,46 @@ const agregarParametros = async (req, res, next) => {
 //metodo para actualizar parametros
 const actualizarParametros = async (req, res, next) => {
   try {
-    let { id, parametros, eliminados } = req.body;
+    let { id, parametros } = req.body;
 
-    //Verificamos si hay archivos que borrar
-    const archivosDelete = await Archivo.find({
-      parametro: { $in: eliminados },
-    });
-    //Si hay procedemos a borrarlos
-    if (archivosDelete.length > 0) {
-      archivosDelete.forEach((element) => {
-        let nombreArchivo = element.archivo.substring(
-          element.archivo.lastIndexOf("/") + 1
-        );
-        bucket
-          .file(nombreArchivo)
-          .delete()
-          .then(() => {
-            console.log(`Archivo:///${nombreArchivo} ha sido eliminado.`);
-          })
-          .catch((err) => {
-            console.log("El archivo no existe");
-          });
-      });
+    // //Verificamos si hay archivos que borrar
+    // const archivosDelete = await Archivo.find({
+    //   parametro: { $in: eliminados },
+    // });
+    // //Si hay procedemos a borrarlos
+    // if (archivosDelete.length > 0) {
+    //   archivosDelete.forEach((element) => {
+    //     let nombreArchivo = element.archivo.substring(
+    //       element.archivo.lastIndexOf("/") + 1
+    //     );
+    //     bucket
+    //       .file(nombreArchivo)
+    //       .delete()
+    //       .then(() => {
+    //         console.log(`Archivo:///${nombreArchivo} ha sido eliminado.`);
+    //       })
+    //       .catch((err) => {
+    //         console.log("El archivo no existe");
+    //       });
+    //   });
 
-      const borrados = await Archivo.deleteMany({
-        parametro: { $in: eliminados },
-      });
-      console.log(borrados);
-    }
+    //   const borrados = await Archivo.deleteMany({
+    //     parametro: { $in: eliminados },
+    //   });
+    //   console.log(borrados);
+    // }
 
-    const CarpetaActualizada = await Carpeta.findById(id).then((folder) => {
-      parametros.forEach((param) => {
-        const params = folder.parametros.id(param._id);
-        if (params) {
-          params.set(param);
-        } else {
-          folder.parametros.addToSet(param);
-        }
-      });
-      //Para eliminar los parametros
-      eliminados.forEach((eliminado) => {
-        folder.parametros.id(eliminado).remove();
-      });
-      return folder.save();
-    });
+    const carpetaActualizada = await Carpeta.findByIdAndUpdate(
+      id,
+      { parametros },
+      { new: true }
+    );
 
-    if (CarpetaActualizada) {
+    if (carpetaActualizada) {
       await cumplimiento.actualizarCumplimientoTodasSubCarpetas();
       await cumplimiento.calcularCumplimientoCarpeta(id);
-      await cumplimiento.calcularCumplimientoSociedad(CarpetaActualizada.padre);
-      res.status(200).json(CarpetaActualizada);
+      await cumplimiento.calcularCumplimientoSociedad(carpetaActualizada.padre);
+      res.status(200).json(carpetaActualizada);
     } else {
       res.status(404).json("La Carpeta buscada no existe");
     }
@@ -139,22 +134,75 @@ const actualizarParametros = async (req, res, next) => {
   }
 };
 
-//Metodo para obtener una Carpeta mediante su id
 const query = async (req, res, next) => {
   try {
-    //console.log(req.query._id);
-    const reg = await Carpeta.findOne({ _id: req.query._id });
-    if (!reg) {
-      res.status(404).send({
-        message: "El registro no existe",
-      });
-    } else {
-      res.status(200).json(reg);
-    }
-  } catch (e) {
-    res.status(500).send({
-      message: "Ocurrio un error",
+    const tokenActual = req.headers.authorization.split(" ")[1];
+    // Verificar si el token es válido y obtener el usuario
+    const user = await Token.verificarTokenValido(tokenActual);
+
+    const carpetaId = req.query._id; // Obtener el ID de la carpeta
+    // Buscar la carpeta por su ID y poblar los parámetros
+    let carpeta = await Carpeta.findOne({
+      _id: carpetaId,
+      usuariosConAcceso: user._id,
+    }).populate({
+      path: "parametros",
+      match: { usuariosConAcceso: user._id }, // Filtrar los parámetros por usuariosConAcceso que coincidan con el usuario actual
     });
+
+    if (!carpeta) {
+      return res.status(404).json({ message: "La carpeta no existe" });
+    }
+
+    // Obtener la cantidad de archivos por parámetro en la carpeta utilizando la agregación de MongoDB
+    const archivosPorParametro = await Archivo.aggregate([
+      {
+        $match: {
+          abuelo: carpeta._id, // Filtrar por la carpeta actual
+          parametro: {
+            $in: carpeta.parametros.map((parametro) => parametro._id),
+          },
+        },
+      },
+      {
+        $group: {
+          _id: "$parametro",
+          cantidadArchivos: { $sum: 1 },
+        },
+      },
+    ]);
+
+    
+    // Crear un mapa para mapear el ID de parámetro con la cantidad de archivos
+    const archivosPorParametroMap = new Map();
+    archivosPorParametro.forEach((item) => {
+      archivosPorParametroMap.set(item._id.toString(), item.cantidadArchivos);
+    });
+
+    // Agregar la cantidad de archivos a cada parámetro
+    const parametrosConArchivos = carpeta.parametros.map((parametro) => ({
+      ...parametro.toObject(),
+      cantidadArchivos:
+      archivosPorParametroMap.get(parametro._id.toString()) || 0,
+      disabled: archivosPorParametroMap.get(parametro._id.toString()) > 0,
+    }));
+
+    //console.log(parametrosConArchivos)
+    // Asignar el valor de parametrosConArchivos a carpeta.parametros
+    carpeta.parametros = parametrosConArchivos;
+
+    const folder = JSON.parse(JSON.stringify(carpeta));
+
+    // Asignar el valor de parametrosConArchivos a la copia de carpeta
+    folder.parametros = parametrosConArchivos;
+
+    const resultado = {
+      folder,
+    };
+
+    res.status(200).json(resultado);
+  } catch (e) {
+    res.status(500).json({ message: "Ocurrió un error", error: e.message });
     next(e);
   }
 };
@@ -221,8 +269,12 @@ const update = async (req, res, next) => {
     const id = req.body._id;
     let body = req.body.carpeta;
     // transformar el arreglo de usuariosConAcceso a un arreglo solo de ids
-    body.usuariosConAcceso = body.usuariosConAcceso.map((usuario) => usuario._id);
-    const reg = await Carpeta.findByIdAndUpdate(id, body, { new: true }).populate({ path: "usuariosConAcceso", select: "_id email rol" });
+    body.usuariosConAcceso = body.usuariosConAcceso.map(
+      (usuario) => usuario._id
+    );
+    const reg = await Carpeta.findByIdAndUpdate(id, body, {
+      new: true,
+    }).populate({ path: "usuariosConAcceso", select: "_id email rol" });
     res.status(200).json(reg);
   } catch (e) {
     res.status(500).send({

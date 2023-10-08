@@ -335,10 +335,10 @@ const getArchivosStatus = async (req, res, next) => {
   try {
     let archivos = await archivo.find();
     let sociedades = await sociedad.find();
-    let carpetas = await Carpeta.find();
+    let carpetas = await Carpeta.find().populate({ path: "parametros" });
     let subCarpetas = await subCarpeta.find();
 
-    if (!archivos && !sociedades && !carpetas && !subCarpetas && !parametros) {
+    if (!archivos && !sociedades && !carpetas && !subCarpetas) {
       res.status(404).send({
         message: "El registro no existe",
       });

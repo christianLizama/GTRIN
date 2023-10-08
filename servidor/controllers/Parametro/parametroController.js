@@ -1,6 +1,9 @@
 import Parametro from "../../models/Parametro.js";
 import Archivo from "../../models/Archivo.js";
 import Usuario from "../../models/Usuario.js";
+import carpeta from "../../models/Carpeta.js";
+
+const Carpeta = carpeta.Carpeta;
 
 //Obtener todos los parametros
 export async function getParametros(req, res) {
@@ -10,13 +13,13 @@ export async function getParametros(req, res) {
     // Si se proporciona un término de búsqueda en la consulta, agregamos criterios de búsqueda
     searchQuery.$or = [
       { value: { $regex: req.query.search, $options: "i" } }, // Búsqueda insensible a mayúsculas y minúsculas en el campo "value"
-      // Agrega más campos de búsqueda si es necesario
+      // Agregar más campos de búsqueda si es necesario
     ];
   }
   const page = req.query.page || 1;
   const limit = req.query.limit || 10;
 
-  const sortOptions = { value: 1 }; // Ordenar en orden ascendente (alfabético) por el campo "value"
+  const sortOptions = { option: -1, value: 1 }; // Ordenar en orden ascendente (alfabético) por el campo "value"
 
   const options = {
     page,
@@ -34,9 +37,31 @@ export async function getParametros(req, res) {
     // Obtener el total de parametros
     const total = result.totalDocs;
 
+    // Consulta de agregación para contar archivos por parámetro
+    const archivosPorParametro = await Archivo.aggregate([
+      {
+        $group: {
+          _id: "$parametro",
+          cantidadArchivos: { $sum: 1 },
+        },
+      },
+    ]);
+
+    // Crear un mapa para mapear el ID de parámetro con la cantidad de archivos
+    const archivosPorParametroMap = new Map();
+    archivosPorParametro.forEach((item) => {
+      archivosPorParametroMap.set(item._id.toString(), item.cantidadArchivos);
+    });
+
+    // Agregar la cantidad de archivos a cada parámetro
+    const parametrosConArchivos = result.docs.map((parametro) => ({
+      ...parametro.toObject(),
+      cantidadArchivos: archivosPorParametroMap.get(parametro._id.toString()) || 0,
+    }));
+
     // Retornar respuesta con parametros, total de parametros, paginas totales y pagina actual
     res.json({
-      parametros: result.docs,
+      parametros: parametrosConArchivos,
       cantidad: total,
       pages: result.totalPages,
       page: result.page,
@@ -45,6 +70,7 @@ export async function getParametros(req, res) {
     res.status(500).json({ error: "Error al obtener parámetros paginados." });
   }
 }
+
 
 //Obtener un parametro
 export async function getParametro(req, res) {
@@ -102,22 +128,29 @@ export async function addParametro(req, res) {
 //Eliminar un parametro
 export async function deleteParametro(req, res) {
   try {
-    const parametro = await Parametro.findByIdAndDelete(req.params.id);
-    //Retornar un mensaje de éxito si se elimina el parametro
+    //Buscar el parametro por id
+    const parametro = await Parametro.findById(req.params.id);
+    //Verificar si existe el parametro
     if (parametro) {
       // Verificar si hay el menos 1 archivo con este parametro
       const archivos = await Archivo.find({ parametro: parametro._id }).count();
       if (archivos > 0) {
-        res.json({
+        res.status(400).json({
           type: "warning",
           message: `El ${parametro.value} no se puede eliminar porque hay ${archivos} archivos con este parametro`,
           parametro: parametro,
         });
       } else {
-        res.json({
+        //Quitar el parametro de las carpetas que lo tienen
+        await Carpeta.updateMany(
+          { parametros: parametro._id },
+          { $pull: { parametros: parametro._id } }
+        );
+        const parametroBorrado = await Parametro.findByIdAndDelete(req.params.id);
+        res.status(200).json({
           type: "succes",
-          message: `El ${parametro.value} ha sido eliminado exitosamente`,
-          parametro: parametro,
+          message: `El ${parametroBorrado.value} ha sido eliminado exitosamente`,
+          parametro: parametroBorrado,
         });
       }
     }
@@ -164,8 +197,6 @@ export async function updateParametro(req, res) {
 export async function countArchivos(req, res) {
   try {
     let parametroEncontrado = await Parametro.findById(req.query._id);
-    console.log(parametroEncontrado);
-
     const archivos = await Archivo.find({ parametro: req.query._id }).count();
     const retorno = {
       nombre: "Archivos Totales",

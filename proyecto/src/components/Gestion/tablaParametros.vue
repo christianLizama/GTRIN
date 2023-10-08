@@ -150,11 +150,19 @@
               </v-card-text>
               <v-card-actions>
                 <v-spacer></v-spacer>
-                <v-btn color="blue darken-1" text @click="closeDelete"
+                <v-btn
+                  color="grey"
+                  text
+                  class="body-2 font-weight-bold"
+                  @click="closeDelete"
                   >Cancel</v-btn
                 >
-                <v-btn color="blue darken-1" text @click="deleteItemConfirm"
-                  >OK</v-btn
+                <v-btn
+                  color="red"
+                  class="body-2 font-weight-bold"
+                  outlined
+                  @click="deleteItemConfirm"
+                  >Eliminar</v-btn
                 >
                 <v-spacer></v-spacer>
               </v-card-actions>
@@ -355,22 +363,19 @@ export default {
     },
 
     //Eliminar parametro
-    async deleteParametro(item) {
+    async deleteParametro(item, index) {
       await axios
         .delete("parametro/deleteParametro/" + item._id)
         .then((res) => {
           const mensaje = res.data.message;
-          if (mensaje == "warning") {
-            this.$refs.childComponent.SnackbarShow(
-              "error",
-              "Error no se pudo eliminar el parametro, posee archivos asignado"
-            );
-          } else {
-            this.$refs.childComponent.SnackbarShow("success", mensaje);
-          }
+          this.$refs.childComponent.SnackbarShow("success", mensaje);
+          this.desserts.splice(index, 1);
         })
         .catch((e) => {
-          console.log(e);
+          this.$refs.childComponent.SnackbarShow(
+              "error",
+              e.response.data.message,
+            );
         });
     },
 
@@ -424,8 +429,7 @@ export default {
     },
 
     deleteItemConfirm() {
-      this.desserts.splice(this.editedIndex, 1);
-      this.deleteParametro(this.editedItem);
+      this.deleteParametro(this.editedItem,this.editedIndex);
       this.closeDelete();
     },
 

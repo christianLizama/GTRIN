@@ -73,6 +73,7 @@ const queryNombre = async (req, res, next) => {
 //Metodo para obtener Carpetas de una sociedad segun el id de la sociedad
 const queryFolders = async (req, res, next) => {
   try {
+    console.log(req.headers.authorization)
     const tokenActual = req.headers.authorization.split(" ")[1];
     // Verificar si el token es válido y obtener el usuario
     const user = await Token.verificarTokenValido(tokenActual);

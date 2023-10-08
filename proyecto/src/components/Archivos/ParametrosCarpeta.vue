@@ -229,11 +229,16 @@ export default {
       });
     },
     async obtenerPadreSuperior(id,idSubFolder) {
-      await axios.get("carpeta/query?_id=" + id).then((result) => {
-        this.padre = result.data;
-        this.parametros = result.data.parametros;
-        this.contar(result.data.parametros, result.data._id);
-        this.obtenerArchivos(idSubFolder,result.data.parametros);
+      const token = localStorage.getItem("token");
+      const headers = {
+        Authorization: `Bearer ${token}`,
+      };
+      await axios.get("carpeta/query?_id=" + id, {headers}).then((result) => {
+        let folder = result.data.carpeta;
+        this.padre = folder;
+        this.parametros = folder.parametros;
+        this.contar(folder.parametros, folder._id);
+        this.obtenerArchivos(idSubFolder,folder.parametros);
       });
     },
     async initialize() {

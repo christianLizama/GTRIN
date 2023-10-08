@@ -56,7 +56,6 @@ async function actualizarCumplimientoTodasSociedades() {
   }
 }
 
-
 //calcula el cumplimiento de la carpeta
 async function calcularCumplimientoCarpeta(idCarpeta) {
   try {
@@ -96,7 +95,7 @@ async function calcularCumplimientoCarpeta(idCarpeta) {
     console.log("--------");
 
     // Actualizar el porcentaje de cumplimiento de la carpeta
-    if (!comprobarExistenciaAtributo(carpeta,"porcentaje")) {
+    if (!comprobarExistenciaAtributo(carpeta, "porcentaje")) {
       // Actualiza el documento con el nuevo campo "porcentaje"
       //console.log("Porcentaje nuevo de la carpeta: "+porcentajeCumplimiento);
       await carpeta.updateOne(
@@ -130,7 +129,10 @@ async function calcularCumplimientoSubCarpeta(subCarpetaId) {
   console.log("Actualizando cumplimiento de SubCarpeta");
   try {
     // Buscar la subcarpeta y su carpeta padre para obtener los parámetros
-    let subFolder = await subCarpeta.findById(subCarpetaId).populate("padre");
+    let subFolder = await subCarpeta.findById(subCarpetaId).populate({
+      path: "padre",
+      populate: { path: "parametros" }, // Poblar los parámetros de la carpeta
+    });
 
     if (!subFolder) {
       console.error("Subcarpeta no encontrada");
@@ -188,9 +190,9 @@ async function calcularCumplimientoSubCarpeta(subCarpetaId) {
     console.log("------------------");
 
     //Verificar existencia de atributos de la subcarpeta
-    if (!comprobarExistenciaAtributo(subFolder,"porcentaje")) {
+    if (!comprobarExistenciaAtributo(subFolder, "porcentaje")) {
       console.log("subcarpeta no posee porcentaje");
-      if (!comprobarExistenciaAtributo(subFolder,"cumplimiento")) {
+      if (!comprobarExistenciaAtributo(subFolder, "cumplimiento")) {
         console.log("subcarpeta no posee cumplimiento");
         await subCarpeta.updateOne(
           { _id: subFolder._id },
