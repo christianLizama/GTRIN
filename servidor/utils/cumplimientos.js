@@ -91,7 +91,7 @@ async function calcularCumplimientoCarpeta(idCarpeta) {
         : Math.round((subCarpetasCumplidas / subCarpetasTotales) * 100);
 
     console.log("--------");
-    console.log(carpeta);
+    //console.log(carpeta);
     console.log("--------");
 
     // Actualizar el porcentaje de cumplimiento de la carpeta
@@ -186,7 +186,7 @@ async function calcularCumplimientoSubCarpeta(subCarpetaId) {
       cumplimientoSubCarpeta = "Cumple";
     }
     console.log("--------soy la subcarpeta----------");
-    console.log(subFolder);
+    //console.log(subFolder);
     console.log("------------------");
 
     //Verificar existencia de atributos de la subcarpeta
@@ -231,7 +231,7 @@ async function calcularCumplimientoSociedad(idSociedad) {
       let totalCarpetas = 0;
       let totalCumplimiento = 0;
 
-      console.log(carpetas);
+      //console.log(carpetas);
 
       // Iterar a través de las carpetas y calcular el total de cumplimiento
       for (const carpeta of carpetas) {

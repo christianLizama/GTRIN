@@ -196,7 +196,7 @@
           </v-toolbar-title>
         </v-toolbar>
 
-        <v-card-text class="pa-4"> No se pueden eliminar. </v-card-text>
+        <v-card-text class="pa-4"> Si hay archivos en algún parámetro que quitaste, este no será eliminado; elimina primero los archivos de respectivos de ese parametro en las carpetas. </v-card-text>
 
         <v-card-actions>
           <v-spacer></v-spacer>
@@ -274,12 +274,11 @@
 
         <v-card-text class="pa-4">
           <!-- Apartados a controlar: -->
-          <p>{{parametrosSeleccionado}}</p>
           <div class="selector-container">
             <v-select
               v-model="parametrosSeleccionado"
               :items="parametros"
-              label="Selecciona un parámetro"
+              label="Selecciona los parametros a controlar"
               hide-details
               outlined
               item-text="value"
@@ -668,7 +667,7 @@ export default {
     cancelUpdateParams() {
       this.eliminados = [];
       this.dialogParam = false;
-      this.finds = Object.assign([], this.primerosParametros);
+      this.parametrosSeleccionado = Object.assign([], this.primerosParametros);
     },
     async deleteAllFiles(idPadre) {
       var data = {

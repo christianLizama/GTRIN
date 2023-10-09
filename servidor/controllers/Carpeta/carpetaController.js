@@ -83,7 +83,7 @@ const agregarParametros = async (req, res, next) => {
 //metodo para actualizar parametros
 const actualizarParametros = async (req, res, next) => {
   try {
-    let { id, parametros } = req.body;
+    let { id, parametros: nuevosParametros } = req.body;
 
     // //Verificamos si hay archivos que borrar
     // const archivosDelete = await Archivo.find({
@@ -112,9 +112,71 @@ const actualizarParametros = async (req, res, next) => {
     //   console.log(borrados);
     // }
 
+    // Obtenemos la carpeta con sus parametros
+    const carpeta = await Carpeta.findOne({ _id: id }).populate("parametros");
+
+    // Verificamos si los parametros actuales tienen archivos
+    const archivosPorParametro = await Archivo.aggregate([
+      {
+        $match: {
+          abuelo: carpeta._id, // Filtrar por la carpeta actual
+          parametro: {
+            $in: carpeta.parametros.map((parametro) => parametro._id),
+          },
+        },
+      },
+      {
+        $group: {
+          _id: "$parametro",
+          cantidadArchivos: { $sum: 1 },
+        },
+      },
+    ]);
+
+    // Crear un mapa para mapear el ID de parámetro con la cantidad de archivos
+    const archivosPorParametroMap = new Map();
+    archivosPorParametro.forEach((item) => {
+      archivosPorParametroMap.set(item._id.toString(), item.cantidadArchivos);
+    });
+
+    // Agregar la cantidad de archivos a cada parámetro
+    const parametrosConArchivos = carpeta.parametros.map((parametro) => ({
+      ...parametro.toObject(),
+      cantidadArchivos:
+        archivosPorParametroMap.get(parametro._id.toString()) || 0,
+    }));
+
+    let parametrosAusentes = [];
+
+    // Obtener que parametro de parametros con archivos no esta en nuevosParametros
+    parametrosConArchivos.forEach((parametro) => {
+      let parametroEncontrado = nuevosParametros.find(
+        (parametroNuevo) => parametroNuevo._id == parametro._id
+      );
+      if (!parametroEncontrado) {
+        parametrosAusentes.push(parametro);
+      }
+    });
+
+    let listaFinal = [];
+    // Recorremos los parametros ausentes y verificamos si tienen archivos
+    parametrosAusentes.forEach((parametro) => {
+      // Verificar si el parámetro tiene archivos (supongamos que la propiedad es "cantidadArchivos")
+      if (parametro.cantidadArchivos > 0) {
+        // Agregar el parámetro a la lista final
+        listaFinal.push(parametro);
+      }
+    });
+
+    // Si la lista final tiene elementos, significa que hay parámetros con archivos que no están en nuevosParametros
+    if (listaFinal.length > 0) {
+      // Agregar los nuevos elementos a nuevosParametros
+      nuevosParametros = [...nuevosParametros, ...listaFinal];
+    }
+    
     const carpetaActualizada = await Carpeta.findByIdAndUpdate(
       id,
-      { parametros },
+      { parametros: nuevosParametros },
       { new: true }
     );
 
@@ -172,7 +234,6 @@ const query = async (req, res, next) => {
       },
     ]);
 
-    
     // Crear un mapa para mapear el ID de parámetro con la cantidad de archivos
     const archivosPorParametroMap = new Map();
     archivosPorParametro.forEach((item) => {
@@ -183,16 +244,11 @@ const query = async (req, res, next) => {
     const parametrosConArchivos = carpeta.parametros.map((parametro) => ({
       ...parametro.toObject(),
       cantidadArchivos:
-      archivosPorParametroMap.get(parametro._id.toString()) || 0,
+        archivosPorParametroMap.get(parametro._id.toString()) || 0,
       disabled: archivosPorParametroMap.get(parametro._id.toString()) > 0,
     }));
 
-    //console.log(parametrosConArchivos)
-    // Asignar el valor de parametrosConArchivos a carpeta.parametros
-    carpeta.parametros = parametrosConArchivos;
-
     const folder = JSON.parse(JSON.stringify(carpeta));
-
     // Asignar el valor de parametrosConArchivos a la copia de carpeta
     folder.parametros = parametrosConArchivos;
 

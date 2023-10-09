@@ -234,7 +234,7 @@ export default {
         Authorization: `Bearer ${token}`,
       };
       await axios.get("carpeta/query?_id=" + id, {headers}).then((result) => {
-        let folder = result.data.carpeta;
+        let folder = result.data.folder;
         this.padre = folder;
         this.parametros = folder.parametros;
         this.contar(folder.parametros, folder._id);

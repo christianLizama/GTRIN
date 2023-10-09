@@ -1,6 +1,6 @@
-import { google } from 'googleapis';
-import nodemailer from 'nodemailer';
-import cron from 'node-cron';
+import { google } from "googleapis";
+import nodemailer from "nodemailer";
+import cron from "node-cron";
 import trigger from "../../models/Trigger.js";
 import archivo from "../../models/Archivo.js";
 import subCarpeta from "../../models/SubCarpeta.js";
@@ -95,38 +95,38 @@ const enviarCorreo = async (req, res, next) => {
         if (status === "Vigente") {
           let diasSumados = rango.value;
           let fechaTope = moment().add(diasSumados, "days");
-          archivos = await archivo.find({
-            padreSuperior: contenedor._id,
-            abuelo: carpeta._id,
-            status: status,
-            parametro: { $in: parametro },
-            fechaCambioEstado: { $gte: new Date(), $lte: fechaTope.toDate() },
-          });
+          archivos = await archivo
+            .find({
+              padreSuperior: contenedor._id,
+              abuelo: carpeta._id,
+              status: status,
+              parametro: { $in: parametro },
+              fechaCambioEstado: { $gte: new Date(), $lte: fechaTope.toDate() },
+            })
+            .populate("padreSuperior abuelo padre parametro");
         } else {
-          archivos = await archivo.find({
-            padreSuperior: contenedor._id,
-            abuelo: carpeta._id,
-            status: status,
-            parametro: { $in: parametro },
-          });
+          archivos = await archivo
+            .find({
+              padreSuperior: contenedor._id,
+              abuelo: carpeta._id,
+              status: status,
+              parametro: { $in: parametro },
+            })
+            .populate("padreSuperior abuelo padre parametro");
         }
 
-        const subCarpetas = await subCarpeta.find();
+        if (archivos.length === 0) {
+          console.log(
+            "La lista de archivos está vacía. No se enviará el correo."
+          );
+          return;
+        }
 
         let result = JSON.parse(JSON.stringify(archivos));
-        let result2 = JSON.parse(JSON.stringify(subCarpetas));
 
         result.forEach((archivo) => {
           let fechaCadu = archivo.fechaCaducidad.split("T");
           archivo.fechaCaducidad = moment(fechaCadu[0]).format("DD/MM/YYYY");
-          var found = result2.find((e) => e._id === archivo.padre);
-          var found2 = parametro.find(
-            (param) => param._id === archivo.parametro
-          );
-          let nombreSubCarpeta = found.nombre;
-          let nombreParametro = found2.value;
-          archivo.nombrePadre = nombreSubCarpeta;
-          archivo.nombreParametro = nombreParametro;
         });
 
         const accessToken = await oAuth2Client.getAccessToken();
@@ -144,6 +144,7 @@ const enviarCorreo = async (req, res, next) => {
         });
 
         const tablaHTML = `<table BORDER>
+            <caption><strong>Por favor no contestar a este correo</strong></caption>
             <caption>Contenedor: ${contenedor.nombre}</caption>
             <caption>Carpeta: ${carpeta.nombre}</caption>
             <thead>
@@ -159,12 +160,12 @@ const enviarCorreo = async (req, res, next) => {
             <tbody>
               ${result
                 .map(
-                  (u, index) =>
-                    `<tr><td>${index + 1}</td><td>${u.nombre}</td><td>${
-                      u.nombreParametro
-                    }</td><td>${u.nombrePadre}</td><td>${
-                      u.fechaCaducidad
-                    }</td><td>${u.status}</td></tr>`
+                  (file, index) =>
+                    `<tr><td>${index + 1}</td><td>${file.nombre}</td><td>${
+                      file.parametro.value
+                    }</td><td>${file.padre.nombre}</td><td>${
+                      file.fechaCaducidad
+                    }</td><td>${file.status}</td></tr>`
                 )
                 .join("")}
             </tbody>
@@ -177,11 +178,12 @@ const enviarCorreo = async (req, res, next) => {
           text: mensaje,
           html: tablaHTML,
         };
-        // const result = await transporter.sendMail(mailOptions);
+
         transporter.sendMail(mailOptions, function (error, info) {
           if (error) {
             console.log(error);
           } else {
+            console.log("Email enviado por cron:" + nombre);
             console.log("Email enviado: " + info.response);
           }
         });
@@ -209,7 +211,6 @@ const enviarCorreo = async (req, res, next) => {
       let trabajo = cron.schedule(
         expresion,
         () => {
-          console.log("Email enviado por:" + nombre);
           sendEmail(
             mensaje,
             destino,
@@ -285,41 +286,59 @@ async function cargar(trigger) {
     REDIRECT_URI
   );
   oAuth2Client.setCredentials({ refresh_token: REFRESH_TOKEN });
-  
-  async function sendEmail(mensaje,destino,asunto,contenedor,carpeta,status,parametro,rango) {
+
+  async function sendEmail(
+    mensaje,
+    destino,
+    asunto,
+    contenedor,
+    carpeta,
+    status,
+    parametro,
+    rango
+  ) {
     try {
       let archivos = [];
       if (status === "Vigente") {
         let diasSumados = rango.value;
         let fechaTope = moment().add(diasSumados, "days");
-        archivos = await archivo.find({
-          padreSuperior: contenedor._id,
-          abuelo: carpeta._id,
-          status: status,
-          parametro: { $in: parametro },
-          fechaCambioEstado: { $gte: new Date(), $lte: fechaTope.toDate() },
-        });
+        archivos = await archivo
+          .find({
+            padreSuperior: contenedor._id,
+            abuelo: carpeta._id,
+            status: status,
+            parametro: { $in: parametro },
+            fechaCambioEstado: { $gte: new Date(), $lte: fechaTope.toDate() },
+          })
+          .populate("padreSuperior abuelo padre parametro");
       } else {
-        archivos = await archivo.find({
-          padreSuperior: contenedor._id,
-          abuelo: carpeta._id,
-          status: status,
-          parametro: { $in: parametro },
-        });
+        archivos = await archivo
+          .find({
+            padreSuperior: contenedor._id,
+            abuelo: carpeta._id,
+            status: status,
+            parametro: { $in: parametro },
+          })
+          .populate("padreSuperior abuelo padre parametro");
       }
 
-      const subCarpetas = await subCarpeta.find();
+      if (archivos.length === 0) {
+        console.log("La lista de archivos está vacía. No se enviará el correo.");
+        return;
+      }
+
+      //const subCarpetas = await subCarpeta.find();
       let result = JSON.parse(JSON.stringify(archivos));
-      let result2 = JSON.parse(JSON.stringify(subCarpetas));
+      //let result2 = JSON.parse(JSON.stringify(subCarpetas));
       result.forEach((archivo) => {
         let fechaCadu = archivo.fechaCaducidad.split("T");
         archivo.fechaCaducidad = moment(fechaCadu[0]).format("DD/MM/YYYY");
-        var found = result2.find((e) => e._id === archivo.padre);
-        var found2 = parametro.find((param) => param._id === archivo.parametro);
-        let nombreSubCarpeta = found.nombre;
-        let nombreParametro = found2.value;
-        archivo.nombrePadre = nombreSubCarpeta;
-        archivo.nombreParametro = nombreParametro;
+        // var found = result2.find((e) => e._id === archivo.padre);
+        // var found2 = parametro.find((param) => param._id === archivo.parametro);
+        // let nombreSubCarpeta = found.nombre;
+        // let nombreParametro = found2.value;
+        // archivo.nombrePadre = nombreSubCarpeta;
+        // archivo.nombreParametro = nombreParametro;
       });
 
       const accessToken = await oAuth2Client.getAccessToken();
@@ -337,6 +356,7 @@ async function cargar(trigger) {
       });
 
       const tablaHTML = `<table BORDER>
+            <caption><strong>Por favor no contestar a este correo</strong></caption>
             <caption>Contenedor: ${contenedor.nombre}</caption>
             <caption>Carpeta: ${carpeta.nombre}</caption>
             <thead>
@@ -352,8 +372,8 @@ async function cargar(trigger) {
             <tbody>
               ${result
                 .map(
-                  (u, index) =>
-                    `<tr><td>${index}</td><td>${u.nombre}</td><td>${u.nombreParametro}</td><td>${u.nombrePadre}</td><td>${u.fechaCaducidad}</td><td>${u.status}</td></tr>`
+                  (file, index) =>
+                    `<tr><td>${index}</td><td>${file.nombre}</td><td>${file.parametro.value}</td><td>${file.padre.nombre}</td><td>${file.fechaCaducidad}</td><td>${file.status}</td></tr>`
                 )
                 .join("")}
             </tbody>
@@ -454,7 +474,7 @@ export default {
   stopCron,
   obtenerTriggers,
   cargarTriggers,
-}
+};
 
 // module.exports = {
 //   enviarCorreo,

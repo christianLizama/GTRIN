@@ -132,8 +132,9 @@ export async function deleteParametro(req, res) {
     const parametro = await Parametro.findById(req.params.id);
     //Verificar si existe el parametro
     if (parametro) {
-      // Verificar si hay el menos 1 archivo con este parametro
+      
       const archivos = await Archivo.find({ parametro: parametro._id }).count();
+      // Verificar si hay el menos 1 archivo con este parametro
       if (archivos > 0) {
         res.status(400).json({
           type: "warning",
@@ -196,7 +197,7 @@ export async function updateParametro(req, res) {
 // Contar todos los archivos de un parametro
 export async function countArchivos(req, res) {
   try {
-    let parametroEncontrado = await Parametro.findById(req.query._id);
+    //let parametroEncontrado = await Parametro.findById(req.query._id);
     const archivos = await Archivo.find({ parametro: req.query._id }).count();
     const retorno = {
       nombre: "Archivos Totales",

@@ -4,6 +4,10 @@ import bcrypt from "bcryptjs";
 import token from "../../services/token.js";
 import enviarCorreo2 from "../Correo/correoController.js";
 import Sociedad from "../../models/Sociedad.js";
+import carpeta from "../../models/Carpeta.js";
+import Parametro from "../../models/Parametro.js";
+
+const Carpeta = carpeta.Carpeta;
 
 async function getUsuarios(req, res) {
   try {
@@ -124,14 +128,14 @@ async function postUsuario(req, res) {
         }
       }
 
-      // await enviarCorreo2(
-      //   `Hola ${req.body.nombreCompleto},\n\n
-      //   Se ha creado una cuenta en el sistema de Transportes Ruiz con tu usuario.\n
-      //   Su usuario es: ${req.body.email}\n
-      //   Su contraseña es: ${req.body.clave}`,
-      //   `Cuenta creada exitosamente`,
-      //   req.body.email
-      // );
+      await enviarCorreo2(
+        `Hola ${req.body.nombreCompleto},\n\n
+        Se ha creado una cuenta en el sistema de Transportes Ruiz con tu usuario.\n
+        Su usuario es: ${req.body.email}\n
+        Su contraseña es: ${req.body.clave}`,
+        `Cuenta creada exitosamente`,
+        req.body.email
+      );
 
       res.status(200).json(newUser);
     }
@@ -158,7 +162,18 @@ async function updateUsuario(req, res) {
 
       // Si el usuario recupera el rol de admin, agregarlo a todas las sociedades
       if (req.body.rol === "admin") {
+        // Agregar el nuevo usuario a usuariosConAcceso de cada sociedad        
         await Sociedad.updateMany(
+          {},
+          { $addToSet: { usuariosConAcceso: reg._id } }
+        );
+        // Agregar el nuevo usuario a usuariosConAcceso de cada carpeta
+        await Carpeta.updateMany(
+          {},
+          { $addToSet: { usuariosConAcceso: reg._id } }
+        );
+        // Agregar el nuevo usuario a usuariosConAcceso de cada parámetro
+        await Parametro.updateMany(
           {},
           { $addToSet: { usuariosConAcceso: reg._id } }
         );
@@ -170,6 +185,16 @@ async function updateUsuario(req, res) {
           { usuariosConAcceso: reg._id },
           { $pull: { usuariosConAcceso: reg._id } }
         );
+        await Carpeta.updateMany(
+          { usuariosConAcceso: reg._id },
+          { $pull: { usuariosConAcceso: reg._id } }
+        );
+
+        await Parametro.updateMany(
+          { usuariosConAcceso: reg._id },
+          { $pull: { usuariosConAcceso: reg._id } }
+        );
+
       }
 
       res.status(200).json(reg);
@@ -184,22 +209,45 @@ async function updateUsuario(req, res) {
         },
         { new: true }
       );
-      // Si el usuario recupera el rol de admin, agregarlo a todas las sociedades
+      // Si el usuario recupera el rol de admin, agregarlo a todas las sociedades, carpetas y parámetros
       if (req.body.rol === "admin") {
+        // Agregar el nuevo usuario a usuariosConAcceso de cada sociedad
         await Sociedad.updateMany(
           {},
           { $addToSet: { usuariosConAcceso: reg._id } }
         );
+        // Agregar el nuevo usuario a usuariosConAcceso de cada carpeta
+        await Carpeta.updateMany(
+          {},
+          { $addToSet: { usuariosConAcceso: reg._id } }
+        );
+        // Agregar el nuevo usuario a usuariosConAcceso de cada parámetro
+        await Parametro.updateMany(
+          {},
+          { $addToSet: { usuariosConAcceso: reg._id } }
+        );
       }
-
-      // Si el usuario ya no es admin, eliminarlo de usuariosConAcceso en todas las sociedades
+      
+      // Si el usuario ya no es admin, eliminarlo de usuariosConAcceso en todas las sociedades, carpetas y parámetros
       if (req.body.rol !== "admin") {
+        // Si el usuario ya no es admin, eliminarlo de usuariosConAcceso en todas las sociedades
         await Sociedad.updateMany(
           { usuariosConAcceso: reg._id },
           { $pull: { usuariosConAcceso: reg._id } }
         );
+        // Si el usuario ya no es admin, eliminarlo de usuariosConAcceso en todas las carpetas  
+        await Carpeta.updateMany(
+          { usuariosConAcceso: reg._id }, 
+          { $pull: { usuariosConAcceso: reg._id } }
+        );
+        // Si el usuario ya no es admin, eliminarlo de usuariosConAcceso en todos los parámetros
+        await Parametro.updateMany(
+          { usuariosConAcceso: reg._id },
+          { $pull: { usuariosConAcceso: reg._id } }
+        );    
       }
-      console.log(reg);
+      
+      //console.log(reg);
       res.status(200).json(reg);
     }
   } catch (e) {
