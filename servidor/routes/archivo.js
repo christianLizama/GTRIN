@@ -1,5 +1,5 @@
-const express = require('express')
-const archivo = require('../controllers/Archivo/archivoController');
+import express from 'express';
+import archivo from '../controllers/Archivo/archivoController.js';
 const router = express.Router();
 
 
@@ -13,8 +13,18 @@ router.get('/', function(req, res, next) {
 router.post('/add', archivo.add);
 router.get('/query',archivo.query);
 router.put('/update',archivo.update);
-router.delete('/remove/:id', archivo.remove)
+router.delete('/remove/', archivo.remove)
 router.get('/getArchivos', archivo.getArchivos)
 router.get('/allFiles', archivo.getAllFiles)
+router.get('/countFiles', archivo.countFiles)
+router.delete('/removeAll/',archivo.removeAll)
+router.delete('/removeFolderFiles/',archivo.removeFolderFiles)
+router.get('/archivosStatus', archivo.getArchivosStatus)
+router.put('/updateStatus',archivo.updateStatus)
+router.get('/countAllFiles', archivo.countAll)
+router.get('/countVigentes', archivo.countVigentes)
+router.get('/countPorVencer', archivo.countPorVencer)
+router.get('/countVencidos', archivo.countVencidos)
 
-module.exports = router;
+
+export default router;  

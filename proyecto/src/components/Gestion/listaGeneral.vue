@@ -2,71 +2,35 @@
   <div>
     <v-toolbar dense dark>
       <v-toolbar-title class="white--text"> Dashboard </v-toolbar-title>
-
       <v-spacer></v-spacer>
     </v-toolbar>
-
     <loading v-if="isLoading" texto="Obteniendo información"></loading>
-    <v-container v-if="!isLoading" :fluid="true">
-      <v-row>
-        <v-col v-for="item in kpi" :key="item.nombre">
-          <v-hover v-slot="{ hover }">
-            <v-card dark elevation="5" :color="item.color" class="mx-auto" height="140" outlined>
-              <v-expand-transition>
-                <div
-                  v-if="hover"
-                  class="caja transition-fast-in-fast-out darken-2 v-card--reveal text-h5 white--text"
-                  style="height: 100%"
-                >
-                  <v-progress-circular
-                    :rotate="-90"
-                    :size="100"
-                    :width="10"
-                    :value="item.porcentaje"
-                    color="white"
-                  >
-                    {{ item.porcentaje }}%
-                  </v-progress-circular>
-                </div>
-              </v-expand-transition>
-              <v-list-item three-line>
-                <v-list-item-content>
-                  <h1>{{ item.total }}</h1>
-                  <v-list-item-title class="text-h7 mb-1">
-                    {{ item.nombre }}
-                  </v-list-item-title>
-                </v-list-item-content>
-                <v-list-item-avatar tile size="100">
-                  <v-icon color="white" size="65"> {{ item.icon }}</v-icon>
-                </v-list-item-avatar>
-              </v-list-item>
-            </v-card>
-          </v-hover>
-        </v-col>
-      </v-row>
-    </v-container>
+    <v-card elevation="5" outlined class="mx-auto mt-2" max-width="98.6%">
+      <Kpi :apiEndpoints="apiEndpointArchivo" v-if="!isLoading"></Kpi>
+    </v-card>
+
     <div class="contenedor" v-if="!isLoading">
       <v-card elevation="5" outlined class="mx-auto" max-width="98.6%">
         <v-card-title>
           Filtros <v-spacer></v-spacer>
-          <v-btn text color="red accent-4" @click="limpiarFiltros()">
+          <v-btn text color="blue accent-4" @click="limpiarFiltros()">
             Limpiar Filtros
-          </v-btn></v-card-title
-        >
-        <v-card-text>
-          <v-row align="center">
-            <v-col cols="11" sm="5" md="6">
+          </v-btn>
+        </v-card-title>
+        <v-container fluid>
+          <v-row>
+            <v-col cols="12" :md="mdSize">
               <v-select
                 :items="sociedades"
                 return-object
                 v-model="sociedadSeleccionada"
                 item-text="nombre"
-                label="Sociedades"
+                label="Contenedores"
                 dense
                 outlined
               ></v-select>
             </v-col>
-            <v-col cols="11" sm="5" md="6">
+            <v-col cols="12" :md="mdSize">
               <v-select
                 label="Carpetas"
                 dense
@@ -78,7 +42,7 @@
               ></v-select>
             </v-col>
 
-            <v-col cols="11" sm="5" md="6">
+            <v-col cols="12" :md="mdSize">
               <v-select
                 v-model="subCarpetaSelecionada"
                 :items="computedSubCarpeta"
@@ -90,7 +54,7 @@
               ></v-select>
             </v-col>
 
-            <v-col cols="11" sm="5" md="6">
+            <v-col cols="12" :md="mdSize">
               <v-select
                 :items="estados"
                 v-model="estadoSeleccionado"
@@ -101,101 +65,260 @@
                 outlined
               ></v-select>
             </v-col>
+            <v-col cols="12" :md="4">
+              <v-menu
+                max-width="400px"
+                bottom
+                rounded="xl"
+                :offset-x="true"
+                :offset-y="true"
+                v-model="menu"
+                :close-on-content-click="false"
+              >
+                <template v-slot:activator="{ on, attrs }">
+                  <v-text-field
+                    v-model="dateRangeText"
+                    label="Filtrar por fecha"
+                    append-icon="mdi-calendar"
+                    outlined
+                    readonly
+                    dense
+                    v-bind="attrs"
+                    v-on="on"
+                    style="font-size: 0.78em"
+                  >
+                    Escoger fechas
+                  </v-text-field>
+                </template>
+                <v-date-picker
+                  full-width
+                  :selectedItemsText="comprobador()"
+                  locale="cl"
+                  v-model="dates"
+                  range
+                  :min="fechaMinimaCaducidad"
+                >
+                  <v-spacer></v-spacer>
+                  <v-btn
+                    color="grey"
+                    text
+                    class="body-2 font-weight-bold"
+                    @click="limpiarCalendario()"
+                  >
+                    Limpiar
+                  </v-btn>
+                  <v-btn color="primary" @click="menu = false"> Listo </v-btn>
+                </v-date-picker>
+              </v-menu>
+            </v-col>
           </v-row>
-        </v-card-text>
+        </v-container>
       </v-card>
     </div>
 
     <div class="contenedor" v-if="!isLoading">
-      <v-card elevation="5" outlined class="mx-auto" max-width="98.6%">
+      <v-card elevation="5" outlined class="mx-auto mb-8" max-width="98.6%">
         <v-data-table
+          :single-expand="singleExpand"
+          :expanded.sync="expanded"
+          item-key="_id"
+          show-expand
           :headers="headers"
           :items="filtros"
-          sort-by="nombre"
+          sort-by="statusId"
           class="elevation-1"
           :search="search"
+          :items-per-page="30"
+          :footer-props="{
+            'items-per-page-options': [15, 20, 25, 30, 35, 40],
+          }"
         >
-          <template v-slot:[`item.padreSuperior`]="{ item }">
-            {{ obtenerNombreSociedad(item.padreSuperior) }}
+          <template v-slot:[`item.number`]="{ index }">
+            {{ index + 1 }}
           </template>
-
-          <template v-slot:[`item.abuelo`]="{ item }">
-            {{ obtenerNombreCarpeta(item.abuelo) }}
+          <template v-slot:[`item.fechaCambioEstado`]="{ item }">
+            {{ fechaFormateada(item.fechaCambioEstado) }}
           </template>
-
-          <template v-slot:[`item.padre`]="{ item }">
-            {{ obtenerNombreSubCarpeta(item.padre) }}
+          <template v-slot:[`item.fechaEmision`]="{ item }">
+            {{ fechaFormateada(item.fechaEmision) }}
+          </template>
+          <template v-slot:[`item.fechaCaducidad`]="{ item }">
+            {{ fechaFormateada(item.fechaCaducidad) }}
           </template>
 
           <template v-slot:[`item.status`]="{ item }">
             <v-chip :color="getColor(item.status, item)" dark>
-              {{ getNombre(item.status) }}
+              {{ item.status }}
             </v-chip>
           </template>
+
+          <template v-slot:[`item.diasVigencia`]="{ item }">
+            <v-tooltip top color="blue">
+              <template v-slot:activator="{ on, attrs }">
+                <div
+                  v-on="on"
+                  v-bind="attrs"
+                  class="text-truncate"
+                  style="max-width: 140px"
+                >
+                  {{ item.diasVigencia }}
+                </div>
+              </template>
+              <span>{{
+                transformarDiasVigencia(item.fechaEmision, item.fechaCaducidad)
+              }}</span>
+            </v-tooltip>
+          </template>
+
+          <template v-slot:[`item.ir`]="{ item }">
+            <v-btn large icon @click="enviarRuta(item)">
+              <Icon
+                width="28"
+                height="28"
+                icon="vscode-icons:file-type-light-todo"
+              ></Icon>
+            </v-btn>
+          </template>
+
+          <template v-slot:[`item.diasRestantes`]="{ item }">
+            <span v-if="item.diasRestantes >= 0">{{ item.diasRestantes }}</span>
+            <span class="red--text" v-if="item.diasRestantes < 0">{{
+              item.diasRestantes
+            }}</span>
+          </template>
           <template v-slot:[`item.archivo`]="{ item }">
-            <div class="text-truncate" style="max-width: 140px">
-              <v-icon class="mr-2"> mdi-file-pdf-box</v-icon>
-              <a
-                class="texto"
-                :href="link+'uploadFile/files/' + item.archivo"
-                >{{ item.archivo }}
-              </a>
-            </div>
+            <v-tooltip top color="blue">
+              <template v-slot:activator="{ on, attrs }">
+                <div
+                  v-on="on"
+                  v-bind="attrs"
+                  class="text-truncate"
+                  style="max-width: 140px"
+                >
+                  <Icon
+                    width="25"
+                    height="25"
+                    :icon="obtenerExtension(item.archivo)"
+                    class="mr-2"
+                  ></Icon>
+                  <a target="_blank" class="texto" :href="item.archivo"
+                    >{{
+                      item.archivo.substring(item.archivo.lastIndexOf("/") + 1)
+                    }}
+                  </a>
+                </div>
+              </template>
+              <span>{{
+                item.archivo.substring(item.archivo.lastIndexOf("/") + 1)
+              }}</span>
+            </v-tooltip>
+          </template>
+          <template v-slot:[`expanded-item`]="{ headers, item }">
+            <td :colspan="headers.length">
+              Pertenece al parametro: <b>{{ item.nombreParametro }}</b>
+            </td>
           </template>
           <template v-slot:top>
             <v-toolbar flat>
-              <v-toolbar-title>Archivos</v-toolbar-title>
-              <v-divider class="mx-4" inset vertical></v-divider>
-              <v-spacer></v-spacer>
+              <v-toolbar-title v-if="searchClosed">Archivos</v-toolbar-title>
+              <v-divider
+                v-if="searchClosed"
+                class="mx-4"
+                inset
+                vertical
+              ></v-divider>
+              <v-spacer v-if="searchClosed"></v-spacer>
               <v-text-field
+                @focus="searchClosed = false"
+                @blur="searchClosed = true"
                 v-model="search"
-                label="Ingrese nombre de archivo"
-                hide-details
-                single-line
+                clearable
+                dense
+                filled
+                rounded
+                placeholder="Buscar archivo"
                 prepend-inner-icon="mdi-magnify"
+                class="mr-3 pt-6 expanding-search"
+                :class="{ closed: searchClosed && !search }"
               ></v-text-field>
               <template>
                 <vue-json-to-csv
-                  :json-data="archivos"
+                  :json-data="filtros"
                   :labels="{
-                    nombre: { title: 'Nombre' },
-                    status: { title: 'Status del documento' },
-                    diasVigencia: { title: 'Dias de vigencia' },
+                    nombreSociedad: { title: 'Nombre Contenedor' },
+                    nombreCarpeta: { title: 'Carpeta' },
+                    nombreSubCarpeta: { title: 'SubCarpeta' },
+                    nombreParametro: { title: 'Nombre parametro' },
+                    nombre: { title: 'Nombre archivo' },
+                    archivo: { title: 'Archivo' },
+                    status: { title: 'Status del archivo' },
+                    fechaEmision: { title: 'Fecha emisión archivo' },
+                    fechaCambioEstado: {
+                      title: 'Fecha alerta archivo (status: por vencer)',
+                    },
+                    fechaCaducidad: { title: 'Fecha Caducidad archivo' },
+                    diasVigencia: { title: 'Días vigencia archivo' },
+                    diasRestantes: { title: 'Días restantes vencimiento' },
                   }"
-                  csv-title="archivo"
+                  :csv-title="'resumenGeneralArchivos-' + fechaHoy"
                   :separator="';'"
                 >
-                  <v-btn icon> <v-icon color="green">mdi-microsoft-excel</v-icon></v-btn>
+                  <v-btn icon>
+                    <v-icon color="green">mdi-microsoft-excel</v-icon></v-btn
+                  >
                 </vue-json-to-csv>
               </template>
             </v-toolbar>
           </template>
 
           <template v-slot:no-data>
-            <v-btn color="primary" @click="initialize"> Reset </v-btn>
+            <v-btn color="primary" @click="obtenerTodo"> Reset </v-btn>
           </template>
         </v-data-table>
       </v-card>
     </div>
+    <trigger v-model="showScheduleForm"></trigger>
   </div>
 </template>
 
 <script>
 import axios from "axios";
 import moment from "moment";
+import location from "moment/dist/locale/es";
+moment.updateLocale("cl", location);
 import VueJsonToCsv from "vue-json-to-csv";
+import Kpi from "../Kpi.vue";
 import loading from "../loading.vue";
+import Trigger from "../trigger.vue";
+import { Icon } from "@iconify/vue2";
+
 export default {
-  components: { VueJsonToCsv, loading },
+  components: { VueJsonToCsv, loading, Trigger, Kpi, Icon },
   data: () => ({
+    dates: ["", ""],
+    menu: false,
+    extensiones: [
+      { type: "png", icon: "vscode-icons:file-type-image" },
+      { type: "pdf", icon: "vscode-icons:file-type-pdf2", color: "red" },
+      { type: "xlsx", icon: "vscode-icons:file-type-excel" },
+      { type: "jpg", icon: "vscode-icons:file-type-image" },
+      { type: "csv", icon: "vscode-icons:file-type-excel" },
+      { type: "docx", icon: "vscode-icons:file-type-word" },
+    ],
+    numero: 0,
+    fechaHoy: new Date().toLocaleString(),
+    searchClosed: true,
+    showScheduleForm: false,
+    mdSize: 2,
+    xlSize: 2,
     link: process.env.VUE_APP_SERVER_URL,
-    cVigente: 0,
-    cPorVencer: 0,
-    cCaducado: 0,
     busqueda: "",
     search: "",
     isLoading: true,
     sociedades: [],
+    expanded: [],
+    singleExpand: true,
+    parametros: [],
     sociedadSeleccionada: {
       nombre: "Todo",
       _id: "",
@@ -226,40 +349,12 @@ export default {
     subCarpetas: [],
     todoSubCarpetas: [],
     subCarpetasDefault: [{ nombre: "Todo", _id: "" }],
-    kpi: [
-      {
-        nombre: "Archivos totales",
-        color: "blue",
-        icon: "mdi-file",
-        id: 0,
-        total: 0,
-        porcentaje: 0,
-      },
-      {
-        nombre: "Vigentes",
-        color: "green",
-        id: 3,
-        icon: "mdi-check",
-        total: 0,
-        porcentaje: 0,
-      },
-      {
-        nombre: "Por Vencer",
-        color: "orange",
-        icon: "mdi-alert-octagon-outline",
-        id: 2,
-        total: 0,
-        porcentaje: 0,
-      },
-      {
-        nombre: "Vencidos",
-        color: "red",
-        icon: "mdi-close-box-outline",
-        id: 1,
-        total: 0,
-        porcentaje: 0,
-      },
-    ],
+    apiEndpointArchivo: {
+      countAllFiles: "archivo/countAllFiles",
+      countVigentes: "archivo/countVigentes",
+      countPorVencer: "archivo/countPorVencer",
+      countVencidos: "archivo/countVencidos",
+    },
     estados: [
       { nombre: "Todos", codigo: 0 },
       { nombre: "Vigente", codigo: 3 },
@@ -268,22 +363,27 @@ export default {
     ],
     headers: [
       {
-        text: "Sociedad",
+        text: "",
+        align: "start",
+        value: "number",
+      },
+      {
+        text: "Contenedor",
         align: "start",
         sortable: true,
-        value: "padreSuperior",
+        value: "nombreSociedad",
       },
       {
         text: "Carpeta",
         align: "start",
         sortable: true,
-        value: "abuelo",
+        value: "nombreCarpeta",
       },
       {
         text: "SubCarpeta",
         align: "start",
         sortable: true,
-        value: "padre",
+        value: "nombreSubCarpeta",
       },
       {
         text: "Nombre",
@@ -298,46 +398,49 @@ export default {
         value: "status",
       },
       {
-        text: "Dias de Aviso alerta",
-        sortable: false,
-        align: "center",
-        value: "diasAviso",
-      },
-      {
         text: "Dias de vigencia archivo",
         align: "center",
         sortable: false,
         value: "diasVigencia",
       },
       {
-        text: "Dias restantes caducidad",
+        text: "Temporizador vencimiento",
         align: "center",
         sortable: true,
         value: "diasRestantes",
       },
+      { text: "Fecha Emisión", value: "fechaEmision" },
+      {
+        text: "Fecha por vencer",
+        sortable: true,
+        value: "fechaCambioEstado",
+      },
+      { text: "Fecha Caducidad", value: "fechaCaducidad" },
       { text: "Archivo", sortable: false, value: "archivo" },
       { text: "Tamaño", value: "peso" },
-      { text: "Fecha Subida", value: "fechaCreacion" },
-      { text: "Fecha Emisión", value: "fechaEmision" },
-      { text: "Fecha Caducidad", value: "fechaCaducidad" },
+      { text: "Gestionar", value: "ir", align: "center", sortable: false },
+      { text: "Parametro", value: "data-table-expand", align: "center" },
     ],
-    message: "",
     archivos: [],
   }),
   computed: {
-    fechaEm() {
-      if (this.editedItem.fechaEmision) {
-        return this.obtenerDiferencia(
-          this.editedItem.fechaEmision,
-          this.editedItem.fechaCaducidad
-        );
-      } else {
-        return 1;
+    fechaMinimaCaducidad() {
+      if (this.dates.length == 1) {
+        return moment(this.dates[0]).add(1, "days").toISOString().substr(0, 10);
       }
+
+      return "";
+    },
+    dateRangeText() {
+      return this.valoresFecha();
     },
     filtros() {
       return this.filtroSociedad(
-        this.filtroCarpetas(this.filtroSubCarpetas(this.filtroStatus(this.archivos)))
+        this.filtroCarpetas(
+          this.filtroSubCarpetas(
+            this.filtroFechas(this.filtroStatus(this.archivos))
+          )
+        )
       );
     },
     computedCarpeta() {
@@ -349,20 +452,98 @@ export default {
   },
   watch: {},
   created() {
-    this.iniciarSociedad();
-    this.iniciarCarpetas();
-    this.iniciarSubCarpetas();
-    this.initialize();
+    //this.componentDidMount();
+    this.obtenerTodo();
   },
   methods: {
-    contadorArchivos(lista, opcion) {
-      let archivosFiltrados = lista.filter((archivo) => archivo.status === opcion);
-      return archivosFiltrados.length;
+    transformarDiasVigencia(fechaEmision, fechaCaducidad) {
+      var date1 = moment(fechaEmision);
+      var date2 = moment(fechaCaducidad);
+      var years = date2.diff(date1, "years");
+      date1.add(years, "years");
+      var months = date2.diff(date1, "months");
+      date1.add(months, "months");
+      var days = date2.diff(date1, "days");
+      return (
+        years + " " + "Años, " + months + " " + "Meses, " + " " + days + " Días"
+      );
     },
+    valoresFecha() {
+      if (this.dates.length == 2) {
+        if (this.dates[0].length < 1 && this.dates[1].length < 1) {
+          return "No hay fecha seleccionada";
+        }
+        return (
+          "Fecha emisión: " +
+          moment(this.dates[0]).format("DD/MM/YYYY") +
+          "   -   " +
+          "Fecha caducidad: " +
+          moment(this.dates[1]).format("DD/MM/YYYY")
+        );
+      }
+      if (this.dates.length == 1) {
+        return "Fecha emisión: " + moment(this.dates[0]).format("DD/MM/YYYY");
+      }
+    },
+    //TODO: para los apartados del calendario
+    comprobador() {
+      if (this.dates[0].length < 1 && this.dates[1].length < 1) {
+        return "Nada seleccionado";
+      } else if (this.dates.length > 1) {
+        let fecha1 = moment(this.dates[0]);
+        let fecha2 = moment(this.dates[1]);
+        let diferencia = fecha2.diff(fecha1, "days");
+        diferencia = diferencia + 1;
+        let retorno = "Días seleccionados: " + diferencia;
+        return retorno;
+      } else {
+        return this.dates.join("-");
+      }
+    },
+    obtenerExtension(archivo) {
+      const myUrl = archivo; // la URL almacenada como una cadena de texto
+      const currentExtension = myUrl.substring(myUrl.lastIndexOf(".") + 1); // obtener la extensión
+
+      let icono = "";
+      this.extensiones.forEach((extension) => {
+        if (extension.type == currentExtension) {
+          icono = extension.icon;
+        }
+      });
+      return icono;
+    },
+    enviarRuta(item) {
+      this.$router.push({
+        name: "files",
+        params: {
+          sociedad: item.padreSuperior,
+          Folder: item.abuelo,
+          subFolder: item.padre,
+        },
+      });
+    },
+    fechaFormateada(fecha) {
+      let fechaFormat = moment(fecha).format("DD/MM/YYYY");
+      return fechaFormat;
+    },
+    obtenerFechaAviso(item) {
+      let fecha = moment(item.fechaEmision)
+        .add(item.diasAviso, "days")
+        .format("DD/MM/YYYY");
+      return fecha;
+    },
+
     carpetasHijas(carpetas) {
       if (this.sociedadSeleccionada.nombre == "Todo") {
+        this.carpetaSelecionada = this.carpetasDefault[0];
+        this.estadoSeleccionado = this.estados[0];
+        this.carpetas.forEach((element) => {
+          this.carpetasDefault.push(element);
+        });
         return this.carpetasDefault;
       }
+      this.carpetaSelecionada = this.carpetasDefault[0];
+      this.estadoSeleccionado = this.estados[0];
       let hijas = carpetas.filter((item) => {
         return item.padre === this.sociedadSeleccionada._id;
       });
@@ -370,192 +551,196 @@ export default {
       return hijas;
     },
     subCarpetasHijas(subCarpetas) {
+      if (this.subCarpetaSelecionada.nombre != "Todo") {
+        this.estadoSeleccionado = this.estados[0];
+      } else {
+        this.estadoSeleccionado = this.estados[0];
+      }
       if (
-        this.subCarpetaSelecionada.nombre == "Todo" &&
+        this.carpetaSelecionada.nombre == "Todo" &&
         this.sociedadSeleccionada.nombre == "Todo"
       ) {
+        this.subCarpetas.forEach((element) => {
+          this.subCarpetasDefault.push(element);
+        });
         return this.subCarpetasDefault;
+      }
+      //Si seleciono una sociedad
+      else if (
+        this.sociedadSeleccionada.nombre != "Todo" &&
+        this.carpetaSelecionada.nombre == "Todo"
+      ) {
+        this.estadoSeleccionado = this.estados[0];
+
+        this.subCarpetaSelecionada = this.subCarpetasDefault[0];
+        let listaFiltrada = subCarpetas.filter(
+          (carpeta) =>
+            !carpeta.padreSuperior.indexOf(this.sociedadSeleccionada._id)
+        );
+        listaFiltrada.unshift({ nombre: "Todo", _id: "" });
+        return listaFiltrada;
+      }
+      //Si solo selecciono una carpeta
+      else if (
+        this.sociedadSeleccionada.nombre == "Todo" &&
+        this.carpetaSelecionada.nombre != "Todo"
+      ) {
+        this.estadoSeleccionado = this.estados[0];
+
+        let carpetasFiltradas = this.carpetas.filter(
+          (carpeta) => carpeta.nombre == this.carpetaSelecionada.nombre
+        );
+        let nuevasSubCarpetas = [];
+        nuevasSubCarpetas = subCarpetas.filter((subCarpeta) => {
+          return carpetasFiltradas.some((carpeta) => {
+            return carpeta._id === subCarpeta.padre;
+          });
+        });
+        nuevasSubCarpetas.unshift({ nombre: "Todo", _id: "" });
+        this.subCarpetaSelecionada = this.subCarpetasDefault[0];
+        return nuevasSubCarpetas;
       }
       let hijas = subCarpetas.filter((item) => {
         return item.padre === this.carpetaSelecionada._id;
       });
       hijas.unshift({ nombre: "Todo", _id: "" });
+      this.subCarpetaSelecionada = this.subCarpetasDefault[0];
+      this.estadoSeleccionado = this.estados[0];
+
       return hijas;
     },
+    //TODO: filtros
     filtroSociedad(archivos) {
       return archivos.filter(
-        (archivo) => !archivo.padreSuperior.indexOf(this.sociedadSeleccionada._id)
+        (archivo) =>
+          !archivo.padreSuperior.indexOf(this.sociedadSeleccionada._id)
       );
     },
+
     filtroCarpetas(archivos) {
-      let listaFiltrada = archivos.filter(
-        (archivo) => !archivo.abuelo.indexOf(this.carpetaSelecionada._id)
-      );
-      return listaFiltrada;
+      if (
+        this.sociedadSeleccionada.nombre != "Todo" &&
+        this.carpetaSelecionada.nombre != "Todo"
+      ) {
+        return archivos.filter(
+          (archivo) => !archivo.abuelo.indexOf(this.carpetaSelecionada._id)
+        );
+      } else if (
+        this.sociedadSeleccionada.nombre == "Todo" &&
+        this.carpetaSelecionada.nombre != "Todo"
+      ) {
+        return archivos.filter(
+          (archivo) =>
+            !archivo.nombreCarpeta.indexOf(this.carpetaSelecionada.nombre)
+        );
+      }
+      return archivos;
     },
     filtroSubCarpetas(archivos) {
-      return archivos.filter(
-        (archivo) => !archivo.padre.indexOf(this.subCarpetaSelecionada._id)
-      );
+      if (this.subCarpetaSelecionada.nombre != "Todo") {
+        return archivos.filter(
+          (archivo) => !archivo.padre.indexOf(this.subCarpetaSelecionada._id)
+        );
+      }
+      return archivos;
     },
     filtroStatus(archivos) {
-      let archivosFiltrados = archivos.filter(
-        (archivo) => archivo.status === this.estadoSeleccionado.codigo
-      );
-      if (archivosFiltrados.length > 0) {
-        return archivosFiltrados;
-      } else {
+      if (this.estadoSeleccionado.codigo == 0) {
         return archivos;
       }
+      let archivosFiltrados = archivos.filter(
+        (archivo) => archivo.status === this.estadoSeleccionado.nombre
+      );
+      return archivosFiltrados;
+    },
+    filtroFechas(archivos) {
+      //Si solo hay una
+      if (this.dates.length == 1) {
+        let archivosFiltrados = archivos.filter((archivo) =>
+          moment(archivo.fechaEmision).isSame(moment(this.dates[0]))
+        );
+        return archivosFiltrados;
+      }
+
+      //Si hay dos fechas
+      if (this.dates.length > 1) {
+        if (this.dates[0].length > 1 && this.dates[1].length > 1) {
+          let archivosFiltrados = archivos.filter(
+            (archivo) =>
+              moment(archivo.fechaEmision).isSameOrAfter(
+                moment(this.dates[0])
+              ) &&
+              moment(archivo.fechaCaducidad).isSameOrBefore(
+                moment(this.dates[1])
+              )
+          );
+          return archivosFiltrados;
+        }
+      }
+      return archivos;
+    },
+    limpiarCalendario() {
+      this.dates = ["", ""];
     },
     limpiarFiltros() {
       this.sociedadSeleccionada = Object.assign({}, this.defaultFilter);
       this.carpetaSelecionada = Object.assign({}, this.defaultFilter);
       this.subCarpetaSelecionada = Object.assign({}, this.defaultFilter);
       this.estadoSeleccionado = Object.assign({}, this.defaultStatusFilter);
+      this.dates = ["", ""];
     },
-    obtenerNombreSociedad(itemId) {
-      let found = this.sociedades.find((e) => e._id === itemId);
+    obtenerNombreSociedad(itemId, sociedades) {
+      let found = sociedades.find((e) => e._id === itemId);
       let nombreSociedad = found.nombre;
       return nombreSociedad;
     },
-    obtenerNombreCarpeta(itemId) {
-      var found = this.todoCarpetas.find((e) => e._id === itemId);
-      return found.nombre;
+    obtenerNombreCarpeta(itemId, carpetas) {
+      var found = carpetas.find((e) => e._id === itemId);
+      let nombreCarpeta = found.nombre;
+      return nombreCarpeta;
     },
-    obtenerNombreSubCarpeta(itemId) {
-      var found = this.todoSubCarpetas.find((e) => e._id === itemId);
-      return found.nombre;
+    obtenerNombreSubCarpeta(itemId, subCarpetas) {
+      var found = subCarpetas.find((e) => e._id === itemId);
+      let nombreSubCarpeta = found.nombre;
+      return nombreSubCarpeta;
     },
-    async iniciarSociedad() {
-      await axios.get("/sociedad/getPadres").then((result) => {
-        this.sociedades = result.data;
+    obtenerNombreParametro(parametroID, parametros) {
+      var found = parametros.find((e) => e._id === parametroID);
+      let nombreParametro = found.value;
+      return nombreParametro;
+    },
+    async obtenerTodo() {
+      await axios.get("archivo/archivosStatus").then((result) => {
+        let { archivos, sociedades, carpetas, subCarpetas, parametros } =
+          result.data;
+        this.archivos = archivos;
+        this.sociedades = sociedades;
         this.sociedades.unshift({ nombre: "Todo", _id: "" });
-      });
-    },
-    async iniciarCarpetas() {
-      await axios.get("/carpeta/getAllFolders").then((result) => {
-        this.carpetas = result.data;
-        this.todoCarpetas = result.data;
-      });
-    },
-    async iniciarSubCarpetas() {
-      await axios.get("/subCarpeta/getAllSubFolders").then((result) => {
-        this.subCarpetas = result.data;
-        this.todoSubCarpetas = result.data;
+        this.carpetas = carpetas;
+        this.todoCarpetas = carpetas;
+        this.parametros = parametros;
+        this.subCarpetas = subCarpetas;
+        this.todoSubCarpetas = subCarpetas;
+
+        this.isLoading = false;
       });
     },
     obtenerDiferencia(fechaEmision, fechaVencimiento) {
-      this.editedItem.diasAviso = 1;
       var fecha1 = moment(fechaEmision);
       var fecha2 = moment(fechaVencimiento);
       return fecha2.diff(fecha1, "days");
     },
-    getNombre(status) {
-      if (status == 3) return "Vigente";
-      else if (status == 2) return "Por vencer";
-      else return "Vencido";
-    },
     getColor(status) {
-      if (status == 3) return "green";
-      else if (status == 2) {
-        return "orange";
-      } else return "red";
-    },
-    async initialize() {
-      await axios.get("archivo/allFiles").then((result) => {
-        let carpetas = result.data;
-        carpetas.forEach((element) => {
-          this.iniciarFile(element);
-        });
-        this.archivos = result.data;
-        this.isLoading = false;
-        let total = 0;
-        var porcentaje = 0;
-        var intPorcentaje = 0;
-        this.kpi.forEach((element) => {
-          if (element.id == 0) {
-            element.total = this.archivos.length;
-            total = this.archivos.length;
-            element.porcentaje = 100;
-          } else if (element.id == 3) {
-            element.total = this.contadorArchivos(this.archivos, 3);
-            porcentaje = (element.total / total) * 100;
-            intPorcentaje = Math.round(porcentaje);
-            element.porcentaje = intPorcentaje;
-          } else if (element.id == 2) {
-            element.total = this.contadorArchivos(this.archivos, 2);
-            porcentaje = (element.total / total) * 100;
-            intPorcentaje = Math.round(porcentaje);
-            element.porcentaje = intPorcentaje;
-          } else {
-            element.total = this.contadorArchivos(this.archivos, 1);
-            porcentaje = (element.total / total) * 100;
-            intPorcentaje = Math.round(porcentaje);
-            element.porcentaje = intPorcentaje;
-          }
-        });
-      });
-    },
-    iniciarFile(element) {
-      let fechaCrea = element.fechaCreacion.split("T");
-      let fechaEmi = element.fechaEmision.split("T");
-      let fechaCadu = element.fechaCaducidad.split("T");
-      element.fechaCreacion = fechaCrea[0];
-      element.fechaEmision = fechaEmi[0];
-      element.fechaCaducidad = fechaCadu[0];
-
-      var today = new Date();
-      var now = today.toISOString();
-      var cortado = now.split("T");
-      var fecha1 = moment(element.fechaEmision);
-      var fecha2 = moment(element.fechaCaducidad);
-      var fecha3 = moment(element.fechaCaducidad);
-
-      var diasVigencia = fecha2.diff(fecha1, "days");
-      var diasRestantes = fecha3.diff(cortado[0], "days");
-
-      element.diasVigencia = diasVigencia;
-      element.diasRestantes = diasRestantes;
-      console.log(element.nombre)
-      console.log("Fecha emision: "+element.fechaEmision)
-      console.log("Fecha vencimiento: "+element.fechaCaducidad)
-      console.log("Dias alerta: " + element.diasAviso )
-      console.log("Dias de vigencia: "+element.diasVigencia)
-      console.log("Dias restantes: "+element.diasRestantes)
-      
-      console.log("--------------------")
-      if (diasRestantes < 1) {
-        element.diasRestantes = 0;
+      switch (status) {
+        case "Vigente":
+          return "green";
+        case "Por vencer":
+          return "orange";
+        case "Vencido":
+          return "red";
+        default:
+          break;
       }
-      //   console.log("Dias de vigencia: " + element.diasVigencia);
-      //   console.log("Dias de aviso: " + element.diasAviso);
-      //   console.log("Dias restantes: " + diasRestantes);
-      //   console.log("---------------");
-      if (diasRestantes == 0) {
-        element.status = 1;
-      } else if (diasRestantes > element.diasAviso) {
-        element.status = 3;
-      } else if (diasRestantes <= element.diasAviso && diasRestantes >= 1) {
-        element.status = 2;
-      } else {
-        element.status = 1;
-      }
-    },
-
-    eliminarDiacriticos(texto) {
-      return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-    },
-    formatBytes(bytes, decimals = 2) {
-      if (!+bytes) return "0 Bytes";
-
-      const k = 1024;
-      const dm = decimals < 0 ? 0 : decimals;
-      const sizes = ["Bytes", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
-
-      const i = Math.floor(Math.log(bytes) / Math.log(k));
-
-      return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
     },
   },
 };
@@ -573,4 +758,17 @@ export default {
   align-items: center;
   justify-content: center;
 }
+</style>
+
+<style lang="sass">
+.v-input.expanding-search
+  transition: max-width 0.3s
+  .v-input__slot
+    cursor: pointer !important
+    &before, &:after
+      border-color: transparent !important
+  &.closed
+    max-width: 50px
+    .v-input__slot
+      background-color: transparent !important
 </style>

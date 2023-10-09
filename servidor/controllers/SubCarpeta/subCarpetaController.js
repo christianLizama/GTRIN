@@ -1,10 +1,22 @@
-import subCarpeta from "../../models/SubCarpeta";
-import archivo from "../../models/Archivo";
-import moment from "moment";
+import subCarpeta from "../../models/SubCarpeta.js";
+import archivo from "../../models/Archivo.js";
+import cumplimiento from "../../utils/cumplimientos.js";
+
 //Metodo para crear una sub carpeta
 const add = async (req, res, next) => {
   try {
-    const reg = await subCarpeta.create(req.body);
+    const reg = await subCarpeta.create(req.body.carpeta);
+    // const buscado = await subCarpeta.findOne(reg._id);
+    // req.body.parametros.forEach(element => {
+    //   buscado.parametros.push(element); 
+    // });
+    // const actualizado = await subCarpeta.findByIdAndUpdate(buscado._id, buscado, { new: true });
+    if(reg){
+      const idCarpeta = reg.padre;
+      const idSociedad = reg.padreSuperior;
+      await cumplimiento.calcularCumplimientoCarpeta(idCarpeta);
+      await cumplimiento.calcularCumplimientoSociedad(idSociedad);
+    }
     res.status(200).json(reg);
   } catch (e) {
     res.status(500).send({
@@ -17,7 +29,7 @@ const add = async (req, res, next) => {
 //Metodo para obtener una sub carpeta mediante su id
 const query = async (req, res, next) => {
   try {
-    console.log(req.query._id);
+    //console.log(req.query._id);
     const reg = await subCarpeta.findOne({ _id: req.query._id });
     if (!reg) {
       res.status(404).send({
@@ -54,6 +66,30 @@ const queryNombre = async (req, res, next) => {
 };
 
 //Metodo para obtener los hijos de una carpeta
+const getArchivosParametro = async (req, res, next) => {
+  try {
+    const id = req.query._id;
+    const idPadre = req.query.padre;
+    const reg = await archivo.find({ parametro: id , padre:idPadre});
+    if (!reg) {
+      res.status(404).send({
+        message: "El registro no existe",
+      });
+    } else {
+      res.status(200).json(reg);
+      console.log(reg);
+    }
+  } catch (e) {
+    res.status(500).send({
+      message: "Ocurrio un error",
+    });
+    next(e);
+  }
+};
+
+
+
+//Metodo para obtener los hijos de una carpeta
 const getArchivos = async (req, res, next) => {
   try {
     const id = req.query._id;
@@ -76,7 +112,7 @@ const getArchivos = async (req, res, next) => {
 //Metodo para agregar archivos a una subCarpeta
 const addFile = async (req, res, next) => {
   try {
-    console.log(req.body);
+    //console.log(req.body);
     const reg = await subCarpeta.findByIdAndUpdate(
       { _id: req.body._id },
       { archivos: req.body.archivo }
@@ -108,9 +144,13 @@ const update = async (req, res, next) => {
 const remove = async (req, res, next) => {
   try {
     const id = req.params;
-    console.log(id);
+    //console.log(id);
     const reg = await subCarpeta.findByIdAndDelete({ _id: id.id });
     if (reg) {
+      const idCarpeta = reg.padre;
+      const idSociedad = reg.padreSuperior;
+      await cumplimiento.calcularCumplimientoCarpeta(idCarpeta);
+      await cumplimiento.calcularCumplimientoSociedad(idSociedad);
       res.status(200).json(reg);
     }
   } catch (e) {
@@ -124,7 +164,7 @@ const remove = async (req, res, next) => {
 //Metodo para actualizar los archivos de una sub carpeta
 const updateHijos = async (req, res, next) => {
   try {
-    console.log(req.body);
+    //console.log(req.body);
     const reg = await subCarpeta.findByIdAndUpdate(
       { _id: req.body._id },
       { archivos: req.body.archivos }
@@ -151,7 +191,7 @@ const getAllSubFolders = async (req, res, next) => {
   }
 };
 
-module.exports = {
+export default {
   add,
   query,
   update,
@@ -160,5 +200,6 @@ module.exports = {
   queryNombre,
   addFile,
   updateHijos,
-  getAllSubFolders
+  getAllSubFolders,
+  getArchivosParametro
 };

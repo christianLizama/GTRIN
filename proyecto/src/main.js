@@ -4,9 +4,14 @@ import router from './router'
 import store from './store'
 import vuetify from './plugins/vuetify'
 import axios from 'axios'
+
+import cronCore from '@vue-js-cron/core'
+Vue.use(cronCore)
+
 Vue.config.productionTip = false
 
 axios.defaults.baseURL = process.env.VUE_APP_SERVER_URL;
+
 
 new Vue({
   router,
@@ -14,3 +19,4 @@ new Vue({
   vuetify,
   render: h => h(App)
 }).$mount('#app')
+

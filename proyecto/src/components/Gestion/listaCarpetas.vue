@@ -1,28 +1,25 @@
 <template>
   <v-card>
-    <v-alert v-model="aceptado" dense text type="success">
-      {{ alerta }}
-    </v-alert>
-    <v-alert v-model="rechazado" dense outlined type="error">
-      {{ alerta }}
-    </v-alert>
+    <snackbar ref="childComponent"></snackbar>
     <v-toolbar dense dark>
+      <v-btn @click="atras" big icon>
+        <v-icon>mdi-chevron-left</v-icon>
+      </v-btn>
       <v-toolbar-title class="white--text">
         {{ padre.nombre }}
       </v-toolbar-title>
 
       <v-spacer></v-spacer>
-
-      <v-text-field
-        v-model="busqueda"
-        label="Buscador"
-        hide-details
-        single-line
-        prepend-inner-icon="mdi-magnify"
-        class="shrink"
-      ></v-text-field>
-
       <v-tooltip bottom>
+        <template v-slot:activator="{ on, attrs }">
+          <v-btn v-on="on" v-bind="attrs" icon @click="hidden = !hidden">
+            <v-icon>{{ hidden ? "mdi-magnify" : "mdi-close" }}</v-icon>
+          </v-btn>
+        </template>
+        <span>Buscar</span>
+      </v-tooltip>
+
+      <v-tooltip bottom v-if="esAdmin">
         <template v-slot:activator="{ on, attrs }">
           <v-btn
             dark
@@ -30,25 +27,60 @@
             v-on="on"
             @click="showDialog = !showDialog"
           >
-          <v-icon>mdi-folder-plus</v-icon>
+            <v-icon>mdi-folder-plus</v-icon>
           </v-btn>
         </template>
         <span>Agregar carpeta</span>
       </v-tooltip>
     </v-toolbar>
+
     <loading texto="Cargando Datos" v-if="isLoading"></loading>
     <v-list v-if="!isLoading" two-line subheader>
+      <div class="container">
+        <v-expand-transition>
+          <v-text-field
+            v-show="!hidden"
+            v-model="busqueda"
+            clearable
+            hide-details
+            filled
+            dense
+            autofocus
+            rounded
+            full-width
+            color="black darken"
+            placeholder="Buscar Carpeta"
+            prepend-inner-icon="mdi-folder-search-outline"
+          ></v-text-field>
+        </v-expand-transition>
+      </div>
+
       <v-subheader inset> Carpetas </v-subheader>
-      <v-list-item v-for="item in resultadoBusqueda" :key="item.nombre" link>
+
+      <v-list-item
+        v-for="item in resultadoBusqueda"
+        :key="item.nombre"
+        link
+        @click="enviarRuta(item)"
+      >
         <v-list-item-avatar> <v-icon>mdi-folder </v-icon> </v-list-item-avatar>
-        <v-list-item-content @click="enviarRuta(item)">
+        <v-list-item-content>
           <v-list-item-title>{{ item.nombre }}</v-list-item-title>
           <v-list-item-subtitle>{{
             obtenerFecha(item.fechaCreacion)
           }}</v-list-item-subtitle>
         </v-list-item-content>
 
-        <v-menu left top offset-y>
+        <progress-folder :porcentaje="item.porcentaje"></progress-folder>
+
+        <v-menu
+          v-if="esAdmin"
+          top
+          left
+          rounded="tr-xl"
+          :offset-x="true"
+          :offset-y="true"
+        >
           <template v-slot:activator="{ on, attrs }">
             <v-btn icon v-bind="attrs" v-on="on">
               <v-icon> mdi-cog </v-icon>
@@ -69,12 +101,6 @@
             </v-list-item>
           </v-list>
         </v-menu>
-        <!-- <v-btn icon>
-          <v-icon class="mr-2" @click="editItem(item)"> mdi-pencil </v-icon>
-        </v-btn>
-        <v-btn icon>
-          <v-icon @click="deleteItem(item)"> mdi-delete </v-icon>
-        </v-btn> -->
         <v-list-item-action>
           <v-tooltip top>
             <template v-slot:activator="{ on, attrs }">
@@ -89,44 +115,105 @@
       </v-list-item>
     </v-list>
 
-    <v-dialog v-model="dialogDelete" max-width="400px">
+    <v-dialog
+      v-model="dialogDelete"
+      max-width="400px"
+      @keydown.esc="closeDelete"
+    >
       <v-card>
-        <v-card-title class="text-h5"> Borrar Carpeta </v-card-title>
-        <v-divider inset></v-divider>
-        <v-card-text>
-          Estas seguro que deseas borrar esta carpeta y todo su contenido?
+        <v-toolbar dark color="grey darken-3" dense flat>
+          <v-icon color="red" class="mr-2">mdi-alert</v-icon>
+          <v-toolbar-title class="text-body-4 font-weight-bold white--text">
+            ¿Estás seguro?
+          </v-toolbar-title>
+        </v-toolbar>
+
+        <v-card-text class="pa-4 black--text"
+          >Si borras esta carpeta se perdera todo su contenido
         </v-card-text>
 
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn color="blue darken-1" text @click="closeDelete"
+          <v-btn
+            color="grey"
+            text
+            class="body-2 font-weight-bold"
+            @click="closeDelete"
             >Cancelar</v-btn
           >
-          <v-btn color="blue darken-1" text @click="deleteItemConfirm"
-            >OK</v-btn
+          <v-btn
+            color="red"
+            class="body-2 font-weight-bold"
+            outlined
+            @click="deleteItemConfirm"
           >
+            OK
+          </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
 
     <v-dialog v-model="showDialog" max-width="500px">
       <v-card>
-        <v-card-title> {{ formTitle }}</v-card-title>
-        <v-card-text>
+        <v-toolbar dark color="black lighten-3" dense flat>
+          <v-btn icon dark @click="showDialog = !showDialog">
+            <v-icon>mdi-close</v-icon>
+          </v-btn>
+          <v-toolbar-title class="text-body-4 font-weight-bold white--text">
+            {{ formTitle }}
+          </v-toolbar-title>
+        </v-toolbar>
+        <v-card-text class="pa-4">
           <v-text-field
-            v-model="nombreCarpeta"
-            label="Nombre carpeta"
+            outlined
+            v-model="editedItem.nombre"
+            label="Nombre"
+            placeholder="Ingrese nombre de la carpeta"
           ></v-text-field>
           <v-text-field
-            v-model="descripcion"
+            outlined
+            v-model="editedItem.descripcion"
             label="Descripción"
+            placeholder="Ingrese descripción"
           ></v-text-field>
+          <v-select
+            v-model="editedItem.usuariosConAcceso"
+            outlined
+            :items="usuariosDisponibles"
+            label="Usuarios"
+            multiple
+            chips
+            return-object
+            :item-text="(user) => user.email"
+            hint="Selecciona usuarios con acceso"
+            persistent-hint
+            :no-data-text="
+              usuariosDisponibles.length === 0
+                ? 'No hay usuarios disponibles'
+                : ''
+            "
+          ></v-select>
         </v-card-text>
 
         <v-card-actions>
           <v-spacer></v-spacer>
+          <v-btn
+            color="grey"
+            text
+            class="body-2 font-weight-bold"
+            @click="close"
+          >
+            Cancel
+          </v-btn>
 
-          <v-btn text color="primary" @click="save"> Guardar </v-btn>
+          <v-btn
+            color="primary"
+            class="body-2 font-weight-bold"
+            outlined
+            @click="save"
+          >
+            Guardar
+          </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -135,57 +222,80 @@
 
 <script>
 import axios from "axios";
-import loading from '../loading.vue';
+import loading from "../loading.vue";
+import Snackbar from "../snackbar.vue";
+import ProgressFolder from "../ProgressFolder.vue";
 export default {
-  components: { loading},
+  components: { loading, Snackbar, ProgressFolder },
   data: () => ({
+    usuarios: [],
+    hidden: true,
+    searchClosed: true,
     busqueda: "",
-    isLoading:true,
-    alerta: "",
+    isLoading: true,
     showDialog: false,
     padre: {},
     nombreCarpeta: "",
     descripcion: "",
     carpetas: {},
     editedIndex: -1,
-    aceptado: false,
-    rechazado: false,
     dialogDelete: false,
     items: [
       { title: "Editar", icon: "mdi-pencil", metodo: "editItem" },
       { title: "Eliminar", icon: "mdi-delete" },
     ],
-    editedItem: {},
+    editedItem: {
+      nombre: "",
+      descripcion: "",
+      usuariosConAcceso: [],
+      // parametros:[]
+    },
+    defaulteditedItem: {
+      nombre: "",
+      descripcion: "",
+      usuariosConAcceso: [],
+      // parametros:[]
+    },
   }),
   created() {
     this.initialize();
+    this.getUsers();
   },
   watch: {
     dialogDelete(val) {
       val || this.closeDelete();
     },
     showDialog(val) {
-      if (val) {
-        this.nombreCarpeta = "";
-        this.descripcion = "";
-      }
-    },
-    aceptado(new_val) {
-      if (new_val) {
-        setTimeout(() => {
-          this.aceptado = false;
-        }, 3000);
-      }
-    },
-    rechazado(new_val) {
-      if (new_val) {
-        setTimeout(() => {
-          this.rechazado = false;
-        }, 3000);
-      }
+      val || this.close();
     },
   },
   computed: {
+    usuariosDisponibles() {
+      if (this.editedIndex === -1) {
+        // Creando nueva carpeta
+        return this.usuarios;
+      } else {
+        // Editando carpeta existente
+        const usuariosNormales = this.usuarios.filter(
+          (user) => user.rol !== "admin"
+        );
+        const usuariosSeleccionados = this.editedItem.usuariosConAcceso.map(
+          (user) => user._id
+        );
+
+        return usuariosNormales.map((user) => {
+          return {
+            ...user,
+            selected: usuariosSeleccionados.includes(user._id),
+          };
+        });
+      }
+    },
+    esAdmin() {
+      return (
+        this.$store.state.usuario && this.$store.state.usuario.rol == "admin"
+      );
+    },
     formTitle() {
       return this.editedIndex === -1
         ? "Nueva Carpeta"
@@ -205,6 +315,23 @@ export default {
     },
   },
   methods: {
+    async getUsers() {
+      await axios
+        .get("usuario/getUsuariosNormales")
+        .then((res) => {
+          this.usuarios = res.data;
+        })
+        .catch((e) => {
+          console.log(e);
+        });
+    },
+
+    atras() {
+      this.$router.go(-1);
+    },
+    addFind: function () {
+      this.finds.push({ value: "" });
+    },
     obtenerFecha(fecha) {
       let retorno = fecha.split("T");
       return retorno[0];
@@ -222,27 +349,47 @@ export default {
     closeDelete() {
       this.dialogDelete = false;
       this.$nextTick(() => {
-        this.editedItem = Object.assign({}, {});
+        this.editedItem = Object.assign({}, this.defaulteditedItem);
         this.editedIndex = -1;
       });
     },
-
+    async deleteAllFiles(idPadre) {
+      var data = {
+        id: idPadre,
+      };
+      await axios
+        .delete("archivo/removeFolderFiles", { data })
+        .then((result) => {
+          console.log(result.data);
+        });
+    },
     async deleteSubFolders(item) {
+      console.log(item);
       await axios
         .delete("/carpeta/deleteSubFolders/" + item._id)
         .then((result) => {
           console.log(result);
-          this.alerta = "Carpeta eliminada correctamente";
-          this.aceptado = true;
+          this.$refs.childComponent.SnackbarShow(
+            "success",
+            "Carpeta eliminada correctamente"
+          );
           this.actualizarHijos();
         });
     },
     async deleteFolder(item) {
-      console.log(item);
-      await axios.delete("/carpeta/remove/" + item._id).then((result) => {
-        console.log(result);
-        this.deleteSubFolders(item);
-      });
+      await axios
+        .delete("/carpeta/remove/" + item._id)
+        .then((result) => {
+          this.deleteSubFolders(result.data);
+          this.deleteAllFiles(item._id);
+        })
+        .catch((e) => {
+          console.log(e);
+          this.$refs.childComponent.SnackbarShow(
+            "error",
+            "No se ha podido elminar la carpeta"
+          );
+        });
     },
 
     deleteOrEdit(item, opcion) {
@@ -259,21 +406,23 @@ export default {
     save() {
       if (this.editedIndex > -1) {
         const resultado = this.carpetas.find(
-          (carpeta) => carpeta.nombre === this.nombreCarpeta
+          (carpeta) => carpeta.nombre === this.editedItem.nombre
         );
         //Si no la encuentra la crea
-        if (!resultado) {
-          console.log(this.nombreCarpeta);
-          if (this.nombreCarpeta.length > 3) {
+        if (!resultado || resultado._id === this.editedItem._id) {
+          console.log(this.editedItem.nombre);
+          if (this.editedItem.nombre.length > 3) {
             this.actualizarCarpeta(this.editedItem, this.editedIndex);
-            this.alerta = "Nombre modificado exitosamente";
-            this.aceptado = true;
+            this.$refs.childComponent.SnackbarShow(
+              "success",
+              "Nombre modificado exitosamente"
+            );
           }
-          //this.aceptado = true;
-          //this.actualizarSociedad2()
         } else {
-          this.alerta = "El nombre utilizado de carpeta ya existe";
-          this.rechazado = true;
+          this.$refs.childComponent.SnackbarShow(
+            "error",
+            "El nombre ingresado de carpeta ya existe"
+          );
         }
       } else {
         this.createF();
@@ -284,10 +433,12 @@ export default {
       this.showDialog = false;
       this.$nextTick(() => {
         this.editedIndex = -1;
-        this.editedItem = Object.assign({}, {});
+        this.editedItem = Object.assign({}, this.defaulteditedItem);
+        this.finds = Object.assign([], []);
       });
     },
     editItem(item) {
+      console.log(item);
       this.editedIndex = this.carpetas.indexOf(item);
       this.editedItem = Object.assign({}, item);
       this.showDialog = true;
@@ -297,7 +448,8 @@ export default {
       this.carpetas.forEach((element) => {
         newIds.push(element._id);
       });
-
+      // console.log("Las carpetas son:")
+      // console.log(this.carpetas)
       await axios
         .put("sociedad/updateCarpetas/", {
           _id: this.padre._id,
@@ -305,8 +457,10 @@ export default {
         })
         .then((res) => {
           console.log(res);
-          this.alerta = "Cambios realizados exitosamente";
-          this.aceptado = true;
+          this.$refs.childComponent.SnackbarShow(
+            "success",
+            "Cambios realizados exitosamente"
+          );
         })
         .catch((e) => {
           console.log(e.response);
@@ -321,14 +475,12 @@ export default {
         });
     },
     async actualizarCarpeta(carpeta, index) {
-      carpeta.nombre = this.nombreCarpeta;
-      carpeta.descripcion = this.descripcion;
+      carpeta.nombre = this.editedItem.nombre;
+      carpeta.descripcion = this.editedItem.descripcion;
       await axios
         .put("carpeta/update/", { _id: carpeta._id, carpeta: carpeta })
         .then((res) => {
-          console.log(res);
-          console.log(this.editedItem);
-          Object.assign(this.carpetas[index], carpeta);
+          Object.assign(this.carpetas[index], res.data);
         })
         .catch((e) => {
           console.log(e.response);
@@ -340,8 +492,10 @@ export default {
         .put("sociedad/update/", { _id: sociedad._id, sociedad: sociedad })
         .then((res) => {
           console.log(res);
-          this.alerta = "Carpeta creada exitosamente";
-          this.aceptado = true;
+          this.$refs.childComponent.SnackbarShow(
+            "success",
+            "Carpeta creada exitosamente"
+          );
         })
         .catch((e) => {
           console.log(e.response);
@@ -357,12 +511,34 @@ export default {
           console.log(e.response);
         });
     },
-    async getFolders(id) {
+
+    async getSubFolders(padre) {
+      const request = {
+        params: {
+          _id: padre._id,
+          padre: padre.padre,
+        },
+      };
+
       await axios
-        .get("sociedad/queryFolders?_id=" + id)
-        .then((res) => {
+        .get("carpeta/contarCumplimiento", request)
+        .then(async (res) => {
+          padre.subFolders = res.data;
+        })
+        .catch((e) => {
+          console.log(e);
+        });
+    },
+    async getFolders(id) {
+      const token = localStorage.getItem("token");
+      const headers = {
+        Authorization: `Bearer ${token}`,
+      };
+      await axios
+        .get("sociedad/queryFolders?_id=" + id, { headers })
+        .then(async (res) => {
           this.carpetas = res.data;
-          this.isLoading= false;
+          this.isLoading = false;
         })
         .catch((e) => {
           console.log(e);
@@ -370,8 +546,9 @@ export default {
     },
     async postFolder(nuevaCarpeta) {
       await axios
-        .post("carpeta/add", nuevaCarpeta)
+        .post("carpeta/add", { carpeta: nuevaCarpeta })
         .then((res) => {
+          res.data.subFolders = [];
           this.carpetas.push(res.data);
           this.actualizarHijos();
         })
@@ -380,41 +557,49 @@ export default {
         });
     },
     crearCarpeta() {
-      if (this.nombreCarpeta.length > 3) {
+      if (this.editedItem.nombre.length > 3) {
         var nueva = {
-          nombre: this.nombreCarpeta,
-          descripcion: this.descripcion,
+          nombre: this.editedItem.nombre,
+          descripcion: this.editedItem.descripcion,
           padre: this.padre._id,
+          usuariosConAcceso: this.editedItem.usuariosConAcceso,
         };
-
         //this.createServerFolder(nueva);
         this.postFolder(nueva);
+      } else {
+        this.$refs.childComponent.SnackbarShow(
+          "error",
+          "El nombre de la carpeta debe contener un largo minimo de 4 caracteres"
+        );
       }
-      this.nombreCarpeta = "";
+      this.editedItem.nombre = "";
       this.descripcion = "";
     },
     createF() {
+      console.log(this.editedItem);
       const resultado = this.carpetas.find(
-        (carpeta) => carpeta.nombre === this.nombreCarpeta
+        (carpeta) => carpeta.nombre === this.editedItem.nombre
       );
       //Si no la encuentra la crea
       if (!resultado) {
         this.crearCarpeta();
       } else {
-        this.alerta = "El nombre de carpeta ingresado ya existe";
-        this.rechazado = true;
+        this.$refs.childComponent.SnackbarShow(
+          "error",
+          "El nombre ingresado de carpeta ya existe"
+        );
+        // this.alerta = "El nombre de carpeta ingresado ya existe";
       }
     },
     //Crear carpeta en el servidor
     async createServerFolder(nueva) {
-      var ruta = this.padre.ruta + "/" + this.nombreCarpeta;
+      var ruta = this.padre.ruta + "/" + this.editedItem.nombre;
       var params = { ruta: ruta };
       await axios
         .post("sociedad/addFolder", params)
         .then((res) => {
           //Si no es una carpeta repetida y se logro agregar la agregamos visualmente y en la db
           if (res.data == true) {
-            this.aceptado = true;
             this.postFolder(nueva);
           } else {
             this.rechazado = true;
@@ -433,3 +618,25 @@ export default {
   },
 };
 </script>
+
+<style>
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  max-width: 100%;
+}
+</style>
+
+<style lang="sass">
+.v-input.expanding-search
+  transition: max-width 0.3s
+  .v-input__slot
+    cursor: pointer !important
+    &before, &:after
+      border-color: transparent !important
+  &.closed
+    max-width: 50px
+    .v-input__slot
+      background-color: transparent !important
+</style>

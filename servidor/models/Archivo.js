@@ -8,11 +8,15 @@ const archivoSchema = new Schema({
     peso: {type: String, required :[true, 'Peso obligatorio']},
     fechaCreacion: {type: Date,default:Date.now, required: [true, 'Fecha obligatoria']},
     fechaEmision: {type: Date, required: [true, 'Fecha Emision obligatoria']},
+    fechaCambioEstado:{type: Date, required: [true, 'Fecha de cambio estado obligatoria']},
     fechaCaducidad:{type: Date, required: [true, 'Fecha caducidad obligatoria']},
-    padre: { type: Schema.ObjectId, ref: 'SubCarpeta' ,required: [true, 'padre obligatorio']},
+    padre: { type: Schema.ObjectId, ref: 'subCarpeta' ,required: [true, 'padre obligatorio']},
     abuelo: { type: Schema.ObjectId, ref: 'Carpeta' ,required: [true, 'carpeta padre obligatoria']},
-    padreSuperior: { type: Schema.ObjectId, ref: 'Sociedad' ,required: [true, 'padre obligatorio']},
+    padreSuperior: { type: Schema.ObjectId, ref: 'Sociedad' ,required: [true, 'padre superior obligatorio']},
+    parametro: { type: Schema.ObjectId, ref: 'Parametro' ,required: [true, 'parametro obligatorio']},
     descripcion:{type: String},
+    status:{type: String, required:[true,'Estado obligatorio']},
+    usuarioCreador: { type: String, required: [true, 'Usuario obligatorio']},
 });
 
 const archivo = mongoose.model('Archivo', archivoSchema);

@@ -1,12 +1,29 @@
 // importar el modelo sociedad
-import sociedad from "../../models/Sociedad";
-import carpeta from "../../models/Carpeta";
+import sociedad from "../../models/Sociedad.js";
+import usuario from "../../models/Usuario.js";
+import folder from "../../models/Carpeta.js";
+import Token from "../../services/token.js";
+
+const Carpeta = folder.Carpeta;
 
 //Metodo para añadir una sociedad
 const add = async (req, res, next) => {
   try {
-    const reg = await sociedad.create(req.body);
-    res.status(200).json(reg);
+    let sociedadNueva = req.body;
+    //obtener todos los usuarios administradores
+    const usuariosAdministradores = await usuario.find({ rol: "admin" }, "_id");
+    const idsUsuariosAdministradores = usuariosAdministradores.map(
+      (usuario) => usuario._id
+    );
+    //mezclar arreglo de usuarios administradores con arreglo de usuarios con acceso
+    sociedadNueva.usuariosConAcceso = [
+      ...idsUsuariosAdministradores,
+      ...sociedadNueva.usuariosConAcceso,
+    ];
+    const reg = await sociedad.create(sociedadNueva);
+    //Buscar esa sociedad y devolverla con los usuariosConAcceso populados
+    const sociedadPopulada = await sociedad.findOne({ _id: reg._id }).populate({ path: "usuariosConAcceso", select: "_id email rol" });
+    res.status(200).json(sociedadPopulada);
   } catch (e) {
     res.status(500).send({
       message: "Ocurrio un error",
@@ -52,12 +69,23 @@ const queryNombre = async (req, res, next) => {
     next(e);
   }
 };
-//Metodo para obtener carpetas de una sociedad segun el id de la sociedad
+
+//Metodo para obtener Carpetas de una sociedad segun el id de la sociedad
 const queryFolders = async (req, res, next) => {
   try {
-    console.log(req.query._id)
+    console.log(req.headers.authorization)
+    const tokenActual = req.headers.authorization.split(" ")[1];
+    // Verificar si el token es válido y obtener el usuario
+    const user = await Token.verificarTokenValido(tokenActual);
+
     const id = req.query._id;
-    const reg = await carpeta.find({padre:id});
+
+    // Obtener todas las carpetas que contienen al usuario actual en usuariosConAcceso
+    const reg = await Carpeta.find({
+      padre: id,
+      usuariosConAcceso: user._id,
+    }).populate({ path: "usuariosConAcceso", select: "_id email rol" });
+
     if (!reg) {
       res.status(404).send({
         message: "El registro no existe",
@@ -73,10 +101,9 @@ const queryFolders = async (req, res, next) => {
   }
 };
 
-//Metodo para agregar carpetas a una sociedad
+//Metodo para agregar Carpetas a una sociedad
 const addFolder = async (req, res, next) => {
   try {
-    console.log(req.body);
     const reg = await sociedad.findByIdAndUpdate(
       { _id: req.body._id },
       { carpetas: req.body.carpetas }
@@ -93,9 +120,11 @@ const addFolder = async (req, res, next) => {
 //Metodo para actualizar una sociedad en concreto mediante el _id
 const update = async (req, res, next) => {
   try {
-    const id = req.body._id
-    const body = req.body.sociedad
-    const reg = await sociedad.findByIdAndUpdate(id,body, {new: true});
+    const id = req.body._id;
+    let body = req.body.sociedad;
+    // transformar el arreglo de usuariosConAcceso a un arreglo solo de ids
+    body.usuariosConAcceso = body.usuariosConAcceso.map((usuario) => usuario._id);
+    const reg = await sociedad.findByIdAndUpdate(id, body, { new: true }).populate({ path: "usuariosConAcceso", select: "_id email rol" });
     res.status(200).json(reg);
   } catch (e) {
     res.status(500).send({
@@ -104,6 +133,7 @@ const update = async (req, res, next) => {
     next(e);
   }
 };
+
 //Metodo para eliminar una sociedad mediante _id
 const remove = async (req, res, next) => {
   try {
@@ -136,15 +166,15 @@ const getArchivos = async (req, res, next) => {
     next(e);
   }
 };
-//Metodo para agregar un archivo a la sociedad
+//Metodo para actualizar las carpetas de una sociedad
 const updateCarpetas = async (req, res, next) => {
   try {
-    console.log(req.body);
+    //console.log(req.body);
     const reg = await sociedad.findByIdAndUpdate(
       { _id: req.body._id },
       { carpetas: req.body.carpetas }
     );
-    if(reg){
+    if (reg) {
       res.status(200).json(reg);
     }
   } catch (e) {
@@ -158,17 +188,38 @@ const updateCarpetas = async (req, res, next) => {
 //Metodo para obtener todas las sociedad
 const getPadres = async (req, res, next) => {
   try {
-    const reg = await sociedad.find();
-    res.status(200).json(reg);
+    const token = req.headers.authorization.split(" ")[1];
+
+    try {
+      const usuario = await Token.verificarTokenValido(token);
+      //console.log("Usuario válido:", usuario);
+
+      const reg = await sociedad.find({ usuariosConAcceso: usuario._id }).populate({
+        path: "usuariosConAcceso",
+        select: "_id email rol"
+      });;
+      res.status(200).json(reg);
+    } catch (error) {
+      if (
+        error.message === "Token expirado" ||
+        error.message === "Token inválido"
+      ) {
+        return res.status(401).send({
+          message: error.message,
+        });
+      } else {
+        throw error; // Propagar otros errores hacia arriba
+      }
+    }
   } catch (e) {
     res.status(500).send({
-      message: "Ocurrio un error",
+      message: "Ocurrió un error",
     });
     next(e);
   }
 };
 
-module.exports = {
+export default {
   add,
   query,
   update,
@@ -178,5 +229,5 @@ module.exports = {
   queryNombre,
   queryFolders,
   getPadres,
-  addFolder
+  addFolder,
 };

@@ -8,7 +8,9 @@ class UploadFilesService {
     return axios.post("uploadFile/upload",formData, {headers: {"Content-Type": "multipart/form-data"},onUploadProgress});
   }
   download(file){
-    return axios.get("uploadFile/files/"+ file);
+    return axios.get("uploadFile/files/"+ file,{
+      responseType: 'blob'
+    });
   }
 
   getFiles() {

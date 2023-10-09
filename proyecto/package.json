@@ -9,13 +9,14 @@
     "create-env": "printenv > .env"
   },
   "dependencies": {
+    "@vue-js-cron/core": "^2.1.2",
     "axios": "^1.2.2",
     "core-js": "^3.8.3",
     "dotenv": "^16.0.3",
+    "jwt-decode": "^3.1.2",
     "moment": "^2.29.4",
     "vue": "^2.6.14",
     "vue-json-to-csv": "^1.1.8",
-    "vue-moment": "^4.1.0",
     "vue-router": "^3.5.1",
     "vuetify": "^2.6.0",
     "vuex": "^3.6.2"
@@ -23,6 +24,7 @@
   "devDependencies": {
     "@babel/core": "^7.12.16",
     "@babel/eslint-parser": "^7.12.16",
+    "@iconify/vue2": "^2.1.0",
     "@vue/cli-plugin-babel": "~5.0.0",
     "@vue/cli-plugin-eslint": "~5.0.0",
     "@vue/cli-plugin-router": "~5.0.0",

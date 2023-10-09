@@ -1,24 +1,6 @@
 <template>
   <div>
-    <v-toolbar dense dark>
-      <v-btn @click="atras" big icon>
-        <v-icon>mdi-chevron-left</v-icon>
-      </v-btn>
-      <v-toolbar-title class="white--text">
-        {{ padre.nombre }}
-      </v-toolbar-title>
-      <v-spacer></v-spacer>
-
-      <v-text-field
-        v-model="busqueda"
-        label="Buscador"
-        hide-details
-        single-line
-        filled
-        prepend-inner-icon="mdi-magnify"
-        class="shrink"
-      ></v-text-field>
-    </v-toolbar>
+    <snackbar ref="childComponent"></snackbar>
     <loading texto="Cargando Datos" v-if="isLoading"></loading>
     <v-data-table
       :headers="headers"
@@ -27,213 +9,311 @@
       class="elevation-1"
       v-if="!isLoading"
     >
+      <template v-slot:[`item.fechaCambioEstado`]="{ item }">
+        {{ fechaFormateada(item.fechaCambioEstado) }}
+      </template>
+      <template v-slot:[`item.fechaEmision`]="{ item }">
+        {{ fechaFormateada(item.fechaEmision) }}
+      </template>
+      <template v-slot:[`item.fechaCaducidad`]="{ item }">
+        {{ fechaFormateada(item.fechaCaducidad) }}
+      </template>
       <template v-slot:[`item.status`]="{ item }">
         <v-chip :color="getColor(item.status, item)" dark>
-          {{ getNombre(item.status) }}
+          {{ item.status }}
         </v-chip>
       </template>
 
       <template v-slot:[`item.archivo`]="{ item }">
-        <div class="text-truncate" style="max-width: 140px">
-          <v-icon class="mr-2"> mdi-file-pdf-box</v-icon>
-          <a class="texto" :href="link + 'uploadFile/files/' + item.archivo"
-            >{{ item.archivo }}
-          </a>
-        </div>
+        <v-tooltip top>
+          <template v-slot:activator="{ on, attrs }">
+            <div
+              v-on="on"
+              v-bind="attrs"
+              class="text-truncate"
+              style="max-width: 140px"
+            >
+              <Icon
+                width="25"
+                height="25"
+                :icon="obtenerExtension(item.archivo)"
+                class="mr-2"
+              ></Icon>
+              <a target="_blank" class="texto" :href="item.archivo"
+                >{{ item.archivo.substring(item.archivo.lastIndexOf("/") + 1) }}
+              </a>
+            </div>
+          </template>
+          <span>{{
+            item.archivo.substring(item.archivo.lastIndexOf("/") + 1)
+          }}</span>
+        </v-tooltip>
       </template>
       <template v-slot:top>
         <v-toolbar flat>
-          <v-toolbar-title>Archivos</v-toolbar-title>
-          <v-divider class="mx-4" inset vertical></v-divider>
-          <v-spacer></v-spacer>
+          <v-toolbar-title v-if="searchClosed">Archivos</v-toolbar-title>
+          <v-divider
+            v-if="searchClosed"
+            class="mx-4"
+            inset
+            vertical
+          ></v-divider>
+          <v-spacer v-if="searchClosed"></v-spacer>
+          <v-text-field
+            @focus="searchClosed = false"
+            @blur="searchClosed = true"
+            v-model="busqueda"
+            clearable
+            dense
+            filled
+            rounded
+            placeholder="Buscar archivo"
+            prepend-inner-icon="mdi-magnify"
+            class="pt-6 expanding-search"
+            :class="{ closed: searchClosed && !busqueda }"
+          ></v-text-field>
           <v-dialog v-model="dialog" max-width="80%">
             <template v-slot:activator="{ on, attrs }">
               <v-btn icon v-bind="attrs" v-on="on">
                 <v-icon color="blue">mdi-file-document-plus-outline</v-icon>
               </v-btn>
-              <vue-json-to-csv
-                :json-data="archivos"
-                :labels="{
-                  nombre: { title: 'Nombre' },
-                  status: { title: 'Status del documento' },
-                  diasVigencia: { title: 'Dias de vigencia' },
-                }"
-                :csv-title="padre.nombre"
-                :separator="';'"
-              >
-                <v-btn icon>
-                  <v-icon color="green">mdi-microsoft-excel</v-icon></v-btn
-                >
-              </vue-json-to-csv>
             </template>
-            
-            <loading texto="Subiendo Archivo" v-if="isUpload"></loading>
-            <v-stepper v-else v-model="e1">
-              <v-alert v-model="aceptado" dense text type="success">
-              {{ message }}
-            </v-alert>
-            <v-alert v-model="rechazado" dense outlined type="error">
-              {{ message }}
-            </v-alert>
-              <v-stepper-header>
-                <v-stepper-step :complete="e1 > 1" step="1">
-                  Nombre archivo
-                </v-stepper-step>
+            <v-card>
+              <snackbar2 ref="childComponent2"></snackbar2>
+              <v-toolbar dense dark>
+                <v-btn icon @click="close">
+                  <v-icon>mdi-close</v-icon>
+                </v-btn>
+                <v-toolbar-title> Subir un archivo</v-toolbar-title>
+              </v-toolbar>
+              <loading texto="Subiendo Archivo" v-if="isUpload"></loading>
+              <v-stepper v-if="!isUpload" v-model="e1">
+                <v-stepper-header>
+                  <v-stepper-step :complete="e1 > 1" step="1">
+                    Subir archivo
+                  </v-stepper-step>
 
-                <v-divider></v-divider>
+                  <v-divider></v-divider>
 
-                <v-stepper-step :complete="e1 > 2" step="2">
-                  Seleccionar Fechas
-                </v-stepper-step>
+                  <v-stepper-step :complete="e1 > 2" step="2">
+                    Seleccionar Fechas
+                  </v-stepper-step>
 
-                <v-divider></v-divider>
+                  <v-divider></v-divider>
 
-                <v-stepper-step step="3"> Seleccionar Día </v-stepper-step>
-              </v-stepper-header>
+                  <v-stepper-step step="3"> Configurar Día </v-stepper-step>
+                </v-stepper-header>
 
-              <v-stepper-items>
-                <v-stepper-content step="1">
-                  <v-card class="mb-12 mx-auto" outlined color="lighten-1">
-                    <v-card-title v-if="!isUpload">
-                      <span class="text-h5">{{ formTitle }}</span>
-                    </v-card-title>
-                    <v-container>
-                      <v-row align="center" justify="center">
-                        <v-col cols="12" sm="6" md="4">
-                          <v-text-field
-                            v-model="editedItem.nombre"
-                            label="Nombre del archivo"
-                          ></v-text-field>
-                        </v-col>
-                        <v-col cols="12" sm="6" md="4">
-                          <v-file-input
-                            prepend-icon="mdi-tray-arrow-up"
-                            show-size
-                            label="Seleccione un archivo"
-                            @change="selectFile"
-                          >
-                            <p>hoakasjdkdjas</p>
-                          </v-file-input>
-                        </v-col>
-                      </v-row>
-                    </v-container>
-                  </v-card>
-
-                  <v-btn color="primary" text @click="close"> Cancelar </v-btn>
-                  <v-btn color="primary" @click="e1 = 2"> Siguiente </v-btn>
-                </v-stepper-content>
-
-                <v-stepper-content step="2">
-                  <v-card class="mb-12 mx-auto" outlined color="lighten-1">
-                    <v-card-title v-if="!isUpload">
-                      <span class="text-h5">Fechas </span>
-                    </v-card-title>
-
-                    <v-card-text v-if="!isUpload">
+                <v-stepper-items>
+                  <v-stepper-content step="1">
+                    <v-card class="mb-12 mx-auto" outlined color="lighten-1">
+                      <v-card-title>
+                        <span class="text-h5">{{ formTitle }}</span>
+                      </v-card-title>
                       <v-container>
                         <v-row align="center" justify="center">
                           <v-col cols="12" sm="6" md="4">
-                            <v-menu
-                              v-model="menu"
-                              :close-on-content-click="false"
-                              :nudge-right="40"
-                              transition="scale-transition"
-                              offset-y
-                              min-width="auto"
-                            >
-                              <template v-slot:activator="{ on, attrs }">
-                                <v-text-field
-                                  v-model="editedItem.fechaEmision"
-                                  label="Fecha de emisión"
-                                  prepend-icon="mdi-calendar"
-                                  readonly
-                                  v-bind="attrs"
-                                  v-on="on"
-                                ></v-text-field>
-                              </template>
-                              <v-date-picker
-                                :max="fechaMaximaEmision"
-                                locale="cl"
-                                v-model="editedItem.fechaEmision"
-                                @input="menu = false"
-                              ></v-date-picker>
-                            </v-menu>
+                            <v-text-field
+                              ref="form"
+                              v-model="editedItem.nombre"
+                              label="Nombre del archivo"
+                              :rules="rules.nombre"
+                              required
+                            ></v-text-field>
                           </v-col>
                           <v-col cols="12" sm="6" md="4">
-                            <v-menu
-                              v-model="menu2"
-                              :close-on-content-click="false"
-                              :nudge-right="40"
-                              transition="scale-transition"
-                              offset-y
-                              min-width="auto"
+                            <v-text-field
+                              ref="form"
+                              v-model="editedItem.descripcion"
+                              label="Descripción"
+                            ></v-text-field>
+                          </v-col>
+                          <v-col
+                            v-if="editedIndex == -1"
+                            cols="12"
+                            sm="6"
+                            md="4"
+                          >
+                            <v-file-input
+                              v-model="currentFile"
+                              prepend-inner-icon="mdi-tray-arrow-up"
+                              prepend-icon=""
+                              show-size
+                              label="Subir archivo"
+                              @change="selectFile"
                             >
-                              <template v-slot:activator="{ on, attrs }">
-                                <v-text-field
-                                  v-model="editedItem.fechaCaducidad"
-                                  label="Fecha de caducidad"
-                                  prepend-icon="mdi-calendar"
-                                  readonly
-                                  v-bind="attrs"
-                                  v-on="on"
-                                ></v-text-field>
-                              </template>
-                              <v-date-picker
-                                :min="fechaMinimaCaducidad"
-                                locale="cl"
-                                v-model="editedItem.fechaCaducidad"
-                                @input="menu2 = false"
-                              ></v-date-picker>
-                            </v-menu>
+                            </v-file-input>
                           </v-col>
                         </v-row>
                       </v-container>
-                    </v-card-text>
-                  </v-card>
-                  <v-btn color="primary" @click="e1 = 1" text> Atras </v-btn>
-                  <v-btn color="primary" @click="e1 = 3"> Siguiente </v-btn>
-                </v-stepper-content>
+                    </v-card>
 
-                <v-stepper-content step="3">
-                  <v-card class="mb-12 mx-auto" outlined color="lighten-1" >
-                    <v-card-title>
-                      Establecer día en que el archivo deja de estar vigente
-                    </v-card-title>
-                    <v-card-text>
-                      <v-slider
-                        thumb-label="always"
-                        label="Día"
-                        v-model="editedItem.diasAviso"
-                        min="1"
-                        :max="fechaEm - 1"
-                      ></v-slider>
-                      <p v-if="editedItem.diasAviso == 0">
-                        Día en que el archivo pasa a estado por vencer: <b>Hoy</b>
-                      </p>
-                      <p v-else>
-                        Día en que el archivo pasa a estado por vencer:
-                        <b>{{ obtenerFecha(editedItem.diasAviso) }}</b>
-                      </p>
-                      <p>Maxima Cantidad de dias de aviso: {{ fechaEm }}</p>
-                    </v-card-text>
-                  </v-card>
-                  <v-btn color="primary" @click="e1 = 2" text> Atras </v-btn>
-                  <v-btn color="primary" @click="save"> Guardar </v-btn>
-                </v-stepper-content>
-              </v-stepper-items>
-            </v-stepper>
+                    <v-btn color="primary" text @click="close">
+                      Cancelar
+                    </v-btn>
+                    <v-btn color="primary" @click="comprobar()">
+                      Siguiente
+                    </v-btn>
+                  </v-stepper-content>
+
+                  <v-stepper-content step="2">
+                    <v-card class="mb-12 mx-auto" outlined color="lighten-1">
+                      <v-card-title>
+                        <span class="text-h5">Fechas </span>
+                      </v-card-title>
+                      <v-card-text>
+                        <v-container>
+                          <v-row align="center" justify="center">
+                            <v-col cols="12" sm="6" md="4">
+                              <v-menu
+                                v-model="menu"
+                                :close-on-content-click="false"
+                                :nudge-right="40"
+                                transition="scale-transition"
+                                offset-y
+                                min-width="auto"
+                              >
+                                <template v-slot:activator="{ on, attrs }">
+                                  <v-text-field
+                                    v-model="editedItem.fechaEmisionFormateada"
+                                    label="Fecha de emisión"
+                                    prepend-icon="mdi-calendar"
+                                    v-bind="attrs"
+                                    @blur="
+                                      editedItem.fechaEmision = parseDate(
+                                        editedItem.fechaEmisionFormateada
+                                      )
+                                    "
+                                    v-on="on"
+                                  ></v-text-field>
+                                </template>
+                                <v-date-picker
+                                  :max="fechaMaximaEmision"
+                                  locale="cl"
+                                  v-model="editedItem.fechaEmision"
+                                  @input="menu = false"
+                                ></v-date-picker>
+                              </v-menu>
+                            </v-col>
+                            <v-col cols="12" sm="6" md="4">
+                              <v-menu
+                                v-model="menu2"
+                                :close-on-content-click="false"
+                                :nudge-right="40"
+                                transition="scale-transition"
+                                offset-y
+                                min-width="auto"
+                              >
+                                <template v-slot:activator="{ on, attrs }">
+                                  <v-text-field
+                                    v-model="
+                                      editedItem.fechaCaducidadFormateada
+                                    "
+                                    label="Fecha de caducidad"
+                                    prepend-icon="mdi-calendar"
+                                    v-bind="attrs"
+                                    v-on="on"
+                                    @blur="
+                                      editedItem.fechaCaducidad = parseDate(
+                                        editedItem.fechaCaducidadFormateada
+                                      )
+                                    "
+                                  ></v-text-field>
+                                </template>
+                                <v-date-picker
+                                  :min="fechaMinimaCaducidad"
+                                  locale="cl"
+                                  v-model="editedItem.fechaCaducidad"
+                                  @input="menu2 = false"
+                                ></v-date-picker>
+                              </v-menu>
+                            </v-col>
+                          </v-row>
+                        </v-container>
+                      </v-card-text>
+                    </v-card>
+                    <v-btn color="primary" @click="e1 = 1" text> Atras </v-btn>
+                    <v-btn color="primary" @click="e1 = 3"> Siguiente </v-btn>
+                  </v-stepper-content>
+
+                  <v-stepper-content step="3">
+                    <v-card class="mb-12 mx-auto" outlined color="lighten-1">
+                      <v-card-title>
+                        Establecer el día en que el archivo cambia al estado por
+                        vencer
+                      </v-card-title>
+                      <v-card-text class="pa-4">
+                        <v-slider
+                          thumb-label="always"
+                          label="Día(s)"
+                          v-model="editedItem.diasAviso"
+                          min="1"
+                          :max="fechaEm - 1"
+                        ></v-slider>
+                        <p class="red--text">
+                          Notificación
+                          <b>{{
+                            calcularDias(
+                              editedItem.diasAviso,
+                              editedItem.fechaCaducidad
+                            )
+                          }}</b>
+                          día(s) antes de la fecha de vencimiento
+                        </p>
+                        <p class="red--text" v-if="editedItem.diasAviso == 0">
+                          Día en que el archivo pasa a estado por vencer:
+                          <b>Hoy</b>
+                        </p>
+                        <p class="red--text" v-else>
+                          Día en que el archivo pasa a estado por vencer:
+                          <b>{{ obtenerFecha(editedItem.diasAviso) }}</b>
+                        </p>
+                        <p>
+                          Fecha de vencimiento:
+                          <b>{{
+                            fechaFormateada(editedItem.fechaCaducidad)
+                          }}</b>
+                        </p>
+                        <p>
+                          Maxima Cantidad de dias de aviso:
+                          <b>{{ fechaEm - 1 }}</b>
+                        </p>
+                      </v-card-text>
+                    </v-card>
+                    <v-btn color="primary" @click="e1 = 2" text> Atras </v-btn>
+                    <v-btn color="primary" @click="save"> Guardar </v-btn>
+                  </v-stepper-content>
+                </v-stepper-items>
+              </v-stepper>
+            </v-card>
           </v-dialog>
           <v-dialog v-model="dialogDelete" max-width="500px">
             <v-card>
-              <v-card-title class="text-h5"
-                >Estas seguro que deseas eliminar este archivo?</v-card-title
-              >
+              <v-toolbar dark color="grey darken-3" dense flat>
+                <v-icon color="red" class="mr-2">mdi-alert</v-icon>
+                <v-toolbar-title
+                  class="text-body-4 font-weight-bold white--text"
+                >
+                  ¿Estás seguro?
+                </v-toolbar-title>
+              </v-toolbar>
+              <v-card-text class="pa-4 black--text"
+                >Esta acción es irreversible
+              </v-card-text>
               <v-card-actions>
                 <v-spacer></v-spacer>
-                <v-btn color="blue darken-1" text @click="closeDelete"
+                <v-btn
+                  color="grey"
+                  text
+                  class="body-2 font-weight-bold"
+                  @click="closeDelete"
                   >Cancelar</v-btn
                 >
-                <v-btn color="blue darken-1" text @click="deleteItemConfirm"
+                <v-btn
+                  color="red"
+                  class="body-2 font-weight-bold"
+                  outlined
+                  @click="deleteItemConfirm"
                   >Aceptar</v-btn
                 >
                 <v-spacer></v-spacer>
@@ -281,19 +361,33 @@ import moment from "moment";
 import location from "moment/dist/locale/es";
 moment.updateLocale("es", location);
 import UploadService from "../../services/UploadFilesService";
-import VueJsonToCsv from "vue-json-to-csv";
 import loading from "../loading.vue";
+import Snackbar from "../snackbar.vue";
+import Snackbar2 from "../snackbar.vue";
+import { Icon } from "@iconify/vue2";
 
 export default {
-  components: { VueJsonToCsv, loading },
+  components: { Icon, loading, Snackbar, Snackbar2 },
+  props: {
+    Parametro: String,
+    nombreParametro: String,
+  },
   data: () => ({
+    extensiones: [
+      { type: "png", icon: "vscode-icons:file-type-image" },
+      { type: "pdf", icon: "vscode-icons:file-type-pdf2", color: "red" },
+      { type: "xlsx", icon: "vscode-icons:file-type-excel" },
+      { type: "jpg", icon: "vscode-icons:file-type-image" },
+      { type: "csv", icon: "vscode-icons:file-type-excel" },
+    ],
+    searchClosed: true,
+    alerta: "",
     e1: 1,
     link: process.env.VUE_APP_SERVER_URL,
     seleccion: 1,
-    aceptado: false,
-    rechazado: false,
     busqueda: "",
     isLoading: true,
+    snackTipe: false,
     isUpload: false,
     nombre: "",
     currentFile: undefined,
@@ -302,9 +396,17 @@ export default {
     padre: {},
     menu: false,
     menu2: false,
+    rules: {
+      file: [(val) => val == undefined || "Sube un archivo"],
+      nombre: [(val) => (val || "").length >= 4 || "Largo minimo 4 caracteres"],
+    },
+
     items: [
-      { title: "Editar", icon: "mdi-pencil", metodo: "editItem" },
+      { title: "Editar", icon: "mdi-pencil" },
       { title: "Eliminar", icon: "mdi-delete" },
+      { title: "Descargar", icon: "mdi-download" },
+      { title: "Compartir", icon: "mdi-share" },
+      { title: "Copiar url", icon: "mdi-clipboard-outline" },
     ],
     headers: [
       {
@@ -319,12 +421,7 @@ export default {
         sortable: true,
         value: "status",
       },
-      {
-        text: "Fecha cambio estado",
-        sortable: false,
-        align: "center",
-        value: "diasAviso",
-      },
+
       {
         text: "Dias de vigencia archivo",
         align: "center",
@@ -339,8 +436,14 @@ export default {
       },
       { text: "Archivo", sortable: false, value: "archivo" },
       { text: "Tamaño", value: "peso", align: "center" },
-      { text: "Fecha Subida", value: "fechaCreacion", align: "center" },
+      // { text: "Fecha Subida", value: "fechaCreacion", align: "center" },
       { text: "Fecha Emisión", value: "fechaEmision", align: "center" },
+      {
+        text: "Fecha estado por vencer",
+        sortable: true,
+        align: "center",
+        value: "fechaCambioEstado",
+      },
       { text: "Fecha Caducidad", value: "fechaCaducidad", align: "center" },
       { text: "Acciones", value: "actions", sortable: false, align: "center" },
     ],
@@ -350,6 +453,7 @@ export default {
     editedIndex: -1,
     editedItem: {
       nombre: "",
+      descripcion: "",
       status: "",
       diasVigencia: "",
       diasRestantes: 0,
@@ -361,14 +465,18 @@ export default {
       )
         .toISOString()
         .substr(0, 10),
-      fechaCaducidad: moment().add(1, "days").toISOString().substr(0, 10),
+      fechaCaducidad: moment().add(3, "days").toISOString().substr(0, 10),
+      fechaCambioEstado: "",
       padre: "",
       abuelo: "",
       padreSuperior: "",
+      parametro: "",
+      usuarioCreador: "",
     },
     defaultItem: {
       nombre: "",
       archivo: "",
+      descripcion: "",
       status: "",
       diasVigencia: "",
       diasAviso: 1,
@@ -379,14 +487,13 @@ export default {
       )
         .toISOString()
         .substr(0, 10),
-      fechaCaducidad: new Date(
-        Date.now() - new Date().getTimezoneOffset() * 60000
-      )
-        .toISOString()
-        .substr(0, 10),
+      fechaCaducidad: moment().add(3, "days").toISOString().substr(0, 10),
+      fechaCambioEstado: "",
       padre: "",
       abuelo: "",
       padreSuperior: "",
+      parametro: "",
+      usuarioCreador: "",
     },
   }),
   computed: {
@@ -396,7 +503,7 @@ export default {
     },
     fechaMinimaCaducidad() {
       return moment(this.editedItem.fechaEmision)
-        .add(1, "days")
+        .add(3, "days")
         .toISOString()
         .substr(0, 10);
     },
@@ -427,20 +534,17 @@ export default {
     },
   },
   watch: {
-    aceptado(new_val) {
-      if (new_val) {
-        setTimeout(() => {
-          this.aceptado = false;
-        }, 2000);
-      }
+    "editedItem.fechaEmision": function () {
+      this.editedItem.fechaEmisionFormateada = this.formatDate(
+        this.editedItem.fechaEmision
+      );
     },
-    rechazado(new_val) {
-      if (new_val) {
-        setTimeout(() => {
-          this.rechazado = false;
-        }, 1000);
-      }
+    "editedItem.fechaCaducidad": function () {
+      this.editedItem.fechaCaducidadFormateada = this.formatDate(
+        this.editedItem.fechaCaducidad
+      );
     },
+
     dialog(val) {
       val || this.close();
     },
@@ -452,17 +556,99 @@ export default {
     this.initialize();
   },
   methods: {
+    formatDate(date) {
+      if (!date) return null;
+      const [year, month, day] = date.split("-");
+      return `${day}/${month}/${year}`;
+    },
+    parseDate(date) {
+      if (!date) return null;
+      const [day, month, year] = date.split("/");
+      return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+    },
+    obtenerExtension(archivo) {
+      const myUrl = archivo; // la URL almacenada como una cadena de texto
+      const currentExtension = myUrl.substring(myUrl.lastIndexOf(".") + 1); // obtener la extensión
+
+      let icono = "";
+      this.extensiones.forEach((extension) => {
+        if (extension.type == currentExtension) {
+          icono = extension.icon;
+        }
+      });
+      return icono;
+    },
+    resetValidation() {
+      this.$refs.form.resetValidation();
+    },
+    comprobar() {
+      //Si falta el archivo y el nombre es mayor a 4 y se está subiendo un archivo
+      if (
+        this.editedItem.nombre.length >= 4 &&
+        this.currentFile == undefined &&
+        this.editedIndex == -1
+      ) {
+        this.$refs.childComponent2.SnackbarShow(
+          "error",
+          "Por favor sube un archivo"
+        );
+      }
+      //Si esta editando y el nombre es mayor 4 pasamos al siguiente paso
+      else if (this.editedItem.nombre.length >= 4 && this.editedIndex != -1) {
+        this.e1 = 2;
+      }
+      //Si esta editando y el nombre es inferior a los 4 caracteres
+      else if (this.editedItem.nombre.length < 4 && this.editedIndex != -1) {
+        this.$refs.childComponent2.SnackbarShow(
+          "error",
+          "El nuevo nombre debe tener al menos 4 caracteres"
+        );
+      }
+      //Si no estamos editando revisamos que esté subiendo un archivo y dando un nombre correcto
+      else if (
+        this.editedItem.nombre.length >= 4 &&
+        this.currentFile != undefined
+      ) {
+        this.e1 = 2;
+      } else {
+        this.$refs.childComponent2.SnackbarShow(
+          "error",
+          "Por favor rellena todos los campos"
+        );
+      }
+    },
+    fechaFormateada(fecha) {
+      let fechaFormat = moment(fecha).format("DD/MM/YYYY");
+      return fechaFormat;
+    },
+    calcularDias(dias, fechaCaducidad) {
+      let fecha1 = moment(this.editedItem.fechaEmision).add(dias, "days");
+      let fecha2 = moment(fechaCaducidad);
+      return fecha2.diff(fecha1, "days");
+    },
+    obtenerFechaAviso(item) {
+      let fecha = moment(item.fechaEmision)
+        .add(item.diasAviso, "days")
+        .format("DD/MM/YYYY");
+      return fecha;
+    },
     fechasIguales() {
-      // console.log("Fecha emision: "+this.editedItem.fechaEmision)
-      // console.log("Fecha caducidad: "+this.editedItem.fechaCaducidad)
       if (
         this.obtenerDiferencia(
           this.editedItem.fechaEmision,
           this.editedItem.fechaCaducidad
-        ) == 0
+        ) == 0 ||
+        this.obtenerDiferencia(
+          this.editedItem.fechaEmision,
+          this.editedItem.fechaCaducidad
+        ) < 0 ||
+        this.obtenerDiferencia(
+          this.editedItem.fechaEmision,
+          this.editedItem.fechaCaducidad
+        ) < 3
       ) {
         this.editedItem.fechaCaducidad = moment(this.editedItem.fechaEmision)
-          .add(1, "days")
+          .add(3, "days")
           .toISOString()
           .substr(0, 10);
       }
@@ -474,6 +660,18 @@ export default {
         .format("DD/MM/YYYY");
       return fechaPosicion;
     },
+    async actualizarArchivo(Archivo, index) {
+      await axios
+        .put("archivo/update/", { _id: Archivo._id, archivo: Archivo })
+        .then((res) => {
+          this.iniciarFile(res.data);
+          Object.assign(this.archivos[index], res.data);
+          this.close();
+        })
+        .catch((e) => {
+          console.log(e.response);
+        });
+    },
     deleteOrEdit(item, opcion) {
       opcion = opcion + 1;
       //Si es editar
@@ -483,30 +681,84 @@ export default {
       //eliminar
       else if (opcion == 2) {
         this.deleteItem(item);
+      } else if (opcion == 3) {
+        this.downloadFile(item.archivo);
+      } else if (opcion == 4) {
+        this.shareFile(item);
+      } else if (opcion == 5) {
+        this.copiarAlPortapapeles(item.archivo);
       }
     },
+    shareFile(archivo) {
+      if (navigator.share) {
+        navigator
+          .share({
+            title: `Nombre de archivo: ${archivo.nombre}`,
+            text: "Archivo compartido desde la aplicación de gestión de archivos de Transportes Ruiz <p>hola</p>",
+            url: archivo.archivo,
+          })
+          .then(() => console.log("Contenido compartido exitosamente"))
+          .catch((error) => console.error("Error al compartir:", error));
+      } else {
+        console.log("La API de compartir no es compatible en este navegador.");
+      }
+    },
+
+    copiarAlPortapapeles(archivo) {
+      navigator.clipboard
+        .writeText(archivo)
+        .then(() => {
+          this.$refs.childComponent.SnackbarShow(
+            "success",
+            "Url copiada al portapapeles"
+          );
+        })
+        .catch((error) => {
+          console.error("Error al copiar al portapapeles:", error);
+          this.$refs.childComponent.SnackbarShow(
+            "error",
+            "Error al copiar al portapapeles"
+          );
+        });
+    },
+
     obtenerDiferencia(fechaEmision, fechaVencimiento) {
-      this.editedItem.diasAviso = 1;
       var fecha1 = moment(fechaEmision);
       var fecha2 = moment(fechaVencimiento);
+
+      if (
+        fecha2.diff(fecha1, "days") <= 1 ||
+        this.editedItem.diasAviso > fecha2.diff(fecha1, "days")
+      ) {
+        this.editedItem.diasAviso = 1;
+      }
+
       return fecha2.diff(fecha1, "days");
     },
-    getNombre(status) {
-      if (status == 3) return "Vigente";
-      else if (status == 2) return "Por vencer";
-      else return "Vencido";
-    },
     getColor(status) {
-      // console.log(status);
-      if (status == 3) return "green";
-      else if (status == 2) {
-        return "orange";
-      } else return "red";
+      switch (status) {
+        case "Vigente":
+          return "green";
+        case "Por vencer":
+          return "orange";
+        case "Vencido":
+          return "red";
+        default:
+          break;
+      }
     },
     downloadFile(file) {
-      UploadService.download(file)
+      let nombreArchivo = file.substring(file.lastIndexOf("/") + 1);
+      UploadService.download(nombreArchivo)
         .then((response) => {
-          console.log(response);
+          var fileURL = window.URL.createObjectURL(new Blob([response.data]));
+          var fileLink = document.createElement("a");
+
+          fileLink.href = fileURL;
+          fileLink.setAttribute("download", nombreArchivo);
+          document.body.appendChild(fileLink);
+
+          fileLink.click();
         })
         .catch(() => {
           this.message = "No se puede descargar el archivo";
@@ -521,17 +773,20 @@ export default {
         .get("subCarpeta/query?_id=" + this.$route.params.subFolder)
         .then((result) => {
           this.padre = result.data;
-          this.getFolders(result.data._id);
+          this.getFiles(this.Parametro, this.padre);
         });
     },
     iniciarFile(element) {
-      let fechaCrea = element.fechaCreacion.split("T");
+      let fechaCambio = element.fechaCambioEstado.split("T");
       let fechaEmi = element.fechaEmision.split("T");
       let fechaCadu = element.fechaCaducidad.split("T");
-      element.fechaCreacion = fechaCrea[0];
+      element.fechaCambioEstado = fechaCambio[0];
       element.fechaEmision = fechaEmi[0];
       element.fechaCaducidad = fechaCadu[0];
-
+      element.fechaEmisionFormateada = moment(fechaEmi[0]).format("DD/MM/YYYY");
+      element.fechaCaducidadFormateada = moment(fechaCadu[0]).format(
+        "DD/MM/YYYY"
+      );
       var today = new Date();
       var now = today.toISOString();
       var cortado = now.split("T");
@@ -544,35 +799,23 @@ export default {
 
       element.diasVigencia = diasVigencia;
       element.diasRestantes = diasRestantes;
-      console.log("nombre :" + element.nombre);
-      console.log("Dias de vigencia: " + element.diasVigencia);
-      console.log("Dias de aviso: " + element.diasAviso);
-      console.log("Dias restantes: " + diasRestantes);
-      console.log("---------------");
-
-      if (diasRestantes < 1) {
-        element.diasRestantes = 0;
-      }
-
-      if (diasRestantes == 0) {
-        element.status = 1;
-      } else if (diasRestantes > element.diasAviso) {
-        element.status = 3;
-      } else if (diasRestantes <= element.diasAviso && diasRestantes >= 1) {
-        element.status = 2;
-      } else {
-        element.status = 1;
-      }
     },
-    async getFolders(id) {
+    async getFiles(id, padre) {
+      const request = {
+        params: {
+          _id: id,
+          padre: padre._id,
+        },
+      };
       await axios
-        .get("subCarpeta/getArchivos?_id=" + id)
+        .get("subCarpeta/getArchivosParam", request)
         .then((res) => {
           let carpetas = res.data;
           carpetas.forEach((element) => {
             this.iniciarFile(element);
           });
           this.archivos = res.data;
+          // console.log(res.data)
           this.isLoading = false;
         })
         .catch((e) => {
@@ -588,24 +831,31 @@ export default {
         (archivo) => archivo.nombre === this.editedItem.nombre
       );
       // console.log("Soy el resultado: " + this.editedItem.nombre);
-      if(this.editedItem.nombre.length < 3){
-        this.message = "Por favor ingrese un nombre con al menos 4 caracteres"
+      if (this.editedItem.nombre.length < 4) {
+        this.$refs.childComponent2.SnackbarShow(
+          "error",
+          "Por favor ingrese un nombre con al menos 4 caracteres"
+        );
+        // this.message = "Por favor ingrese un nombre con al menos 4 caracteres";
         this.isUpload = false;
-        this.rechazado = true;
         this.e1 = 1;
         return;
       }
       if (resultado) {
-        this.message = "Por favor ingrese otro nombre de archivo";
+        this.$refs.childComponent2.SnackbarShow(
+          "error",
+          "Por favor ingrese otro nombre de archivo"
+        );
         this.isUpload = false;
-        this.rechazado = true;
         this.e1 = 1;
         return;
       }
       if (!this.currentFile) {
-        this.message = "Por favor seleccione un archivo";
+        this.$refs.childComponent2.SnackbarShow(
+          "error",
+          "Por favor seleccione un archivo"
+        );
         this.isUpload = false;
-        this.rechazado = true;
         this.e1 = 1;
         return;
       }
@@ -623,31 +873,54 @@ export default {
       })
         .then((response) => {
           this.message = response.data.message;
-          let direcion = this.currentFile.name;
+          let direcion = response.data.url;
           let peso = this.formatBytes(this.currentFile.size);
           this.editedItem.peso = peso;
           this.editedItem.archivo = direcion;
           this.editedItem.padre = this.padre._id;
           this.editedItem.abuelo = this.padre.padre;
           this.editedItem.padreSuperior = this.padre.padreSuperior;
-          // console.log("Dias aviso:"+ this.editedItem.diasAviso);
-          let calculo = this.fechaEm - this.editedItem.diasAviso;
-          if (calculo == 0) {
-            this.editedItem.diasAviso = 1;
+          this.editedItem.parametro = this.Parametro;
+          this.editedItem.usuarioCreador = this.$store.state.usuario._id;
+          let fechaCambio = moment(this.editedItem.fechaEmision).add(
+            this.editedItem.diasAviso,
+            "days"
+          );
+          fechaCambio.set({ hour: 0, minute: 0, second: 0, millisecond: 0 });
+          this.editedItem.fechaCambioEstado = fechaCambio;
+
+          // console.log("----------------------")
+          // console.log("Emision: "+this.editedItem.fechaEmision)
+          // console.log("Caducidad: "+this.editedItem.fechaCaducidad)
+          // console.log("Cambio estado: "+fechaCambio._d)
+          // console.log(new Date())
+          // console.log("----------------------")
+          if (new Date() >= moment(this.editedItem.fechaCaducidad)) {
+            console.log("Estoy vencido");
+            this.editedItem.status = "Vencido";
+          } else if (new Date() >= fechaCambio._d) {
+            console.log("Estoy por vencer");
+            this.editedItem.status = "Por vencer";
           } else {
-            this.editedItem.diasAviso = calculo;
+            console.log("Estoy vigente");
+            this.editedItem.status = "Vigente";
           }
+          // console.log("Fecha em: " + this.fechaEm);
+          console.log("Dias aviso: " + this.editedItem.diasAviso);
+          console.log(this.editedItem);
           this.postArchivo(this.editedItem);
         })
         .catch(() => {
-          this.message = "No se puede subir archivo Excede máximo de 2 mb";
+          this.$refs.childComponent2.SnackbarShow(
+            "error",
+            "No se puede subir archivo Excede máximo de 5 mb"
+          );
           this.isUpload = false;
-          this.rechazado = true;
           this.currentFile = undefined;
+          this.e1 = 1;
         });
     },
     async postArchivo(archivo) {
-      // console.log(archivo);
       await axios
         .post("archivo/add", archivo)
         .then((res) => {
@@ -658,6 +931,7 @@ export default {
         })
         .catch((e) => {
           console.log(e);
+          this.isUpload = false;
         });
     },
     formatBytes(bytes, decimals = 2) {
@@ -684,12 +958,19 @@ export default {
         })
         .then((res) => {
           console.log(res);
-          this.alerta = "Cambios realizados exitosamente";
-          this.aceptado = true;
+          this.$refs.childComponent.SnackbarShow(
+            "success",
+            "Cambios realizados exitosamente"
+          );
           this.close();
         })
         .catch((e) => {
           console.log(e.response);
+          this.isLoading = false;
+          this.$refs.childComponent.SnackbarShow(
+            "error",
+            "No se ha podido actualizar la subcarpeta"
+          );
         });
     },
     editItem(item) {
@@ -703,12 +984,32 @@ export default {
       this.dialogDelete = true;
     },
     deleteItemConfirm() {
-      this.archivos.splice(this.editedIndex, 1);
+      this.borrarArchivo(this.archivos[this.editedIndex], this.editedIndex);
       this.closeDelete();
     },
+    async borrarArchivo(archivo, index) {
+      let nombreArchivo = archivo.archivo.substring(
+        archivo.archivo.lastIndexOf("/") + 1
+      );
+      let idUsuario = this.$store.state.usuario._id;
+      console.log(idUsuario);
+
+      var data = {
+        id: archivo._id,
+        fileName: nombreArchivo,
+        idUser: idUsuario,
+      };
+
+      await axios.delete("archivo/remove", { data }).then((result) => {
+        this.$refs.childComponent.SnackbarShow("success", result.data.message);
+        this.archivos.splice(index, 1);
+      });
+    },
     close() {
+      this.resetValidation();
       this.dialog = false;
       this.e1 = 1;
+      this.currentFile = undefined;
       this.$nextTick(() => {
         this.editedItem = Object.assign({}, this.defaultItem);
         this.editedIndex = -1;
@@ -727,7 +1028,39 @@ export default {
     save() {
       //Cuando se edita
       if (this.editedIndex > -1) {
-        Object.assign(this.archivos[this.editedIndex], this.editedItem);
+        const resultado = this.archivos.find(
+          (archivo) => archivo.nombre === this.editedItem.nombre
+        );
+
+        //Si no la encuentra hace el update
+        if (!resultado || resultado._id === this.editedItem._id) {
+          if (this.editedItem.nombre.length > 3) {
+            //Actualizamos la nueva
+            this.editedItem.fechaCambioEstado = moment(
+              this.editedItem.fechaEmision
+            ).add(this.editedItem.diasAviso, "days");
+            this.actualizarArchivo(this.editedItem, this.editedIndex);
+            this.snackTipe = true;
+            this.$refs.childComponent.SnackbarShow(
+              "success",
+              "Archivo modificado exitosamente"
+            );
+          } else {
+            this.snackTipe = false;
+            this.e1 = 1;
+            this.$refs.childComponent2.SnackbarShow(
+              "error",
+              "El nombre del archivo debe tener un largo mayor a 3 caracteres"
+            );
+          }
+        } else {
+          this.$refs.childComponent.SnackbarShow(
+            "error",
+            "Ya existe un archivo con ese nombre"
+          );
+
+          return;
+        }
       } else {
         this.upload();
       }
@@ -741,4 +1074,17 @@ export default {
 .texto {
   text-overflow: ellipsis;
 }
+</style>
+
+<style lang="sass">
+.v-input.expanding-search
+  transition: max-width 0.3s
+  .v-input__slot
+    cursor: pointer !important
+    &before, &:after
+      border-color: transparent !important
+  &.closed
+    max-width: 50px
+    .v-input__slot
+      background-color: transparent !important
 </style>
