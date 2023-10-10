@@ -8,6 +8,7 @@ router.get('/', function(req, res, next) {
 });
 
 router.get('/allParametros', parametro.getParametros);
+router.get('/obtenerParametros', parametro.getParametrosSinPaginar);
 router.get('/parametro/:id', parametro.getParametro);
 router.post('/addParametro', parametro.addParametro);
 router.delete('/deleteParametro/:id', parametro.deleteParametro);

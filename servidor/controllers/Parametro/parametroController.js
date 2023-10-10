@@ -71,6 +71,17 @@ export async function getParametros(req, res) {
   }
 }
 
+//Obtener todos los parametros
+export async function getParametrosSinPaginar(req, res) {
+  try {
+    const parametros = await Parametro.find();
+    res.status(200).json(parametros);
+  } catch (error) {
+    res.status(500).json({
+      message: error,
+    });
+  }
+}
 
 //Obtener un parametro
 export async function getParametro(req, res) {
@@ -323,4 +334,5 @@ export default {
   countArchivosVencidos,
   countArchivosVigentes,
   countArchivosPorVencer,
+  getParametrosSinPaginar,
 };

@@ -188,7 +188,20 @@
       </v-card>
     </v-dialog>
     <v-dialog v-model="dialogFindDelete" max-width="400px">
-      <v-card>
+      <v-card v-if="isUpload">
+        <v-toolbar dark color="grey darken-3" dense flat>
+          <v-icon color="yellow" class="mr-2">mdi-alert</v-icon>
+          <v-toolbar-title class="text-body-4 font-weight-bold white--text">
+            Actualizando Parametros
+          </v-toolbar-title>
+        </v-toolbar>
+        <loading
+          texto="Subiendo Datos"
+          :overlay="false"
+          v-if="isUpload"
+        ></loading>
+      </v-card>
+      <v-card v-if="!isUpload">
         <v-toolbar dark color="grey darken-3" dense flat>
           <v-icon color="yellow" class="mr-2">mdi-alert</v-icon>
           <v-toolbar-title class="text-body-4 font-weight-bold white--text">
@@ -196,7 +209,7 @@
           </v-toolbar-title>
         </v-toolbar>
 
-        <v-card-text class="pa-4"> Si hay archivos en algún parámetro que quitaste, este no será eliminado; elimina primero los archivos de respectivos de ese parametro en las carpetas. </v-card-text>
+        <v-card-text class="pa-4"> Si hay archivos en algún parámetro que quitaste, este no será eliminado; elimina primero los archivos respectivos de ese parametro en las carpetas. </v-card-text>
 
         <v-card-actions>
           <v-spacer></v-spacer>
@@ -255,13 +268,6 @@
     </v-dialog>
     <!-- Dialogo de parametrización -->
     <v-dialog v-model="dialogParam" max-width="500px">
-      <v-card v-if="isUpload">
-        <loading
-          texto="Subiendo Datos"
-          :overlay="false"
-          v-if="isUpload"
-        ></loading>
-      </v-card>
       <v-card v-if="!isUpload">
         <v-toolbar dark color="black darken-3" dense flat>
           <v-btn icon dark @click="dialogParam = !dialogParam">
@@ -283,15 +289,9 @@
               outlined
               item-text="value"
               item-value="_id"
-              @input.native="cargarParametros"
-              ref="vSelect"
               return-object
               multiple
             >
-              <template v-slot:append-item>
-                <div v-intersect="endIntersect" />
-              </template>
-              
               <template v-slot:selection="{ item, index }">
                 <v-chip v-if="index === 0">
                   <span>{{ item.value }}</span>
@@ -300,21 +300,6 @@
                   (+{{ parametrosSeleccionado.length - 1 }} parametro(s))
                 </span>
               </template>
-              <!-- <template v-slot:item="{ item }">
-                <span
-                  style="margin-right: 10px"
-                  :style="{
-                    color: item.option ? 'green' : 'red',
-                    'pointer-events':
-                      item.cantidadArchivos > 0 ? 'none' : 'auto',
-                  }"
-                >
-                  {{ item.value }}
-                  <span v-if="item.cantidadArchivos > 0" style="color: red"
-                    >(Tiene archivos)</span
-                  >
-                </span>
-              </template> -->
             </v-select>
           </div>
 
@@ -447,7 +432,7 @@ export default {
   }),
   created() {
     this.initialize();
-    this.cargarParametros();
+    this.obtenerParametros();
   },
   computed: {
     esAdmin() {
@@ -490,59 +475,19 @@ export default {
     },
   },
   methods: {
-    endIntersect(entries, observer, isIntersecting) {
-      if (isIntersecting) {
-        this.cargarMasParametros();
-      }
-    },
-    async cargarMasParametros() {
-      if (
-        !this.loading &&
-        this.currentPage <= this.totalPages &&
-        !this.reachedEnd
-      ) {
-        console.log("Evento de scroll activado");
-        this.currentPage++;
-        await this.cargarParametros();
-      }
-    },
-    async cargarParametros() {
-      this.loading = true;
-      try {
-        const response = await this.getServerData(
-          0,
-          0,
-          this.currentPage,
-          this.itemsPerPage
-        );
-
-        // Agrega los nuevos elementos a la lista existente
-        this.parametros = this.parametros.concat(response.parametros);
-        this.totalItems = response.cantidad;
-        this.totalPages = response.pages;
-
-        // Verificar si se ha alcanzado el final
-        if (this.currentPage >= this.totalPages) {
-          this.reachedEnd = true;
-        }
-        this.loading = false;
-      } catch (error) {
-        console.error("Error al obtener parámetros:", error);
-        this.loading = false;
-      }
-    },
-
-    async getServerData(sortBy, sortDesc, page, itemsPerPage) {
-      try {
-        const response = await axios.get(
-          `parametro/allParametros?search=${""}&page=${page}&limit=${itemsPerPage}`
-        );
-        return response.data;
-      } catch (error) {
-        console.error("Error al obtener datos del servidor:", error);
-        this.loading = false;
-        return [];
-      }
+    
+    async obtenerParametros(){
+      this.isLoading = true;
+      await axios
+        .get("parametro/obtenerParametros")
+        .then((res) => {
+          this.parametros = res.data;
+          this.isLoading = false;
+        })
+        .catch((e) => {
+          console.log(e);
+          this.isLoading = false;
+        });
     },
 
     toggleOrdenarPor() {
@@ -589,35 +534,6 @@ export default {
             "Error agregando los parametros"
           );
           this.isUpload = false;
-        });
-    },
-    async addParams() {
-      this.isUpload = true;
-      await axios
-        .put("/carpeta/addParams/", {
-          id: this.padre._id,
-          parametros: this.parametrosSeleccionado,
-        })
-        .then((result) => {
-          console.log(result);
-
-          this.$refs.childComponent.SnackbarShow(
-            "success",
-            "Parametros agregados correctamente"
-          );
-          // this.textSnackbar = "Parametros agregados correctamente";
-          // this.snackbar = true;
-          this.isUpload = false;
-          this.dialogParam = false;
-        })
-        .catch((e) => {
-          console.log(e);
-          this.$refs.childComponent.SnackbarShow(
-            "error",
-            "Error agregando los parametros"
-          );
-          // this.textSnackbar = "Ha ocurrido un error";
-          // this.snackbar = true;
         });
     },
     addFind: function () {
@@ -702,7 +618,7 @@ export default {
         );
         //Si no la encuentra la crea
         if (!resultado || resultado._id === this.editedItem._id) {
-          console.log(this.editedItem.nombre);
+          //console.log(this.editedItem.nombre);
           if (this.editedItem.nombre.length > 3) {
             this.actualizarSubCarpeta(this.editedItem, this.editedIndex);
 
@@ -784,7 +700,7 @@ export default {
       );
 
       const folder = response.data.folder;
-      console.log(folder)
+      //console.log(folder)
       this.padre = folder;
       this.getSubFolders(folder._id);
       //Guardamos los parametros que ya contiene la carpeta al inicio

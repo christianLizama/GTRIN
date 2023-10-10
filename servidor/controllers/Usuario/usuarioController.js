@@ -261,6 +261,7 @@ async function updateUsuario(req, res) {
 async function login(req, res, next) {
   try {
     let user = await Usuario.findOne({ email: req.body.email });
+    console.log(user);
     if (user) {
       let match = await bcrypt.compare(req.body.password, user.clave);
       if (match) {

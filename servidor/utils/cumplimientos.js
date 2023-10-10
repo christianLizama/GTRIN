@@ -129,18 +129,18 @@ async function calcularCumplimientoSubCarpeta(subCarpetaId) {
   console.log("Actualizando cumplimiento de SubCarpeta");
   try {
     // Buscar la subcarpeta y su carpeta padre para obtener los parámetros
-    let subFolder = await subCarpeta.findById(subCarpetaId).populate({
-      path: "padre",
-      populate: { path: "parametros" }, // Poblar los parámetros de la carpeta
-    });
+    let subFolder = await subCarpeta.findById(subCarpetaId);
 
     if (!subFolder) {
       console.error("Subcarpeta no encontrada");
       return;
     }
 
-    let carpeta = subFolder.padre;
-
+    // Obtener la carpeta padre
+    let carpeta = await Carpeta.findById(subFolder.padre).populate(
+      "parametros"
+    );
+    
     // Obtener los archivos válidos de la subcarpeta
     const archivosValidos = await archivo.find({
       padre: subCarpetaId,
