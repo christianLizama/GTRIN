@@ -103,7 +103,9 @@ export async function getParametro(req, res) {
 export async function addParametro(req, res) {
   try {
     let { value, option, usuariosConAcceso } = req.body;
-
+    // Quitar espacios al inicio y al final
+    value = value.trim();
+    // Quitar acentos
     value = removeAccents(value);
 
     let newParametro = new Parametro({
