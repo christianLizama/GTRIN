@@ -2,6 +2,8 @@ import Parametro from "../../models/Parametro.js";
 import Archivo from "../../models/Archivo.js";
 import Usuario from "../../models/Usuario.js";
 import carpeta from "../../models/Carpeta.js";
+import removeAccents from 'remove-accents';
+
 
 const Carpeta = carpeta.Carpeta;
 
@@ -10,9 +12,11 @@ export async function getParametros(req, res) {
   const searchQuery = {}; // Objeto de consulta vacío por defecto
 
   if (req.query.search) {
+    // Quitamos los acentos de la búsqueda y la convertimos a minúsculas
+    const normalizedSearchTerm = removeAccents(req.query.search).toLowerCase();
     // Si se proporciona un término de búsqueda en la consulta, agregamos criterios de búsqueda
     searchQuery.$or = [
-      { value: { $regex: req.query.search, $options: "i" } }, // Búsqueda insensible a mayúsculas y minúsculas en el campo "value"
+      { value: { $regex: normalizedSearchTerm, $options: "i" } }, // Búsqueda insensible a mayúsculas y minúsculas en el campo "value"
       // Agregar más campos de búsqueda si es necesario
     ];
   }
@@ -98,7 +102,9 @@ export async function getParametro(req, res) {
 //Agregar un parametro
 export async function addParametro(req, res) {
   try {
-    const { value, option, usuariosConAcceso } = req.body;
+    let { value, option, usuariosConAcceso } = req.body;
+
+    value = removeAccents(value);
 
     let newParametro = new Parametro({
       value,

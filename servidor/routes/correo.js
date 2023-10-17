@@ -12,6 +12,8 @@ router.get('/', function(req, res, next) {
 router.post('/sendEmail', correo.enviarCorreo);
 //Para detener un cron
 router.post('/stopCron', correo.stopCron);
-router.get('/getTriggers', correo.obtenerTriggers)
+router.get('/getTriggers', correo.obtenerTriggers);
+router.post('/sendFiles',correo.enviarArchivos);
+
 
 export default router;

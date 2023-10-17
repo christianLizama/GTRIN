@@ -119,10 +119,8 @@
     <div class="contenedor" v-if="!isLoading">
       <v-card elevation="5" outlined class="mx-auto mb-8" max-width="98.6%">
         <v-data-table
-          :single-expand="singleExpand"
           :expanded.sync="expanded"
           item-key="_id"
-          show-expand
           :headers="headers"
           :items="filtros"
           sort-by="statusId"
@@ -213,11 +211,11 @@
               }}</span>
             </v-tooltip>
           </template>
-          <template v-slot:[`expanded-item`]="{ headers, item }">
+          <!-- <template v-slot:[`expanded-item`]="{ headers, item }">
             <td :colspan="headers.length">
               Pertenece al parametro: <b>{{ item.nombreParametro }}</b>
             </td>
-          </template>
+          </template> -->
           <template v-slot:top>
             <v-toolbar flat>
               <v-toolbar-title v-if="searchClosed">Archivos</v-toolbar-title>
@@ -391,6 +389,7 @@ export default {
         sortable: false,
         value: "nombre",
       },
+      { text: "Parametro", value: "nombreParametro", align: "" },
       {
         text: "Status archivo",
         align: "center",
@@ -419,7 +418,6 @@ export default {
       { text: "Archivo", sortable: false, value: "archivo" },
       { text: "Tamaño", value: "peso" },
       { text: "Gestionar", value: "ir", align: "center", sortable: false },
-      { text: "Parametro", value: "data-table-expand", align: "center" },
     ],
     archivos: [],
   }),

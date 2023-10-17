@@ -103,6 +103,19 @@ const routes = [
     },
   },
   {
+    path: '/Compartir',
+    name: 'compartir',
+    // route level code-splitting
+    // this generates a separate chunk (about.[hash].js) for this route
+    // which is lazy-loaded when the route is visited.
+    component: () => import(/* webpackChunkName: "about" */ '../views/Compartir.vue'),
+    meta: {
+      title: "Compartir",
+      admin: true,
+      usuario: true,
+    },
+  },
+  {
     path: '/archivosEliminados',
     name: 'eliminados',
     // route level code-splitting

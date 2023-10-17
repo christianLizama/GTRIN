@@ -5,8 +5,175 @@ import trigger from "../../models/Trigger.js";
 import archivo from "../../models/Archivo.js";
 import subCarpeta from "../../models/SubCarpeta.js";
 import moment from "moment";
-//Metodo para enviar un correo
 
+// Crear una función de comparación personalizada
+function customSort(a, b) {
+  // Compara por "abuelo.nombre"
+  if (a.abuelo.nombre < b.abuelo.nombre) return -1;
+  if (a.abuelo.nombre > b.abuelo.nombre) return 1;
+
+  // Si los abuelos son iguales, compara por "padre.nombre"
+  if (a.padre.nombre < b.padre.nombre) return -1;
+  if (a.padre.nombre > b.padre.nombre) return 1;
+
+  // Compara por "status"
+  const statusOrder = ["Vigente", "Por vencer", "Vencido"];
+  const statusA = statusOrder.indexOf(a.status);
+  const statusB = statusOrder.indexOf(b.status);
+  if (statusA < statusB) return -1;
+  if (statusA > statusB) return 1;
+
+  // Si todos los campos son iguales, no cambia el orden
+  return 0;
+}
+
+//Funcion para enviar archivos por correo recibiendo contenedor, carpeta y una lista de subcarpetas
+async function enviarArchivos(req, res, next) {
+  try {
+    //Obtener el contenedor, carpeta, subcarpetas y los destinos
+    const { contenedor, carpeta, subCarpetas, destinos } = req.body;
+
+    const subCarpetasIds = subCarpetas.map((subCarpeta) => subCarpeta._id);
+
+    // Obtener todos los archivos que pertenecen al contenedor, carpeta y subcarpetas
+    const archivos = await archivo
+      .find({
+        padreSuperior: contenedor,
+        abuelo: carpeta,
+        padre: { $in: subCarpetasIds },
+      })
+      .populate({
+        path: "padre",
+        select: "nombre",
+      })
+      .populate({
+        path: "abuelo",
+        select: "nombre",
+      })
+      .populate({
+        path: "padreSuperior",
+        select: "nombre",
+      })
+      .populate({
+        path: "parametro",
+        select: "value",
+      });
+
+    // Si no hay archivos, retornar un mensaje
+
+    if (archivos.length === 0) {
+      res.status(404).send({
+        message: "No hay archivos en esta carpeta",
+      });
+    }
+
+    //Ordenar los archivos por nombre de padre
+    archivos.sort(customSort);
+
+    // Enviar los archivos a los destinos
+    const CLIENT_ID = process.env.CLIENT_ID;
+    const CLIENT_SECRET = process.env.CLIENT_SECRET;
+    const REDIRECT_URI = process.env.REDIRECT_URI;
+    const REFRESH_TOKEN = process.env.REFRESH_TOKEN;
+    const USER = "reportes@transportesruiz.cl";
+    const FROM_EMAIL = "reportes@transportesruiz.cl";
+
+    const oAuth2Client = new google.auth.OAuth2(
+      CLIENT_ID,
+      CLIENT_SECRET,
+      REDIRECT_URI
+    );
+    oAuth2Client.setCredentials({ refresh_token: REFRESH_TOKEN });
+
+    const asunto =
+      "Archivos compartidos desde la plataforma de Transportes Ruiz";
+    const mensaje = "";
+
+    const tablaHTML = `<table BORDER>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Contenedor</th>
+                <th>Carpeta</th>
+                <th>Sub-Carpeta</th>
+                <th>Parametro</th>
+                <th>Nombre archivo</th>
+                <th>Fecha de caducidad</th>
+                <th>Archivo</th>
+                <th>Estado</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${archivos
+                .map(
+                  (file, index) =>
+                    `<tr>
+                    <td>${index + 1}</td>
+                    <td>${file.padreSuperior.nombre}</td>
+                    <td>${file.abuelo.nombre}</td>
+                    <td>${file.padre.nombre}</td>
+                    <td>${file.parametro.value}</td>
+                    <td>${file.nombre}</td>
+                    <td>${moment(file.fechaCaducidad).format("DD/MM/YYYY")}</td>
+                    <td><a href="${file.archivo}" target="_blank">${
+                      file.archivo
+                    }</a></td>
+                    <td>${file.status}</td></tr>`
+                )
+                .join("")}
+            </tbody>
+            <tfoot>
+              <tr>
+                <td colspan="8">
+                  <p style="color: red; font-weight: bold;">Por favor no contestar este correo</p>
+                </td>
+              </tr>
+            </tfoot>
+        </table>`;
+
+    var mailOptions = {
+      from: FROM_EMAIL,
+      to: destinos,
+      subject: asunto,
+      text: mensaje,
+      html: tablaHTML,
+    };
+
+    const accessToken = await oAuth2Client.getAccessToken();
+
+    //Crear objeto de transporte
+    var transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        type: "OAuth2",
+        user: USER,
+        clientId: CLIENT_ID,
+        clientSecret: CLIENT_SECRET,
+        refreshToken: REFRESH_TOKEN,
+        accessToken: accessToken,
+      },
+    });
+
+    transporter.sendMail(mailOptions, function (error, info) {
+      if (error) {
+        //Enviar un mensaje de error
+        res.status(500).send({
+          message: "Ocurrio un error",
+        });
+      }
+      console.log("Email enviado: " + info.response);
+      res.status(200).send({
+        message: "Archivos enviados",
+      });
+    });
+  } catch (error) {
+    res.status(500).send({
+      message: "Ocurrio un error",
+    });
+  }
+}
+
+//Metodo para enviar un correo
 async function enviarCorreo2(mensaje, asunto, destino) {
   const CLIENT_ID = process.env.CLIENT_ID;
   const CLIENT_SECRET = process.env.CLIENT_SECRET;
@@ -144,7 +311,6 @@ const enviarCorreo = async (req, res, next) => {
         });
 
         const tablaHTML = `<table BORDER>
-            <caption><strong>Por favor no contestar a este correo</strong></caption>
             <caption>Contenedor: ${contenedor.nombre}</caption>
             <caption>Carpeta: ${carpeta.nombre}</caption>
             <thead>
@@ -169,6 +335,13 @@ const enviarCorreo = async (req, res, next) => {
                 )
                 .join("")}
             </tbody>
+            <tfoot>
+              <tr>
+                <td colspan="8">
+                  <p style="color: red; font-weight: bold;">Por favor no contestar este correo</p>
+                </td>
+              </tr>
+            </tfoot>
         </table>`;
 
         var mailOptions = {
@@ -323,7 +496,9 @@ async function cargar(trigger) {
       }
 
       if (archivos.length === 0) {
-        console.log("La lista de archivos está vacía. No se enviará el correo.");
+        console.log(
+          "La lista de archivos está vacía. No se enviará el correo."
+        );
         return;
       }
 
@@ -356,7 +531,6 @@ async function cargar(trigger) {
       });
 
       const tablaHTML = `<table BORDER>
-            <caption><strong>Por favor no contestar a este correo</strong></caption>
             <caption>Contenedor: ${contenedor.nombre}</caption>
             <caption>Carpeta: ${carpeta.nombre}</caption>
             <thead>
@@ -377,6 +551,13 @@ async function cargar(trigger) {
                 )
                 .join("")}
             </tbody>
+            <tfoot>
+              <tr>
+                <td colspan="8">
+                  <p style="color: red; font-weight: bold;">Por favor no contestar este correo</p>
+                </td>
+              </tr>
+            </tfoot>
         </table>`;
 
       var mailOptions = {
@@ -469,6 +650,7 @@ const obtenerTriggers = async (req, res, next) => {
 };
 
 export default {
+  enviarArchivos,
   enviarCorreo,
   enviarCorreo2,
   stopCron,

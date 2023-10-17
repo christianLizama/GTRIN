@@ -130,6 +130,19 @@
           v-if="esAdmin"
           active-class="white--text"
           link
+          to="/compartir"
+        >
+          <v-list-item-icon>
+            <v-icon>mdi-share-all</v-icon>
+          </v-list-item-icon>
+          <v-list-item-content>
+            <v-list-item-title>Compartir</v-list-item-title>
+          </v-list-item-content>
+        </v-list-item>
+        <v-list-item
+          v-if="esAdmin"
+          active-class="white--text"
+          link
           to="/archivosEliminados"
         >
           <v-list-item-icon>
