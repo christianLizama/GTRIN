@@ -1,7 +1,7 @@
 <template>
   <div>
     <v-toolbar dense dark>
-      <v-toolbar-title class="white--text"> Dashboard </v-toolbar-title>
+      <v-toolbar-title class="white--text"> Sistema Gestor de Archivos </v-toolbar-title>
       <v-spacer></v-spacer>
     </v-toolbar>
     <loading v-if="isLoading" texto="Obteniendo información"></loading>

@@ -16,7 +16,7 @@ async function actualizarCumplimientoTodasCarpetas() {
       await calcularCumplimientoCarpeta(carpeta._id);
     }
 
-    console.log("Cumplimiento de todas las carpetas actualizado");
+    // console.log("Cumplimiento de todas las carpetas actualizado");
   } catch (error) {
     console.error("Error:", error);
   }
@@ -33,7 +33,7 @@ async function actualizarCumplimientoTodasSubCarpetas() {
       await calcularCumplimientoSubCarpeta(subCarpeta._id);
     }
 
-    console.log("Cumplimiento de todas las subcarpetas actualizado");
+    // console.log("Cumplimiento de todas las subcarpetas actualizado");
   } catch (error) {
     console.error("Error:", error);
   }
@@ -50,7 +50,7 @@ async function actualizarCumplimientoTodasSociedades() {
       await calcularCumplimientoSociedad(soc._id);
     }
 
-    console.log("Cumplimiento de todas las subcarpetas actualizado");
+    // console.log("Cumplimiento de todas las subcarpetas actualizado");
   } catch (error) {
     console.error("Error:", error);
   }
@@ -59,7 +59,7 @@ async function actualizarCumplimientoTodasSociedades() {
 //calcula el cumplimiento de la carpeta
 async function calcularCumplimientoCarpeta(idCarpeta) {
   try {
-    console.log("Actualizando cumplimiento de carpeta");
+    // console.log("Actualizando cumplimiento de carpeta");
     // Buscar la carpeta
     let carpeta = await Carpeta.findById(idCarpeta);
 
@@ -90,9 +90,9 @@ async function calcularCumplimientoCarpeta(idCarpeta) {
         ? 0
         : Math.round((subCarpetasCumplidas / subCarpetasTotales) * 100);
 
-    console.log("--------");
+    // console.log("--------");
     //console.log(carpeta);
-    console.log("--------");
+    // console.log("--------");
 
     // Actualizar el porcentaje de cumplimiento de la carpeta
     if (!comprobarExistenciaAtributo(carpeta, "porcentaje")) {
@@ -109,7 +109,7 @@ async function calcularCumplimientoCarpeta(idCarpeta) {
       carpeta.save();
     }
 
-    console.log("Porcentaje de carpeta actualizado");
+    // console.log("Porcentaje de carpeta actualizado");
   } catch (error) {
     console.error("Error:", error);
   }
@@ -126,7 +126,7 @@ function comprobarExistenciaAtributo(objeto, atributo) {
 
 //calcula el cumplimiento de la subcarpeta
 async function calcularCumplimientoSubCarpeta(subCarpetaId) {
-  console.log("Actualizando cumplimiento de SubCarpeta");
+  // console.log("Actualizando cumplimiento de SubCarpeta");
   try {
     // Buscar la subcarpeta y su carpeta padre para obtener los parámetros
     let subFolder = await subCarpeta.findById(subCarpetaId);
@@ -185,15 +185,15 @@ async function calcularCumplimientoSubCarpeta(subCarpetaId) {
     if (porcentajeGeneral === 100) {
       cumplimientoSubCarpeta = "Cumple";
     }
-    console.log("--------soy la subcarpeta----------");
+    // console.log("--------soy la subcarpeta----------");
     //console.log(subFolder);
-    console.log("------------------");
+    // console.log("------------------");
 
     //Verificar existencia de atributos de la subcarpeta
     if (!comprobarExistenciaAtributo(subFolder, "porcentaje")) {
-      console.log("subcarpeta no posee porcentaje");
+      // console.log("subcarpeta no posee porcentaje");
       if (!comprobarExistenciaAtributo(subFolder, "cumplimiento")) {
-        console.log("subcarpeta no posee cumplimiento");
+        // console.log("subcarpeta no posee cumplimiento");
         await subCarpeta.updateOne(
           { _id: subFolder._id },
           { $set: { cumplimiento: cumplimientoSubCarpeta } }
@@ -212,7 +212,7 @@ async function calcularCumplimientoSubCarpeta(subCarpetaId) {
     }
 
     //console.log("Cumplimiento actualizado:", subFolder);
-    console.log("cumplimiento de SubCarpeta actualizado");
+    // console.log("cumplimiento de SubCarpeta actualizado");
   } catch (error) {
     console.error("Error:", error);
   }
@@ -255,10 +255,10 @@ async function calcularCumplimientoSociedad(idSociedad) {
         reg.porcentaje = porcentajeGeneral;
         await reg.save();
       }
-      console.log(
-        "Porcentaje general de cumplimiento de la sociedad:",
-        porcentajeGeneral + "%"
-      );
+      // console.log(
+      //   "Porcentaje general de cumplimiento de la sociedad:",
+      //   porcentajeGeneral + "%"
+      // );
     }
   } catch (error) {
     console.error("Error:", error);

@@ -37,7 +37,7 @@
           return-object
         >
           <template v-slot:selection="{ item, index }">
-            <v-chip v-if="index === 0">
+            <v-chip color="red" v-if="index === 0">
               <span>{{ item.nombre }}</span>
             </v-chip>
             <span v-if="index === 1" class="grey--text caption"

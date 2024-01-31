@@ -215,7 +215,7 @@ const query = async (req, res, next) => {
     if (!carpeta) {
       return res.status(404).json({ message: "La carpeta no existe" });
     }
-
+    
     // Obtener la cantidad de archivos por parámetro en la carpeta utilizando la agregación de MongoDB
     const archivosPorParametro = await Archivo.aggregate([
       {

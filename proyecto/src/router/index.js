@@ -10,7 +10,7 @@ const routes = [
     name: 'home',
     component: HomeView,
     meta: {
-      title: "Dashboard",
+      title: "SGA",
       admin:true,
       usuario:true
     }

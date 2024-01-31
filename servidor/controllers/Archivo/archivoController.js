@@ -348,6 +348,7 @@ const getArchivosStatus = async (req, res, next) => {
       let result3 = JSON.parse(JSON.stringify(carpetas));
       let result4 = JSON.parse(JSON.stringify(subCarpetas));
       let parametrosTotal = [];
+
       //Obtenemos todos los parametros de todas las carpetas
       result3.forEach((folder) => {
         folder.parametros.forEach((param) => {

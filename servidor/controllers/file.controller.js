@@ -1,5 +1,3 @@
-//const uploadFile = require("../middleware/upload");
-// const fs = require("fs");
 import uploadFileMiddleware  from "../middleware/upload.js";
 import fs from 'fs';
 import {format} from 'util';
@@ -33,8 +31,8 @@ const upload = async (req, res) => {
     });
 
     blobStream.on("error", (err) => {
-      console.log("entre aca")
-      res.status(500).send({ message: err.message });
+      console.log(err)
+      res.status(500).send({ message: "Error al subir el archivo" });
     });
 
     blobStream.on("finish", async (data) => {
