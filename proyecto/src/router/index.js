@@ -12,7 +12,8 @@ const routes = [
     meta: {
       title: "SGA",
       admin:true,
-      usuario:true
+      usuario:true,
+      lector: true
     }
   },
   {
@@ -47,6 +48,7 @@ const routes = [
       title: "Sociedades",
       admin: true,
       usuario: true,
+      lector: true
     },
   },
 
@@ -66,6 +68,7 @@ const routes = [
           title: "Carpetas",
           admin: true,
           usuario: true,
+          lector: true
         },
       },
       {
@@ -76,6 +79,7 @@ const routes = [
           title: "SubCarpetas",
           admin: true,
           usuario: true,
+          lector: true
         },
       }, 
       {
@@ -86,6 +90,7 @@ const routes = [
           title: "Archivos",
           admin: true,
           usuario: true,
+          lector: true
         },
       }
     ]
@@ -190,6 +195,11 @@ router.beforeEach((to, from, next) => {
       next();
     }
   }else if(usuario && usuario.rol == "usuario"){
+    if(to.meta.usuario){
+      next();
+    }
+  }
+  else if(usuario && usuario.rol == "lector"){
     if(to.meta.usuario){
       next();
     }

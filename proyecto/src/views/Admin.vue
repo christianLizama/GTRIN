@@ -147,7 +147,7 @@ export default {
       { text: "Email", value: "email" },
       { text: "Acciones", value: "actions", sortable: false },
     ],
-    rols: ["admin", "usuario"],
+    rols: ["admin", "usuario","lector"],
     newPasswordOptions: ["No", "Si"],
     admins: [],
     editedIndex: -1,

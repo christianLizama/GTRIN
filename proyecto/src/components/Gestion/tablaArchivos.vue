@@ -356,6 +356,7 @@
 </template>
 
 <script>
+import { mapState } from "vuex";
 import axios from "axios";
 import moment from "moment";
 import location from "moment/dist/locale/es";
@@ -497,6 +498,7 @@ export default {
     },
   }),
   computed: {
+    ...mapState(["usuario"]),
     fechaMaximaEmision() {
       this.fechasIguales();
       return moment().toISOString().substr(0, 10);
@@ -676,6 +678,13 @@ export default {
       opcion = opcion + 1;
       //Si es editar
       if (opcion == 1) {
+        if(this.usuario.rol==="lector"){
+          this.$refs.childComponent.SnackbarShow(
+            "error",
+            "No tienes permisos para editar"
+          );
+          return;
+        }
         this.editItem(item);
       }
       //eliminar
@@ -988,22 +997,35 @@ export default {
       this.closeDelete();
     },
     async borrarArchivo(archivo, index) {
-      let nombreArchivo = archivo.archivo.substring(
-        archivo.archivo.lastIndexOf("/") + 1
-      );
-      let idUsuario = this.$store.state.usuario._id;
-      console.log(idUsuario);
+      try {
+        let nombreArchivo = archivo.archivo.substring(
+          archivo.archivo.lastIndexOf("/") + 1
+        );
+        let idUsuario = this.$store.state.usuario._id;
+        console.log(idUsuario);
 
-      var data = {
-        id: archivo._id,
-        fileName: nombreArchivo,
-        idUser: idUsuario,
-      };
+        var data = {
+          id: archivo._id,
+          fileName: nombreArchivo,
+          idUser: idUsuario,
+        };
 
-      await axios.delete("archivo/remove", { data }).then((result) => {
-        this.$refs.childComponent.SnackbarShow("success", result.data.message);
-        this.archivos.splice(index, 1);
-      });
+        await axios.delete("archivo/remove", { data }).then((result) => {
+          this.$refs.childComponent.SnackbarShow(
+            "success",
+            result.data.message
+          );
+          this.archivos.splice(index, 1);
+        });
+      } catch (error) {
+        if(error.response.status == 500){
+          this.$refs.childComponent.SnackbarShow("error", "Error al borrar archivo");
+        }
+        else if(error.response.status == 403){
+          this.$refs.childComponent.SnackbarShow("error", "No tienes permisos para borrar este archivo");
+        }
+        //this.$refs.childComponent.SnackbarShow("error", "Error al borrar archivo");  
+      }
     },
     close() {
       this.resetValidation();

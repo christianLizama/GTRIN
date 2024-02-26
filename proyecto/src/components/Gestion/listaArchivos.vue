@@ -214,7 +214,7 @@ export default {
       }
       //eliminar
       else if (opcion == 2) {
-        console.log("soy el otro");
+        // console.log("soy el otro");
         this.deleteItem(item);
       }
     },

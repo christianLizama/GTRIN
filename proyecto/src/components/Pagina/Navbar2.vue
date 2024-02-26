@@ -127,6 +127,7 @@
           </v-list-item-content>
         </v-list-item>
         <v-list-item
+          v-if="!usuario.rol == 'lector'"
           active-class="white--text"
           link
           to="/compartir"

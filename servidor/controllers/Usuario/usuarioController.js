@@ -44,7 +44,7 @@ async function getUsuarios(req, res) {
 //Obtener usuarios normales
 async function getUsuariosNormales(req, res) {
   try {
-    let usuarios = await Usuario.find({ rol: "usuario" }, { clave: 0 });
+    let usuarios = await Usuario.find({ rol: { $in: ["usuario", "lector"] } }, { clave: 0 });
     if (!usuarios) {
       res.status(404).send({
         message: "No hay ningún usuario",

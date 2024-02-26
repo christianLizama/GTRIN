@@ -443,6 +443,15 @@ const remove = async (req, res, next) => {
       })
     //Buscamos el usuario que elimino el archivo
     const user = await usuario.findOne({ _id: idUser });
+
+    //Verificar el rol del usuario que elimino el archivo
+    if (user.rol == "lector") {
+      res.status(403).send({
+        message: "No tienes permisos para eliminar archivos",
+      });
+      return;
+    }
+
     //Eliminamos el archivo de la colección de archivos
     const reg = await archivo.findByIdAndDelete({ _id: id });
     let archivoEliminado = {
