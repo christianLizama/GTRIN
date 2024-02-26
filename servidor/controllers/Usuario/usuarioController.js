@@ -128,7 +128,7 @@ async function postUsuario(req, res) {
         }
       }
 
-      await enviarCorreo2(
+      await enviarCorreo2.enviarCorreo2(
         `Hola ${req.body.nombreCompleto},\n\n
         Se ha creado una cuenta en el sistema de Transportes Ruiz con tu usuario.\n
         Su usuario es: ${req.body.email}\n
@@ -140,6 +140,7 @@ async function postUsuario(req, res) {
       res.status(200).json(newUser);
     }
   } catch (e) {
+    console.log(e);
     res.status(500).send({
       message: "Ocurrió un error",
     });
