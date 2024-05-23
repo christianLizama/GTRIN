@@ -127,7 +127,7 @@
           </v-list-item-content>
         </v-list-item>
         <v-list-item
-          v-if="!usuario.rol == 'lector'"
+          v-if="usuario.rol !== 'lector'"
           active-class="white--text"
           link
           to="/compartir"
@@ -139,6 +139,7 @@
             <v-list-item-title>Compartir</v-list-item-title>
           </v-list-item-content>
         </v-list-item>
+        
         <v-list-item
           v-if="esAdmin"
           active-class="white--text"

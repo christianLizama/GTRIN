@@ -173,7 +173,7 @@ const actualizarParametros = async (req, res, next) => {
       // Agregar los nuevos elementos a nuevosParametros
       nuevosParametros = [...nuevosParametros, ...listaFinal];
     }
-    
+
     const carpetaActualizada = await Carpeta.findByIdAndUpdate(
       id,
       { parametros: nuevosParametros },
@@ -215,7 +215,7 @@ const query = async (req, res, next) => {
     if (!carpeta) {
       return res.status(404).json({ message: "La carpeta no existe" });
     }
-    
+
     // Obtener la cantidad de archivos por parámetro en la carpeta utilizando la agregación de MongoDB
     const archivosPorParametro = await Archivo.aggregate([
       {
@@ -478,6 +478,27 @@ const contarCumplimiento = async (req, res, next) => {
   }
 };
 
+const obtenerParametros = async (req, res, next) => {
+  try {
+    const id = req.query._id;
+    const reg = await Carpeta.findOne({
+      _id: id,
+    }).populate("parametros");
+    if (!reg) {
+      res.status(404).send({
+        message: "El registro no existe",
+      });
+    } else {
+      res.status(200).json(reg.parametros);
+    }
+  } catch (e) {
+    res.status(500).send({
+      message: "Ocurrio un error",
+    });
+    next(e);
+  }
+};
+
 export default {
   add,
   query,
@@ -493,4 +514,5 @@ export default {
   agregarParametros,
   actualizarParametros,
   contarCumplimiento,
+  obtenerParametros
 };

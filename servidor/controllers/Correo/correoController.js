@@ -31,7 +31,7 @@ function customSort(a, b) {
 async function enviarArchivos(req, res, next) {
   try {
     //Obtener el contenedor, carpeta, subcarpetas y los destinos
-    const { contenedor, carpeta, subCarpetas, destinos } = req.body;
+    const { contenedor, carpeta, subCarpetas, parametros, destinos } = req.body;
 
     const subCarpetasIds = subCarpetas.map((subCarpeta) => subCarpeta._id);
 
@@ -41,6 +41,7 @@ async function enviarArchivos(req, res, next) {
         padreSuperior: contenedor,
         abuelo: carpeta,
         padre: { $in: subCarpetasIds },
+        parametro: { $in: parametros },
       })
       .populate({
         path: "padre",

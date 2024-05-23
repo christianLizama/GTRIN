@@ -46,6 +46,25 @@
           </template>
         </v-select>
 
+        <v-select
+          v-if="selectedSubfolder"
+          v-model="selectedParametro"
+          :items="parametros"
+          label="Selecciona uno o más parámetros"
+          item-text="value"
+          multiple
+          return-object
+        >
+          <template v-slot:selection="{ item, index }">
+            <v-chip color="blue" v-if="index === 0">
+              <span>{{ item.value }}</span>
+            </v-chip>
+            <span v-if="index === 1" class="grey--text caption"
+              >(+{{ selectedParametro.length - 1 }} otra(s))</span
+            >
+          </template>
+        </v-select>
+
         <v-combobox
           v-if="selectedSubfolder"
           v-model="destinos"
@@ -59,14 +78,11 @@
           :item-text="(correo) => correo"
         >
           <template v-slot:selection="{ item, index }">
-            <v-chip
-              small
-              label
-              color="primary"
-              class="ma-2"
-            >
-              {{ item }} 
-              <v-icon @click="removeDestino(index)" small>mdi-close-circle-outline</v-icon>
+            <v-chip small label color="primary" class="ma-2">
+              {{ item }}
+              <v-icon @click="removeDestino(index)" small
+                >mdi-close-circle-outline</v-icon
+              >
             </v-chip>
           </template>
         </v-combobox>
@@ -95,9 +111,11 @@ export default {
       selectedContainer: null,
       selectedFolder: null,
       selectedSubfolder: null,
+      selectedParametro: null,
       containers: [],
       folders: [],
       subfolders: [],
+      parametros: [],
       destinos: [],
       newCorreo: "",
       loading: false,
@@ -111,8 +129,10 @@ export default {
       this.selectedFolder = null;
       this.selectedSubfolder = null;
     },
-    selectedFolder() {
-      // Cuando se cambia la subcarpeta, restablecer la lista de destinos
+    selectedFolder(newFolder) {
+      if (newFolder) {
+        this.fetchParametros();
+      }
       this.destinos = [];
       this.subfolders = [];
       this.selectedSubfolder = null;
@@ -172,6 +192,17 @@ export default {
           console.log(e);
         });
     },
+    async fetchParametros() {
+      const idFolder = this.selectedFolder._id;
+      await axios
+        .get("carpeta/obtenerParametros?_id=" + idFolder)
+        .then((res) => {
+          this.parametros = res.data;
+        })
+        .catch((e) => {
+          console.log(e);
+        });
+    },
     async sendEmail() {
       // Validar los correos electrónicos antes de enviar
       const correosValidos = this.destinos.filter((email) =>
@@ -199,6 +230,7 @@ export default {
         contenedor: this.selectedContainer._id,
         carpeta: this.selectedFolder._id,
         subCarpetas: this.selectedSubfolder,
+        parametros: this.selectedParametro,
         destinos: this.destinos,
       };
       // Lógica para enviar correos electrónicos aquí
@@ -210,6 +242,7 @@ export default {
           this.selectedContainer = null;
           this.selectedFolder = null;
           this.selectedSubfolder = null;
+          this.selectedParametro = null;
           this.destinos = [];
           this.newCorreo = "";
           this.loading = false;
@@ -223,6 +256,7 @@ export default {
           this.selectedContainer = null;
           this.selectedFolder = null;
           this.selectedSubfolder = null;
+          this.selectedParametro = null;
           this.destinos = [];
           this.newCorreo = "";
           this.loading = false;

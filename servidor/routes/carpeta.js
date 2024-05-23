@@ -22,5 +22,6 @@ router.get('/getAllFolders',folder.getAllFolders)
 router.put('/addParams',folder.agregarParametros)
 router.put('/updateParams',folder.actualizarParametros)
 router.get('/contarCumplimiento',folder.contarCumplimiento)
+router.get('/obtenerParametros',folder.obtenerParametros)
 
 export default router;
