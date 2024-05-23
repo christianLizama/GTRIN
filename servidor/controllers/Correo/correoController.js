@@ -16,12 +16,16 @@ function customSort(a, b) {
   if (a.padre.nombre < b.padre.nombre) return -1;
   if (a.padre.nombre > b.padre.nombre) return 1;
 
-  // Compara por "status"
+  // Si los padres son iguales, compara por "status"
   const statusOrder = ["Vigente", "Por vencer", "Vencido"];
   const statusA = statusOrder.indexOf(a.status);
   const statusB = statusOrder.indexOf(b.status);
   if (statusA < statusB) return -1;
   if (statusA > statusB) return 1;
+
+  // Si los estatus son iguales, compara por el "value" del "parametro"
+  if (a.parametro.value < b.parametro.value) return -1;
+  if (a.parametro.value > b.parametro.value) return 1;
 
   // Si todos los campos son iguales, no cambia el orden
   return 0;
@@ -90,47 +94,50 @@ async function enviarArchivos(req, res, next) {
       "Archivos compartidos desde la plataforma de Transportes Ruiz";
     const mensaje = "";
 
-    const tablaHTML = `<table BORDER>
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Contenedor</th>
-                <th>Carpeta</th>
-                <th>Sub-Carpeta</th>
-                <th>Parametro</th>
-                <th>Nombre archivo</th>
-                <th>Fecha de caducidad</th>
-                <th>Archivo</th>
-                <th>Estado</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${archivos
-                .map(
-                  (file, index) =>
-                    `<tr>
-                    <td>${index + 1}</td>
-                    <td>${file.padreSuperior.nombre}</td>
-                    <td>${file.abuelo.nombre}</td>
-                    <td>${file.padre.nombre}</td>
-                    <td>${file.parametro.value}</td>
-                    <td>${file.nombre}</td>
-                    <td>${moment(file.fechaCaducidad).format("DD/MM/YYYY")}</td>
-                    <td><a href="${file.archivo}" target="_blank">${
-                      file.archivo
-                    }</a></td>
-                    <td>${file.status}</td></tr>`
-                )
-                .join("")}
-            </tbody>
-            <tfoot>
-              <tr>
-                <td colspan="8">
-                  <p style="color: red; font-weight: bold;">Por favor no contestar este correo</p>
-                </td>
-              </tr>
-            </tfoot>
-        </table>`;
+    const tablaHTML = 
+    `<table BORDER>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Contenedor</th>
+          <th>Carpeta</th>
+          <th>Sub-Carpeta</th>
+          <th>Parametro</th>
+          <th>Nombre archivo</th>
+          <th>Fecha de caducidad</th>
+          <th>Archivo</th>
+          <th>Estado</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${archivos
+          .map(
+            (file, index) =>
+              `<tr>
+                <td>${index + 1}</td>
+                <td>${file.padreSuperior.nombre}</td>
+                <td>${file.abuelo.nombre}</td>
+                <td>${file.padre.nombre}</td>
+                <td>${file.parametro.value || "Falta parametro"}</td>
+                <td>${file.nombre}</td>
+                <td>${moment(file.fechaCaducidad).format("DD/MM/YYYY")}</td>
+                <td><a href="${file.archivo}" target="_blank">${
+                file.archivo
+              }</a></td>
+                <td>${file.status}</td>
+              </tr>`
+          )
+          .join("")}
+      </tbody>
+      <tfoot>
+        <tr>
+          <td colspan="9">
+            <p style="color: red; font-weight: bold;">Por favor no contestar este correo</p>
+            <p style="color: red; font-weight: bold;">Si falta un parámetro, significa que no se encuentra un archivo subido para ese dato.</p>
+          </td>
+        </tr>
+      </tfoot>
+    </table>`;
 
     var mailOptions = {
       from: FROM_EMAIL,
