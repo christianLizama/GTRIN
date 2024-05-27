@@ -94,8 +94,7 @@ async function enviarArchivos(req, res, next) {
       "Archivos compartidos desde la plataforma de Transportes Ruiz";
     const mensaje = "";
 
-    const tablaHTML = 
-    `<table BORDER>
+    const tablaHTML = `<table BORDER>
       <thead>
         <tr>
           <th>#</th>
@@ -120,7 +119,9 @@ async function enviarArchivos(req, res, next) {
                 <td>${file.padre.nombre}</td>
                 <td>${file.parametro.value || "Falta parametro"}</td>
                 <td>${file.nombre}</td>
-                <td>${moment(file.fechaCaducidad).format("DD/MM/YYYY")}</td>
+                <td>${moment(file.fechaCaducidad).add(1,'days').format(
+                  "DD/MM/YYYY"
+                )}</td>
                 <td><a href="${file.archivo}" target="_blank">${
                 file.archivo
               }</a></td>
